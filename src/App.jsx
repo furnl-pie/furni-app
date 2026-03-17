@@ -1,5 +1,4 @@
 import { useState, useRef, Fragment } from "react"
-import { useAppData } from './hooks/useAppData'
 
 // ── 초기 계정 (런타임에 state로 관리됨) ──────────────────────────
 const INIT_USERS = [
@@ -1753,16 +1752,31 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
 // ══════════════════════════════════════════════════════════════
 // 기사 앱
 // ══════════════════════════════════════════════════════════════
-function DriverApp({ user, schedules, onUpdate, onLogout }) {
+function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [view, setView]        = useState('list')
   const [selectedId, setSelId] = useState(null)
   const [filterDate, setFD]    = useState(today)
+  const [showPwModal, setPwModal] = useState(false)
+  const [pwForm, setPwForm]    = useState({ current:'', next:'', confirm:'' })
+  const [pwErr, setPwErr]      = useState('')
+  const [pwOk, setPwOk]        = useState(false)
 
   const mine = schedules
     .filter(s => s.driver_id === user.id && (!filterDate || s.date === filterDate))
     .sort((a,b) => a.time.localeCompare(b.time))
 
   const selected = schedules.find(s => s.id === selectedId)
+
+  const changePw = async () => {
+    setPwErr('')
+    if (pwForm.current !== user.pw) { setPwErr('현재 비밀번호가 틀렸습니다'); return }
+    if (pwForm.next.length < 4)     { setPwErr('새 비밀번호는 4자 이상 입력하세요'); return }
+    if (pwForm.next !== pwForm.confirm) { setPwErr('새 비밀번호가 일치하지 않습니다'); return }
+    await onUpdateDriver(user.id, { pw: pwForm.next })
+    setPwOk(true)
+    setPwForm({ current:'', next:'', confirm:'' })
+    setTimeout(() => { setPwModal(false); setPwOk(false) }, 1500)
+  }
 
   if (view === 'detail' && selected) {
     return (
@@ -1784,7 +1798,13 @@ function DriverApp({ user, schedules, onUpdate, onLogout }) {
             <div style={{ fontSize:16, fontWeight:700 }}>🚛 내 배차 일정</div>
             <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>{user.name} 기사님 · {user.phone}</div>
           </div>
-          <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:12 }}>로그아웃</Btn>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={()=>setPwModal(true)}
+              style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 12px', fontSize:12, cursor:'pointer' }}>
+              🔒 비밀번호
+            </button>
+            <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:12 }}>로그아웃</Btn>
+          </div>
         </div>
         <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)}
           style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', fontSize:14, width:'100%', boxSizing:'border-box' }}/>
@@ -1829,6 +1849,58 @@ function DriverApp({ user, schedules, onUpdate, onLogout }) {
           )
         })}
       </div>
+
+      {/* 비밀번호 변경 모달 */}
+      {showPwModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:340, padding:24 }}>
+            <div style={{ fontSize:16, fontWeight:700, color:navy, marginBottom:4 }}>🔒 비밀번호 변경</div>
+            <div style={{ fontSize:12, color:muted, marginBottom:20 }}>{user.name} 기사님</div>
+
+            {pwOk ? (
+              <div style={{ textAlign:'center', padding:'20px 0' }}>
+                <div style={{ fontSize:32, marginBottom:8 }}>✅</div>
+                <div style={{ fontSize:15, fontWeight:700, color:green }}>변경 완료!</div>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom:12 }}>
+                  <div style={{ fontSize:12, color:muted, marginBottom:4 }}>현재 비밀번호</div>
+                  <input type="password" value={pwForm.current}
+                    onChange={e=>setPwForm(p=>({...p,current:e.target.value}))}
+                    placeholder="현재 비밀번호 입력"
+                    style={iStyle}/>
+                </div>
+                <div style={{ marginBottom:12 }}>
+                  <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호</div>
+                  <input type="password" value={pwForm.next}
+                    onChange={e=>setPwForm(p=>({...p,next:e.target.value}))}
+                    placeholder="새 비밀번호 (4자 이상)"
+                    style={iStyle}/>
+                </div>
+                <div style={{ marginBottom:16 }}>
+                  <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호 확인</div>
+                  <input type="password" value={pwForm.confirm}
+                    onChange={e=>setPwForm(p=>({...p,confirm:e.target.value}))}
+                    placeholder="새 비밀번호 다시 입력"
+                    onKeyDown={e=>e.key==='Enter'&&changePw()}
+                    style={iStyle}/>
+                </div>
+                {pwErr && (
+                  <div style={{ fontSize:12, color:red, marginBottom:12, padding:'8px 12px', background:'#fef2f2', borderRadius:8 }}>
+                    ⚠ {pwErr}
+                  </div>
+                )}
+                <div style={{ display:'flex', gap:10 }}>
+                  <Btn onClick={()=>{ setPwModal(false); setPwForm({current:'',next:'',confirm:''}); setPwErr('') }}
+                    outline color={muted} style={{ flex:1 }}>취소</Btn>
+                  <Btn onClick={changePw} style={{ flex:2 }}>변경</Btn>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2537,55 +2609,44 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 // 앱 루트
 // ══════════════════════════════════════════════════════════════
 export default function App() {
-  const [user, setUser] = useState(null)
-  const {
-    users, schedules, loading, error, loadAll,
-    addSchedules, updateSchedule, deleteSchedules,
-    addDriver, updateDriver, deleteDriver,
-  } = useAppData()
+  const [user, setUser]           = useState(null)
+  const [users, setUsers]         = useState(INIT_USERS)
+  const [schedules, setSchedules] = useState(INIT_SCHEDULES)
 
+  // 헬퍼 함수들이 최신 users를 참조하도록 동기화
   USERS = users
 
-  if (loading) return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:36, marginBottom:16 }}>🚛</div>
-        <div style={{ fontSize:16, fontWeight:600, color:'#1b3a5c', marginBottom:8 }}>데이터 불러오는 중...</div>
-        <div style={{ fontSize:13, color:'#64748b' }}>Firebase에 연결 중입니다</div>
-      </div>
-    </div>
-  )
+  const updateSchedule = (id, patch) =>
+    setSchedules(prev => prev.map(s => s.id===id ? {...s,...patch} : s))
 
-  if (error) return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#fef2f2', fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ textAlign:'center', padding:24 }}>
-        <div style={{ fontSize:36, marginBottom:12 }}>⚠️</div>
-        <div style={{ fontSize:15, fontWeight:600, color:'#dc2626', marginBottom:8 }}>연결 오류</div>
-        <div style={{ fontSize:13, color:'#64748b', marginBottom:20 }}>{error}</div>
-        <button onClick={loadAll} style={{ background:'#1b3a5c', color:'#fff', border:'none', borderRadius:8, padding:'10px 24px', fontSize:14, cursor:'pointer' }}>
-          다시 시도
-        </button>
-      </div>
-    </div>
-  )
+  const addSchedules = list =>
+    setSchedules(prev => [
+      ...prev,
+      ...list.map(s => ({ id:'s'+Date.now()+Math.random().toString(36).slice(2), photos:[], schedule_photos:[], driver_note:'', ...s }))
+    ])
+
+  const deleteSchedules = ids =>
+    setSchedules(prev => prev.filter(s => !ids.includes(s.id)))
+
+  const addDriver = d =>
+    setUsers(prev => [...prev, { role:'driver', ...d }])
+
+  const updateDriver = (id, patch) =>
+    setUsers(prev => prev.map(u => u.id===id ? {...u,...patch} : u))
+
+  const deleteDriver = id => {
+    setUsers(prev => prev.filter(u => u.id!==id))
+    // 해당 기사 배치된 일정은 미배치로
+    setSchedules(prev => prev.map(s => s.driver_id===id ? {...s, driver_id:null} : s))
+  }
 
   if (!user) return <LoginPage onLogin={u=>setUser(u)} users={users}/>
 
   if (user.role==='admin')
-    return <AdminApp
-      user={user} users={users} schedules={schedules}
-      onAddMany={addSchedules}
-      onUpdate={(id, patch) => updateSchedule(id, patch)}
-      onDelete={deleteSchedules}
-      onAddDriver={addDriver}
-      onUpdateDriver={updateDriver}
-      onDeleteDriver={deleteDriver}
-      onLogout={()=>setUser(null)}
-    />
+    return <AdminApp user={user} users={users} schedules={schedules}
+      onAddMany={addSchedules} onUpdate={updateSchedule} onDelete={deleteSchedules}
+      onAddDriver={addDriver} onUpdateDriver={updateDriver} onDeleteDriver={deleteDriver}
+      onLogout={()=>setUser(null)}/>
 
-  return <DriverApp
-    user={user} schedules={schedules}
-    onUpdate={(id, patch) => updateSchedule(id, patch)}
-    onLogout={()=>setUser(null)}
-  />
+  return <DriverApp user={user} schedules={schedules} onUpdate={updateSchedule} onUpdateDriver={updateDriver} onLogout={()=>setUser(null)}/>
 }
