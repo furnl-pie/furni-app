@@ -33,7 +33,7 @@ const textC  = '#1e293b'
 
 const STATUS_CFG = {
   '대기':   { color: muted,  bg: '#f1f5f9', label: '대기' },
-  '이동중': { color: blue,   bg: '#dbeafe', label: '🚛 이동중' },
+  '이동중': { color: blue,   bg: '#dbeafe', label: '🚚 이동중' },
   '진행중': { color: amber,  bg: '#fef3c7', label: '● 진행중' },
   '완료':   { color: green,  bg: '#dcfce7', label: '✓ 완료' },
 }
@@ -161,6 +161,48 @@ function Lightbox({ photos, index, onClose }) {
   )
 }
 
+// ── 슬라이드 사진 뷰어 ──────────────────────────────────────────
+function SlidePhotoViewer({ photos, onOpen }) {
+  const [cur, setCur] = useState(0)
+  const total = photos.length
+  if (total === 0) return null
+
+  const prev = e => { e.stopPropagation(); setCur(i => (i - 1 + total) % total) }
+  const next = e => { e.stopPropagation(); setCur(i => (i + 1) % total) }
+
+  return (
+    <div style={{ position:'relative', width:'100%', borderRadius:10, overflow:'hidden', background:'#000', aspectRatio:'4/3' }}>
+      {/* 사진 */}
+      <img
+        src={photos[cur]} alt={`사진${cur+1}`}
+        onClick={() => onOpen && onOpen(cur)}
+        style={{ width:'100%', height:'100%', objectFit:'contain', cursor: onOpen ? 'pointer' : 'default', display:'block' }}
+      />
+      {/* 이전 버튼 */}
+      {total > 1 && (
+        <button onClick={prev} style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.5)', border:'none', color:'#fff', fontSize:22, width:36, height:36, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
+      )}
+      {/* 다음 버튼 */}
+      {total > 1 && (
+        <button onClick={next} style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.5)', border:'none', color:'#fff', fontSize:22, width:36, height:36, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
+      )}
+      {/* 카운터 */}
+      <div style={{ position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)', background:'rgba(0,0,0,.55)', color:'#fff', fontSize:12, fontWeight:600, padding:'3px 10px', borderRadius:12, whiteSpace:'nowrap' }}>
+        {cur + 1} / {total}
+      </div>
+      {/* 썸네일 도트 */}
+      {total > 1 && total <= 8 && (
+        <div style={{ position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)', display:'flex', gap:5, marginTop:0 }}>
+          {photos.map((_,i) => (
+            <div key={i} onClick={e=>{ e.stopPropagation(); setCur(i) }}
+              style={{ width: i===cur?14:7, height:7, borderRadius:4, background: i===cur?'#fff':'rgba(255,255,255,.45)', cursor:'pointer', transition:'all .2s' }}/>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ══════════════════════════════════════════════════════════════
 // 로그인 화면
 // ══════════════════════════════════════════════════════════════
@@ -221,10 +263,10 @@ function LoginPage({ onLogin, users }) {
 
   return (
     <div style={{ minHeight:'100vh', background:navy, display:'flex', alignItems:'center', justifyContent:'center', padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ background:'#fff', borderRadius:20, padding:36, width:'100%', maxWidth:360 }}>
+      <div style={{ background:'#fff', borderRadius:20, padding:36, width:'100%', maxWidth:360, position:'relative' }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
-          <div style={{ fontSize:36, marginBottom:8 }}>🚛</div>
-          <div style={{ fontSize:20, fontWeight:700, color:navy }}>배차 관리 시스템</div>
+          <div style={{ fontSize:44, marginBottom:8 }}>🚚</div>
+          <div style={{ fontSize:22, fontWeight:700, color:navy }}>동태관리</div>
           <div style={{ fontSize:13, color:muted, marginTop:4 }}>지입기사 일정 관리</div>
         </div>
         <Field label="아이디">
@@ -237,6 +279,7 @@ function LoginPage({ onLogin, users }) {
             onKeyDown={e=>e.key==='Enter'&&go()} placeholder="비밀번호"
             style={{ ...iStyle, color:'#1e293b', WebkitTextFillColor:'#1e293b' }}/>
         </Field>
+        <div style={{ fontSize:12, color:muted, marginBottom:14, marginTop:-6 }}>기본 비밀번호 : 1111</div>
 
         {/* 저장 옵션 */}
         <div style={{ display:'flex', gap:16, marginBottom:16, flexWrap:'wrap' }}>
@@ -257,6 +300,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.0.0</div>
       </div>
     </div>
   )
@@ -350,7 +394,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       {/* 헤더 */}
       <div style={{ background:navy, color:'#fff', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontSize:16, fontWeight:700 }}>🚛 배차 관리 시스템</div>
+          <div style={{ fontSize:16, fontWeight:700 }}>🚚 동태관리</div>
           <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자: {user.name}</div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -1164,26 +1208,16 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         {completePhotos.length > 0 && (
           <Card>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase' }}>완료 사진</div>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <span style={{ fontSize:12, color:muted }}>{completePhotos.length}장 · 탭하여 확대</span>
-                <button onClick={()=>downloadAllPhotos(completePhotos, `완료사진_${schedule.address.slice(0,10)}`)}
-                  style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
-                  ⬇ 전체 다운로드
-                </button>
-              </div>
+              <div style={{ fontSize:13, fontWeight:700, color:textC }}>완료 사진 ({completePhotos.length}장)</div>
+              <button onClick={()=>downloadAllPhotos(completePhotos, `완료사진_${schedule.address.slice(0,10)}`)}
+                style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+                ⬇ 전체 다운로드
+              </button>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-              {completePhotos.map((src,i)=>(
-                <div key={i} onClick={()=>openLightbox('complete',i)}
-                  style={{ position:'relative', aspectRatio:'1', cursor:'pointer', borderRadius:10, overflow:'hidden', border:`1px solid ${border}` }}>
-                  <img src={src} alt={`완료사진${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform .15s' }}
-                    onMouseEnter={e=>e.target.style.transform='scale(1.04)'}
-                    onMouseLeave={e=>e.target.style.transform='scale(1)'}/>
-                  <div style={{ position:'absolute', bottom:4, right:5, fontSize:10, color:'#fff', background:'rgba(0,0,0,.5)', padding:'1px 5px', borderRadius:4 }}>{i+1}</div>
-                </div>
-              ))}
-            </div>
+            <SlidePhotoViewer
+              photos={completePhotos}
+              onOpen={i => openLightbox('complete', i)}
+            />
           </Card>
         )}
         {schedule.status==='완료' && completePhotos.length===0 && (
@@ -1699,7 +1733,7 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
         <div style={{ padding:'14px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:16 }}>
             <div style={{ fontSize:16, fontWeight:700, color:navy }}>
-              {step===1 ? '📋 일정 입력' : '🚛 기사 배치'}
+              {step===1 ? '📋 일정 입력' : '🚚 기사 배치'}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12 }}>
               {[['1','일정 입력'],['2','기사 배치']].map(([n,l],i)=>(
@@ -2075,7 +2109,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
       <div style={{ background:navy, color:'#fff', padding:'16px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <div>
-            <div style={{ fontSize:16, fontWeight:700 }}>🚛 내 배차 일정</div>
+            <div style={{ fontSize:16, fontWeight:700 }}>🚚 동태관리</div>
             <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>{user.name} 기사님 · {user.phone}</div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
@@ -2400,14 +2434,10 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
             <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>
               📎 현장 참고 사진 ({schedule.schedule_photos.length}장)
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
-              {schedule.schedule_photos.map((src,i)=>(
-                <div key={i} onClick={()=>openLb('schedule_ref',i)}
-                  style={{ aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}`, cursor:'pointer' }}>
-                  <img src={src} alt={`참고사진${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                </div>
-              ))}
-            </div>
+            <SlidePhotoViewer
+              photos={schedule.schedule_photos}
+              onOpen={i => openLb('schedule_ref', i)}
+            />
           </Card>
         )}
 
@@ -2445,7 +2475,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                 <span style={{ fontSize:15, fontWeight:700, color:textC }}>출발</span>
               </div>
               <div style={{ flexShrink:0 }}>
-                {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'8px 16px', fontSize:14 }}>🚛 출발</Btn>}
+                {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'8px 16px', fontSize:14 }}>🚚 출발</Btn>}
                 {(isMoving||isWorking||isDone) && schedule.depart_time && (
                   <button onClick={()=>setShowCancelDepart(true)}
                     style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'7px 11px', fontSize:13, color:muted, cursor:'pointer' }}>
@@ -2457,7 +2487,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
             {/* 서브 컨텐츠 */}
             <div style={{ paddingLeft:28, paddingBottom:10 }}>
               {schedule.depart_time
-                ? <div style={{ fontSize:14, color:green, fontFamily:'monospace', marginBottom: (isMoving||isWorking||isDone) ? 8 : 0 }}>🚛 {schedule.depart_time} 출발</div>
+                ? <div style={{ fontSize:14, color:green, fontFamily:'monospace', marginBottom: (isMoving||isWorking||isDone) ? 8 : 0 }}>🚚 {schedule.depart_time} 출발</div>
                 : <div style={{ fontSize:14, color:muted }}>현장으로 출발 시 클릭</div>}
               {(isMoving||isWorking||isDone) && (
                 <>
@@ -2685,14 +2715,10 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                             ⬇ 전체 저장
                           </button>
                         </div>
-                        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
-                          {displayPhotos.map((src,i)=>(
-                            <div key={i} onClick={()=>openLb('complete',i)}
-                              style={{ aspectRatio:'1', cursor:'pointer', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
-                              <img src={src} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                            </div>
-                          ))}
-                        </div>
+                        <SlidePhotoViewer
+                          photos={displayPhotos}
+                          onOpen={i => openLb('complete', i)}
+                        />
                       </div>
                     )}
                   </>
@@ -2708,7 +2734,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36 }}>
             <div style={{ width:36, height:4, background:border, borderRadius:2, margin:'0 auto 18px' }}/>
-            <div style={{ fontSize:19, fontWeight:700, color:navy, marginBottom:6 }}>🚛 출발 보고</div>
+            <div style={{ fontSize:19, fontWeight:700, color:navy, marginBottom:6 }}>🚚 출발 보고</div>
             <div style={{ fontSize:15, color:muted, marginBottom:18 }}>{schedule.address}</div>
             <div style={{ marginBottom:18 }}>
               <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8 }}>도착 예상 시간</div>
@@ -2930,7 +2956,7 @@ export default function App() {
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:36, marginBottom:16 }}>🚛</div>
+        <div style={{ fontSize:36, marginBottom:16 }}>🚚</div>
         <div style={{ fontSize:16, fontWeight:600, color:'#1b3a5c', marginBottom:8 }}>데이터 불러오는 중...</div>
         <div style={{ fontSize:13, color:'#64748b' }}>Firebase에 연결 중입니다</div>
       </div>
