@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.0</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.1</div>
       </div>
     </div>
   )
@@ -1279,28 +1279,34 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         const h = Math.floor(diff/60), m = diff%60
         const workTime = diff > 0 ? (h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`) : ''
 
+        // 업체명에서 (담당자) 제거
+        const companyName = (schedule.cname || '').replace(/\(.*?\)/g, '').trim()
+        const wasteAmt = schedule.final_waste || schedule.waste || ''
+
         const buildText = () =>
 `[FN퍼니 작업보고]
 작업날짜: ${schedule.date} ${schedule.time}
-업체명: ${schedule.cname}
+업체명: ${companyName}
 작업인원: ${billingForm.workers}인
 현장주소: ${schedule.address}
 작업시간: ${workTime}
 성상: 혼합
-페기물양: ${schedule.final_waste || schedule.waste || ''}
+폐기물양: ${wasteAmt}
 특이사항: ${schedule.driver_note || '없음'}
 
 <청구금액>
- > ${billingForm.amount}만원
+${wasteAmt} > ${billingForm.amount}만원
 ${billingForm.workers}인 > ${billingForm.unit}만원
 ${billingForm.total}만원 (부가세 포함)
-*청구내역이나 업무관련 의견 편하게 말씀해주세요
-적극 재검토 하겠습니다^^
+*청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^
 기업 351-112230-01-015 주식회사 퍼니환경개발`
 
+        const [copied, setCopied] = useState(false)
         const copy = () => {
-          navigator.clipboard.writeText(buildText())
-            .then(() => alert('클립보드에 복사되었습니다!'))
+          navigator.clipboard.writeText(buildText()).then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+          })
         }
 
         return (
@@ -1313,77 +1319,83 @@ ${billingForm.total}만원 (부가세 포함)
               </div>
 
               <div style={{ padding:'16px 20px' }}>
-                {/* 자동입력 미리보기 */}
-                <div style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, color:muted, lineHeight:1.9, fontFamily:'monospace' }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:navy, marginBottom:6 }}>[FN퍼니 작업보고]</div>
+                {/* 자동완성 미리보기 */}
+                <div style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, lineHeight:2, fontFamily:'monospace' }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:2 }}>[FN퍼니 작업보고]</div>
                   <div>작업날짜: <span style={{ color:textC }}>{schedule.date} {schedule.time}</span></div>
-                  <div>업체명: <span style={{ color:textC }}>{schedule.cname}</span></div>
+                  <div>업체명: <span style={{ color:textC }}>{companyName}</span></div>
                   <div>작업인원: <span style={{ color:textC }}>{billingForm.workers}인</span></div>
-                  <div>현장주소: <span style={{ color:textC }}>{schedule.address}</span></div>
+                  <div>현장주소: <span style={{ color:textC, wordBreak:'break-all' }}>{schedule.address}</span></div>
                   <div>작업시간: <span style={{ color:textC }}>{workTime}</span></div>
                   <div>성상: <span style={{ color:textC }}>혼합</span></div>
-                  <div>페기물양: <span style={{ color:textC }}>{schedule.final_waste || schedule.waste || ''}</span></div>
+                  <div>폐기물양: <span style={{ color:textC }}>{wasteAmt}</span></div>
                   <div>특이사항: <span style={{ color:textC }}>{schedule.driver_note || '없음'}</span></div>
                 </div>
 
-                {/* 입력 필드들 */}
+                {/* 입력 필드 */}
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
+                  {/* 작업인원 */}
                   <div>
-                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>작업인원</div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>작업인원</div>
                     <div style={{ display:'flex', gap:8 }}>
                       {['1','2','3','4'].map(n=>(
                         <button key={n} onClick={()=>setBF('workers',n)}
-                          style={{ flex:1, padding:'9px 0', borderRadius:8, border:`1.5px solid ${billingForm.workers===n?navy:border}`, background:billingForm.workers===n?navy:'#f8fafc', color:billingForm.workers===n?'#fff':muted, fontSize:14, fontWeight:700, cursor:'pointer' }}>
+                          style={{ flex:1, padding:'10px 0', borderRadius:8, border:`1.5px solid ${billingForm.workers===n?navy:border}`, background:billingForm.workers===n?navy:'#f8fafc', color:billingForm.workers===n?'#fff':muted, fontSize:14, fontWeight:700, cursor:'pointer' }}>
                           {n}인
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                    <div>
-                      <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>금액 (만원)</div>
-                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <input type="number" value={billingForm.amount} onChange={e=>setBF('amount',e.target.value)}
-                          placeholder="0" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right' }}/>
-                        <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>만원</span>
-                      </div>
+                  {/* 폐기물양 금액 */}
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
+                      폐기물 청구금액 <span style={{ fontWeight:400, color:'#94a3b8' }}>({wasteAmt} &gt; ? 만원)</span>
                     </div>
-                    <div>
-                      <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>{billingForm.workers}인 금액 (만원)</div>
-                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <input type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
-                          placeholder="0" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right' }}/>
-                        <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>만원</span>
-                      </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <input type="number" value={billingForm.amount} onChange={e=>setBF('amount',e.target.value)}
+                        placeholder="금액 입력" style={{ ...iStyle, fontSize:16, fontWeight:700, textAlign:'right', flex:1 }}/>
+                      <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
                   </div>
 
+                  {/* 1인 금액 */}
                   <div>
-                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>합계 (부가세 포함, 만원)</div>
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
+                      {billingForm.workers}인 금액
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <input type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
+                        placeholder="금액 입력" style={{ ...iStyle, fontSize:16, fontWeight:700, textAlign:'right', flex:1 }}/>
+                      <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                    </div>
+                  </div>
+
+                  {/* 합계 */}
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>합계 (부가세 포함)</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <input type="number" value={billingForm.total} onChange={e=>setBF('total',e.target.value)}
-                        placeholder="0" style={{ ...iStyle, fontSize:16, fontWeight:700, textAlign:'right', borderColor: billingForm.total ? navy : undefined }}/>
-                      <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                        placeholder="최종 금액" style={{ ...iStyle, fontSize:17, fontWeight:700, textAlign:'right', flex:1, borderColor: billingForm.total ? navy : undefined }}/>
+                      <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
                   </div>
                 </div>
 
-                {/* 미리보기 청구금액 */}
+                {/* 청구금액 미리보기 */}
                 <div style={{ background:'#eff6ff', border:`1px solid #bfdbfe`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, fontFamily:'monospace', lineHeight:2 }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:4 }}>&lt;청구금액&gt;</div>
-                  <div style={{ color:textC }}> &gt; {billingForm.amount||'__'}만원</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:2 }}>&lt;청구금액&gt;</div>
+                  <div style={{ color:textC }}>{wasteAmt || '__'} &gt; {billingForm.amount||'__'}만원</div>
                   <div style={{ color:textC }}>{billingForm.workers}인 &gt; {billingForm.unit||'__'}만원</div>
                   <div style={{ color:textC, fontWeight:700 }}>{billingForm.total||'__'}만원 (부가세 포함)</div>
-                  <div style={{ color:muted, fontSize:11, marginTop:4 }}>*청구내역이나 업무관련 의견 편하게 말씀해주세요</div>
-                  <div style={{ color:muted, fontSize:11 }}>적극 재검토 하겠습니다^^</div>
+                  <div style={{ color:muted, fontSize:11, marginTop:4, lineHeight:1.7 }}>*청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^</div>
                   <div style={{ color:navy, fontSize:11, fontWeight:600 }}>기업 351-112230-01-015 주식회사 퍼니환경개발</div>
                 </div>
 
                 <div style={{ display:'flex', gap:10 }}>
                   <Btn onClick={()=>setShowBilling(false)} outline color={muted} style={{ flex:1, fontSize:14 }}>닫기</Btn>
-                  <Btn onClick={copy} color={navy} style={{ flex:2, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                    📋 클립보드 복사
+                  <Btn onClick={copy} color={copied?green:navy} style={{ flex:2, fontSize:15 }}>
+                    {copied ? '✓ 복사됨!' : '📋 클립보드 복사'}
                   </Btn>
                 </div>
               </div>
