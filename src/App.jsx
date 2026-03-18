@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.3</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.4</div>
       </div>
     </div>
   )
@@ -1284,7 +1284,10 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         const toMin = t => { if(!t) return 0; const [h,m] = t.split(':').map(Number); return h*60+m }
         const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
         const h = Math.floor(diff/60), m = diff%60
-        const workTime = diff > 0 ? (h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`) : ''
+        const duration = diff > 0 ? (h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`) : ''
+        const workTime = (schedule.start_time && schedule.end_time && duration)
+          ? `${schedule.start_time} ~ ${schedule.end_time} (${duration})`
+          : duration
 
         // 업체명에서 (담당자) 제거
         const companyName = (schedule.cname || '').replace(/\(.*?\)/g, '').trim()
@@ -1292,7 +1295,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
         const buildText = () =>
 `[FN퍼니 작업보고]
-작업날짜: ${schedule.date} ${schedule.time}
+작업날짜: ${schedule.date}
 업체명: ${companyName}
 작업인원: ${billingForm.workers}인
 현장주소: ${schedule.address}
@@ -1328,7 +1331,7 @@ ${billingForm.total}만원 (부가세 포함)
                 {/* 자동완성 미리보기 */}
                 <div style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, lineHeight:2, fontFamily:'monospace' }}>
                   <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:2 }}>[FN퍼니 작업보고]</div>
-                  <div>작업날짜: <span style={{ color:textC }}>{schedule.date} {schedule.time}</span></div>
+                  <div>작업날짜: <span style={{ color:textC }}>{schedule.date}</span></div>
                   <div>업체명: <span style={{ color:textC }}>{companyName}</span></div>
                   <div>작업인원: <span style={{ color:textC }}>{billingForm.workers}인</span></div>
                   <div>현장주소: <span style={{ color:textC, wordBreak:'break-all' }}>{schedule.address}</span></div>
