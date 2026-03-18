@@ -350,7 +350,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.8</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.0</div>
       </div>
     </div>
   )
@@ -792,7 +792,12 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                           )}
                         </td>
                         <td style={{ padding:'8px 12px' }}><Badge status={s.status}/></td>
-                        <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>{s.cname}</td>
+                        <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>
+                          {s.cname}
+                          {s.co_driver_id && (
+                            <span style={{ marginLeft:5, fontSize:10, background:'#dbeafe', color:blue, padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle' }}>2인</span>
+                          )}
+                        </td>
                         <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>
                           <div style={{ fontSize:11, color:muted }}>{s.date}</div>
                           <div style={{ fontFamily:'monospace', fontWeight:600 }}>{s.time}</div>
@@ -1194,12 +1199,17 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const [lbSource, setLbSource]     = useState('schedule')
   const [editDriver, setEditDriver] = useState(false)
   const [driverId, setDriverId]     = useState(schedule.driver_id || '')
+  const [editCoDriver, setEditCoDriver] = useState(false)
+  const [coDriverId, setCoDriverId]     = useState(schedule.co_driver_id || '')
   const [pasteMsg, setPasteMsg]     = useState('')
   const spFileRef = useRef()
   const dropRef   = useRef()
 
   const [showBilling, setShowBilling] = useState(false)
-  const [billingForm, setBillingForm] = useState({ workers:'1', amount:'', unit:'', total:'' })
+  const [billingForm, setBillingForm] = useState({
+    workers: schedule.co_driver_id ? '2' : '1',
+    amount:'', unit:'', total:''
+  })
   const [billCopied, setBillCopied]   = useState(false)
   const billUnitRef = useRef()
   const setBF = (k,v) => setBillingForm(p => {
@@ -1338,6 +1348,46 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
               </div>
             </div>
           )}
+
+          {/* 보조기사 */}
+          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${schedule.driver_id?'#86efac':'#fca5a5'}` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:muted, marginBottom:8 }}>보조기사 (2인 현장)</div>
+            {editCoDriver ? (
+              <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+                <select value={coDriverId} onChange={e=>setCoDriverId(e.target.value)} style={{ ...iStyle, flex:1, margin:0 }}>
+                  <option value="">— 없음 (1인 현장) —</option>
+                  {drivers.filter(d=>d.id!==schedule.driver_id).map(d=>(
+                    <option key={d.id} value={d.id}>{d.name} ({d.phone})</option>
+                  ))}
+                </select>
+                <Btn onClick={()=>{ onUpdate({ co_driver_id: coDriverId||null }); setEditCoDriver(false) }} style={{ padding:'9px 16px', fontSize:13 }}>저장</Btn>
+                <Btn onClick={()=>{ setEditCoDriver(false); setCoDriverId(schedule.co_driver_id||'') }} outline color={muted} style={{ padding:'9px 12px', fontSize:13 }}>취소</Btn>
+              </div>
+            ) : (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <div>
+                  {schedule.co_driver_id
+                    ? <><span style={{ fontSize:15, fontWeight:600, color:textC }}>{userName(schedule.co_driver_id)}</span>
+                        <span style={{ fontSize:12, color:muted, marginLeft:8 }}>{USERS.find(u=>u.id===schedule.co_driver_id)?.phone}</span>
+                        <span style={{ marginLeft:8, fontSize:11, background:'#dbeafe', color:blue, padding:'2px 8px', borderRadius:10, fontWeight:600 }}>2인 현장</span></>
+                    : <span style={{ fontSize:13, color:muted }}>없음 (1인 현장)</span>}
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  {schedule.co_driver_id && USERS.find(u=>u.id===schedule.co_driver_id)?.phone && (
+                    <a href={`tel:${USERS.find(u=>u.id===schedule.co_driver_id)?.phone}`} style={{ textDecoration:'none' }}>
+                      <button style={{ background:green, color:'#fff', border:'none', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                        📞 전화
+                      </button>
+                    </a>
+                  )}
+                  <button onClick={()=>setEditCoDriver(true)}
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'6px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
+                    {schedule.co_driver_id ? '변경' : '+ 배정'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 기본 정보 */}
@@ -2562,7 +2612,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [pwOk, setPwOk]        = useState(false)
 
   const mine = schedules
-    .filter(s => s.driver_id === user.id && (!filterDate || s.date === filterDate))
+    .filter(s => (s.driver_id === user.id || s.co_driver_id === user.id) && (!filterDate || s.date === filterDate))
     .sort((a,b) => a.time.localeCompare(b.time))
 
   const selected = schedules.find(s => s.id === selectedId)
@@ -2652,7 +2702,14 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
                 <Badge status={s.status}/>
               </div>
               <div style={{ fontSize:16, fontWeight:600, marginBottom:4, color:textC }}>{s.address}</div>
-              <div style={{ fontSize:14, color:muted }}>폐기물 {s.waste} · 담당: {s.cname}</div>
+              <div style={{ fontSize:14, color:muted }}>
+                폐기물 {s.waste} · 담당: {s.cname}
+                {s.co_driver_id && (
+                  <span style={{ marginLeft:8, fontSize:12, background:'#dbeafe', color:blue, padding:'1px 7px', borderRadius:10, fontWeight:600 }}>
+                    2인 · {userName(s.co_driver_id)}
+                  </span>
+                )}
+              </div>
               {s.start_time && (
                 <div style={{ fontSize:13, color:green, marginTop:6, fontFamily:'monospace' }}>
                   ▶ {s.start_time}{s.end_time ? ` → ■ ${s.end_time}` : ' (진행중)'}
@@ -3056,10 +3113,16 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                 <div style={{ marginBottom:14 }}>
                   <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>최종 물량 (선택)</div>
                   <button onClick={()=>setFinalWasteModal(true)}
-                    style={{ width:'100%', padding:'11px 14px', borderRadius:8, border:`1.5px solid ${finalWaste?amber:border}`, background:finalWaste?'#fef3c7':'#f8fafc', color:finalWaste?amber:muted, fontSize:14, fontWeight:finalWaste?700:400, cursor:'pointer', textAlign:'left', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    style={{ width:'100%', padding:'11px 14px', borderRadius:8, border:`1.5px solid ${finalWaste?amber:border}`, background:finalWaste?'#fef3c7':'#f8fafc', color:finalWaste?amber:muted, fontSize:14, fontWeight:finalWaste?700:400, cursor:'pointer', textAlign:'left', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                     <span>{finalWaste || '— 선택 안함 —'}</span>
                     <span style={{ fontSize:11, color:muted }}>선택 ›</span>
                   </button>
+                  <input
+                    value={finalWaste}
+                    onChange={e=>setFinalWaste(e.target.value)}
+                    placeholder="직접 입력 (예: 1/2차 이상, 소량 등)"
+                    style={{ ...iStyle, fontSize:13, borderColor: finalWaste ? amber : undefined }}
+                  />
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8, display:'flex', justifyContent:'space-between' }}>
@@ -3165,10 +3228,16 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                     <div style={{ marginBottom:12 }}>
                       <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>최종 물량</div>
                       <button onClick={()=>setFinalWasteModal(true)}
-                        style={{ width:'100%', padding:'11px 14px', borderRadius:8, border:`1.5px solid ${finalWaste?amber:border}`, background:finalWaste?'#fef3c7':'#f8fafc', color:finalWaste?amber:muted, fontSize:14, fontWeight:finalWaste?700:400, cursor:'pointer', textAlign:'left', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        style={{ width:'100%', padding:'11px 14px', borderRadius:8, border:`1.5px solid ${finalWaste?amber:border}`, background:finalWaste?'#fef3c7':'#f8fafc', color:finalWaste?amber:muted, fontSize:14, fontWeight:finalWaste?700:400, cursor:'pointer', textAlign:'left', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                         <span>{finalWaste || '— 선택 안함 —'}</span>
                         <span style={{ fontSize:11, color:muted }}>선택 ›</span>
                       </button>
+                      <input
+                        value={finalWaste}
+                        onChange={e=>setFinalWaste(e.target.value)}
+                        placeholder="직접 입력 (예: 1/2차 이상, 소량 등)"
+                        style={{ ...iStyle, fontSize:13, borderColor: finalWaste ? amber : undefined }}
+                      />
                     </div>
                     <div style={{ marginBottom:12 }}>
                       <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>특이사항</div>
