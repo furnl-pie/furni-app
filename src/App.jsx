@@ -284,46 +284,9 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
           <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자: {user.name}</div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          {!deleteMode && !assignMode ? (
-            <>
-              <Btn onClick={()=>setModal(true)} style={{ padding:'7px 14px', fontSize:13 }}>+ 일정 등록</Btn>
-              <Btn onClick={()=>setAssignMode(true)} outline color="#6ee7b7" style={{ padding:'7px 14px', fontSize:13 }}>👥 일괄 배정</Btn>
-              <Btn onClick={()=>setDriverMgr(true)} outline color="#7dd3fc" style={{ padding:'7px 14px', fontSize:13 }}>👤 기사 관리</Btn>
-              <Btn onClick={()=>setDeleteMode(true)} outline color="#f87171" style={{ padding:'7px 14px', fontSize:13 }}>🗑 삭제</Btn>
-              <Btn onClick={onLogout} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>로그아웃</Btn>
-            </>
-          ) : assignMode ? (
-            <>
-              <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,.12)', borderRadius:8, padding:'5px 12px' }}>
-                <span style={{ fontSize:13, color:'#6ee7b7', fontWeight:600 }}>일괄 배정</span>
-                <span style={{ fontSize:12, color:'rgba(255,255,255,.7)' }}>{assignChecked.size}건 선택</span>
-              </div>
-              <select value={assignTarget} onChange={e=>setAssignTarget(e.target.value)}
-                style={{ padding:'6px 10px', borderRadius:7, border:'none', fontSize:13, background:'rgba(255,255,255,.9)', color:navy, fontWeight:600, cursor:'pointer' }}>
-                <option value="">— 기사 선택 —</option>
-                {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-              {assignChecked.size > 0 && (
-                <Btn onClick={confirmAssign} color="#059669" style={{ padding:'7px 14px', fontSize:13 }}>
-                  {assignChecked.size}건 배정
-                </Btn>
-              )}
-              <Btn onClick={exitAssignMode} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>취소</Btn>
-            </>
-          ) : (
-            <>
-              <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,.12)', borderRadius:8, padding:'5px 12px' }}>
-                <span style={{ fontSize:13, color:'#fca5a5', fontWeight:600 }}>삭제 모드</span>
-                <span style={{ fontSize:12, color:'rgba(255,255,255,.7)' }}>{checkedIds.size}건 선택</span>
-              </div>
-              {checkedIds.size > 0 && (
-                <Btn onClick={()=>setDelConfirm(true)} color={red} style={{ padding:'7px 14px', fontSize:13 }}>
-                  선택 삭제 ({checkedIds.size})
-                </Btn>
-              )}
-              <Btn onClick={exitDeleteMode} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>취소</Btn>
-            </>
-          )}
+          <Btn onClick={()=>setModal(true)} style={{ padding:'7px 14px', fontSize:13 }}>+ 일정 등록</Btn>
+          <Btn onClick={()=>setDriverMgr(true)} outline color="#7dd3fc" style={{ padding:'7px 14px', fontSize:13 }}>👤 기사 관리</Btn>
+          <Btn onClick={onLogout} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>로그아웃</Btn>
         </div>
       </div>
 
@@ -360,7 +323,70 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </Field>
-            <div style={{ fontSize:12, color:muted, paddingBottom:3 }}>총 {sorted.length}건 · 기사별 시간순</div>
+
+            {/* 일괄배정 버튼 */}
+            {!deleteMode && (
+              assignMode ? (
+                <div style={{ display:'flex', gap:8, alignItems:'flex-end', paddingBottom:1 }}>
+                  <select value={assignTarget} onChange={e=>setAssignTarget(e.target.value)}
+                    style={{ ...iStyle, width:'auto', borderColor:green, fontWeight:600, color:green }}>
+                    <option value="">— 기사 선택 —</option>
+                    {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                  {assignChecked.size > 0 && (
+                    <button onClick={confirmAssign}
+                      style={{ padding:'8px 14px', background:green, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      ✓ {assignChecked.size}건 배정
+                    </button>
+                  )}
+                  <button onClick={exitAssignMode}
+                    style={{ padding:'8px 12px', background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, fontSize:13, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <div style={{ paddingBottom:1 }}>
+                  <button onClick={()=>setAssignMode(true)}
+                    style={{ padding:'8px 14px', background:'#f0fdf4', color:green, border:`1.5px solid #86efac`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    👥 일괄 배정
+                  </button>
+                </div>
+              )
+            )}
+
+            {/* 삭제 버튼 */}
+            {!assignMode && (
+              deleteMode ? (
+                <div style={{ display:'flex', gap:8, alignItems:'flex-end', paddingBottom:1 }}>
+                  {checkedIds.size > 0 && (
+                    <button onClick={()=>setDelConfirm(true)}
+                      style={{ padding:'8px 14px', background:red, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      🗑 {checkedIds.size}건 삭제
+                    </button>
+                  )}
+                  <button onClick={exitDeleteMode}
+                    style={{ padding:'8px 12px', background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, fontSize:13, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <div style={{ paddingBottom:1 }}>
+                  <button onClick={()=>setDeleteMode(true)}
+                    style={{ padding:'8px 14px', background:'#fef2f2', color:red, border:`1.5px solid #fecaca`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    🗑 삭제
+                  </button>
+                </div>
+              )
+            )}
+
+            <div style={{ fontSize:12, color:muted, paddingBottom:3, marginLeft:'auto' }}>
+              {assignMode && assignChecked.size > 0
+                ? <span style={{ color:green, fontWeight:600 }}>{assignChecked.size}건 선택됨</span>
+                : deleteMode && checkedIds.size > 0
+                ? <span style={{ color:red, fontWeight:600 }}>{checkedIds.size}건 선택됨</span>
+                : `총 ${sorted.length}건 · 기사별 시간순`
+              }
+            </div>
           </div>
         </Card>
 
@@ -2661,6 +2687,7 @@ export default function App() {
     addDriver, updateDriver, deleteDriver,
   } = useAppData()
 
+  // 헬퍼 함수들이 최신 users를 참조하도록 동기화
   USERS = users
 
   if (loading) return (
