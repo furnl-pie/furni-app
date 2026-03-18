@@ -346,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.5</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.6</div>
       </div>
     </div>
   )
@@ -789,6 +789,16 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                               <span>폐기물 {s.waste}</span>
                               <span style={{ fontSize:11, color:'#94a3b8' }}>{s.date}</span>
                               {s.start_time && <span style={{ color:green, fontFamily:'monospace', fontSize:12 }}>▶ {s.start_time}{s.end_time?` ~ ${s.end_time}`:''}</span>}
+                            </div>
+                            {/* 기사 빠른 배정 */}
+                            <div style={{ marginTop:8 }} onClick={e=>e.stopPropagation()}>
+                              <select
+                                value={s.driver_id||''}
+                                onChange={e=>onUpdate(s.id, { driver_id: e.target.value||null })}
+                                style={{ width:'100%', padding:'7px 10px', borderRadius:8, border:`1.5px solid ${s.driver_id?(driverChip(s.driver_id,drivers)?.border||border):border}`, fontSize:13, fontWeight:600, color:s.driver_id?(driverChip(s.driver_id,drivers)?.color||textC):muted, background:s.driver_id?(driverChip(s.driver_id,drivers)?.bg||'#fff'):'#f8fafc', outline:'none', cursor:'pointer' }}>
+                                <option value="">— 기사 배정 —</option>
+                                {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+                              </select>
                             </div>
                           </div>
                         )
@@ -2669,7 +2679,7 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
                 {drivers.map(d=>(
                   <button key={d.id} onClick={()=>assignAll(d.id)}
                     style={{ padding:'5px 14px', borderRadius:20, border:'none', background:driverMap[d.id]?.bg, color:driverMap[d.id]?.color, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                    {d.name} 전체
+                    {d.name}
                   </button>
                 ))}
                 <button onClick={()=>assignAll('')}
@@ -2684,7 +2694,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
                   const dm = assigned ? driverMap[assigned] : null
                   return (
                     <div key={r._id} style={{ display:'flex', alignItems:'center', gap:12, background:assigned?dm?.bg+'40':'#f8fafc', border:`1px solid ${assigned?dm?.bg:border}`, borderRadius:10, padding:'10px 14px' }}>
-                      <div style={{ fontSize:12, color:muted, fontWeight:600, minWidth:18 }}>{i+1}</div>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:13, fontWeight:600, color:textC, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.address}</div>
                         <div style={{ fontSize:11, color:muted, marginTop:2 }}>
@@ -2705,12 +2714,12 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
               </div>
             </div>
 
-            <div style={{ padding:'12px 20px', borderTop:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
-              <button onClick={()=>setStep(1)} style={{ background:'none', border:'none', color:blue, fontSize:13, fontWeight:600, cursor:'pointer' }}>← 일정 수정</button>
-              <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-                {assignedCount < rows.length && <span style={{ fontSize:12, color:red }}>{rows.length-assignedCount}건 미배치</span>}
-                <span style={{ fontSize:13, color:muted }}>{assignedCount}/{rows.length}건 배치</span>
-                <Btn onClick={submit} style={{ padding:'9px 20px' }}>
+            <div style={{ padding:'12px 16px', borderTop:`1px solid ${border}`, display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+              <button onClick={()=>setStep(1)} style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, color:blue, fontSize:13, fontWeight:600, cursor:'pointer', padding:'9px 12px', whiteSpace:'nowrap' }}>← 수정</button>
+              <div style={{ display:'flex', gap:6, alignItems:'center', marginLeft:'auto' }}>
+                {assignedCount < rows.length && <span style={{ fontSize:12, color:red, whiteSpace:'nowrap' }}>{rows.length-assignedCount}건 미배치</span>}
+                <span style={{ fontSize:12, color:muted, whiteSpace:'nowrap' }}>{assignedCount}/{rows.length}건</span>
+                <Btn onClick={submit} style={{ padding:'9px 16px', fontSize:13, whiteSpace:'nowrap' }}>
                   {assignedCount < rows.length ? '미배치 포함 등록' : '등록 완료'}
                 </Btn>
               </div>
