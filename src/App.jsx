@@ -346,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.1</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.2</div>
       </div>
     </div>
   )
@@ -678,20 +678,20 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
         {/* 테이블 */}
         <Card style={{ padding:0, overflow:'hidden' }}>
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+          <div style={{ overflowX:'auto', overflowY:'auto', maxHeight:'70vh' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:16 }}>
               <thead>
-                <tr style={{ background:'#f8fafc', borderBottom:`1px solid ${border}` }}>
+                <tr style={{ background:'#f8fafc', borderBottom:`1px solid ${border}`, position:'sticky', top:0, zIndex:10 }}>
                   {(deleteMode||assignMode) && (
-                    <th style={{ padding:'10px 12px', textAlign:'center', fontSize:11, color:muted, fontWeight:600, width:60 }}>
+                    <th style={{ padding:'10px 12px', textAlign:'center', fontSize:14, color:muted, fontWeight:600, width:60, background:'#f8fafc' }}>
                       <button onClick={assignMode ? toggleAssignAll : toggleAll}
-                        style={{ background: (assignMode ? assignChecked.size===sorted.length : checkedIds.size===sorted.length)&&sorted.length>0 ? (assignMode?'#059669':red) : '#e2e8f0', color:'#fff', border:'none', borderRadius:5, padding:'4px 8px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+                        style={{ background: (assignMode ? assignChecked.size===sorted.length : checkedIds.size===sorted.length)&&sorted.length>0 ? (assignMode?'#059669':red) : '#e2e8f0', color:'#fff', border:'none', borderRadius:5, padding:'4px 8px', fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
                         {(assignMode ? assignChecked.size===sorted.length : checkedIds.size===sorted.length)&&sorted.length>0 ? '전체해제' : '전체선택'}
                       </button>
                     </th>
                   )}
                   {['기사','상태','현장담당자','날짜·시간','주소','폐기물량','시작','완료',''].map(h=>(
-                    <th key={h} style={{ padding:'10px 12px', textAlign:'left', fontWeight:600, color:muted, fontSize:12, whiteSpace:'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding:'10px 12px', textAlign:'center', fontWeight:600, color:muted, fontSize:15, whiteSpace:'nowrap', background:'#f8fafc' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -765,44 +765,44 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                             </div>
                           </td>
                         )}
-                        <td style={{ padding:'8px 8px', minWidth:80, width:90 }} onClick={e=>{ if(!deleteMode) e.stopPropagation() }}>
+                        <td style={{ padding:'8px 8px', minWidth:80, width:90, textAlign:'center' }} onClick={e=>{ if(!deleteMode) e.stopPropagation() }}>
                           {isEdit ? (
                             <select autoFocus
                               defaultValue={s.driver_id||''}
                               onChange={e=>{ onUpdate(s.id,{driver_id:e.target.value||null}); setEditingId(null) }}
                               onBlur={()=>setEditingId(null)}
-                              style={{ fontSize:12, padding:'4px 6px', border:`1.5px solid ${blue}`, borderRadius:6, outline:'none', minWidth:90, cursor:'pointer' }}
+                              style={{ fontSize:14, padding:'4px 6px', border:`1.5px solid ${blue}`, borderRadius:6, outline:'none', minWidth:90, cursor:'pointer' }}
                             >
                               <option value="">— 미배치 —</option>
                               {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
                           ) : (
-                            <div style={{ display:'flex', alignItems:'center', gap:2 }}>
+                            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:2 }}>
                               {s.driver_id
-                                ? <span style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 7px', fontSize:12, fontWeight:600, whiteSpace:'nowrap' }}>{userName(s.driver_id)}</span>
-                                : <span style={{ background:'#fef2f2', color:red, borderRadius:20, padding:'2px 7px', fontSize:12, fontWeight:600, border:'1px dashed #fca5a5', whiteSpace:'nowrap' }}>미배치</span>
+                                ? <span style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 7px', fontSize:14, fontWeight:600, whiteSpace:'nowrap' }}>{userName(s.driver_id)}</span>
+                                : <span style={{ background:'#fef2f2', color:red, borderRadius:20, padding:'2px 7px', fontSize:14, fontWeight:600, border:'1px dashed #fca5a5', whiteSpace:'nowrap' }}>미배치</span>
                               }
                               <button onClick={e=>{ e.stopPropagation(); setEditingId(s.id) }} title="기사 변경"
                                 style={{ background:'none', border:'none', cursor:'pointer', fontSize:10, color:muted, padding:'1px 2px', borderRadius:3, lineHeight:1, flexShrink:0 }}>✏️</button>
                             </div>
                           )}
                         </td>
-                        <td style={{ padding:'8px 12px' }}><Badge status={s.status}/></td>
-                        <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>
+                        <td style={{ padding:'8px 12px', textAlign:'center' }}><Badge status={s.status}/></td>
+                        <td style={{ padding:'8px 12px', textAlign:'center', whiteSpace:'nowrap', fontSize:15 }}>
                           {s.cname}
                           {s.co_driver_id && (
-                            <span style={{ marginLeft:5, fontSize:10, background:'#dbeafe', color:blue, padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle' }}>2인</span>
+                            <span style={{ marginLeft:5, fontSize:11, background:'#dbeafe', color:blue, padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle' }}>2인</span>
                           )}
                         </td>
-                        <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>
-                          <div style={{ fontSize:11, color:muted }}>{s.date}</div>
-                          <div style={{ fontFamily:'monospace', fontWeight:600 }}>{s.time}</div>
+                        <td style={{ padding:'8px 12px', textAlign:'center', whiteSpace:'nowrap' }}>
+                          <div style={{ fontSize:13, color:muted }}>{s.date}</div>
+                          <div style={{ fontFamily:'monospace', fontWeight:600, fontSize:15 }}>{s.time}</div>
                         </td>
-                        <td style={{ padding:'8px 12px', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.address}</td>
-                        <td style={{ padding:'8px 12px', color:muted, whiteSpace:'nowrap' }}>{s.waste}</td>
-                        <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.start_time?green:'#ccc' }}>{s.start_time||'-'}</td>
-                        <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.end_time?blue:'#ccc' }}>{s.end_time||'-'}</td>
-                        <td style={{ padding:'4px 8px', whiteSpace:'nowrap' }} onClick={e=>e.stopPropagation()}>
+                        <td style={{ padding:'8px 12px', textAlign:'center', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontSize:15 }}>{s.address}</td>
+                        <td style={{ padding:'8px 12px', textAlign:'center', color:muted, whiteSpace:'nowrap', fontSize:15 }}>{s.waste}</td>
+                        <td style={{ padding:'8px 12px', textAlign:'center', fontFamily:'monospace', fontSize:15, color:s.start_time?green:'#ccc' }}>{s.start_time||'-'}</td>
+                        <td style={{ padding:'8px 12px', textAlign:'center', fontFamily:'monospace', fontSize:15, color:s.end_time?blue:'#ccc' }}>{s.end_time||'-'}</td>
+                        <td style={{ padding:'4px 8px', textAlign:'center', whiteSpace:'nowrap' }} onClick={e=>e.stopPropagation()}>
                           <button onClick={()=>openCopyModal(s)}
                             title="일정 복사"
                             style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
