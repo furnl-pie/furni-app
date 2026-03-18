@@ -294,7 +294,6 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
           <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자: {user.name}</div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <Btn onClick={()=>setModal(true)} style={{ padding:'7px 14px', fontSize:13 }}>+ 일정 등록</Btn>
           <Btn onClick={()=>setDriverMgr(true)} outline color="#7dd3fc" style={{ padding:'7px 14px', fontSize:13 }}>👤 기사 관리</Btn>
           <Btn onClick={onLogout} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>로그아웃</Btn>
         </div>
@@ -340,6 +339,14 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
             {/* 구분선 */}
             <div style={{ width:1, height:36, background:border, margin:'0 4px', alignSelf:'flex-end', marginBottom:2 }}/>
+
+            {/* 일정 등록 */}
+            {!assignMode && !deleteMode && (
+              <button onClick={()=>setModal(true)}
+                style={{ height:38, padding:'0 14px', background:navy, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', alignSelf:'flex-end' }}>
+                + 일정 등록
+              </button>
+            )}
 
             {/* 일괄 배정 */}
             {!deleteMode && (
@@ -2104,12 +2111,29 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const [finalWaste, setFinalWaste]             = useState(schedule.final_waste || '')
   const [showFinalWasteModal, setFinalWasteModal] = useState(false)
 
-  const addPhotos = e => {
-    Array.from(e.target.files).forEach(f => {
-      const r = new FileReader()
-      r.onload = ev => setPhotos(prev => [...prev, ev.target.result])
-      r.readAsDataURL(f)
-    })
+  // 이미지 리사이즈 후 base64 반환
+  const resizeImage = (file, maxW=1200, quality=0.8) => new Promise(res => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      URL.revokeObjectURL(url)
+      res(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = url
+  })
+
+  const addPhotos = async e => {
+    const files = Array.from(e.target.files)
+    for (const f of files) {
+      const resized = await resizeImage(f)
+      setPhotos(prev => [...prev, resized])
+    }
     e.target.value = ''
   }
   const removePhoto = idx => setPhotos(prev => prev.filter((_,i)=>i!==idx))
@@ -2177,15 +2201,15 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
         {/* 현장 정보 */}
         <Card style={{ marginBottom:12 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:10 }}>현장 정보</div>
-          <div style={{ marginBottom:12 }}><CopyAddress address={schedule.address}/></div>
+          <div style={{ fontSize:12, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:10 }}>현장 정보</div>
+          <div style={{ marginBottom:14 }}><CopyAddress address={schedule.address}/></div>
           <Row label="예정 시간"   value={`${schedule.date}  ${schedule.time}`}/>
           <Row label="폐기물량"    value={schedule.waste}/>
           <Row label="현장 담당자" value={schedule.cname}/>
           <Row label="연락처"      value={schedule.cphone}/>
           {schedule.memo && <Row label="메모" value={schedule.memo}/>}
-          <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none', display:'block', marginTop:14 }}>
-            <div style={{ background:green, color:'#fff', borderRadius:10, padding:13, textAlign:'center', fontWeight:700, fontSize:15 }}>
+          <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none', display:'block', marginTop:16 }}>
+            <div style={{ background:green, color:'#fff', borderRadius:10, padding:15, textAlign:'center', fontWeight:700, fontSize:17 }}>
               📞 {schedule.cname}에게 전화
             </div>
           </a>
@@ -2194,7 +2218,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         {/* 일정 참고 사진 */}
         {(schedule.schedule_photos||[]).length > 0 && (
           <Card style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>
               📎 현장 참고 사진 ({schedule.schedule_photos.length}장)
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
@@ -2210,10 +2234,10 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
         {/* 업무 기록 */}
         <Card>
-          <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>업무 기록</div>
+          <div style={{ fontSize:12, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:14 }}>업무 기록</div>
 
           {/* ─ 스텝 표시 바 ─ */}
-          <div style={{ display:'flex', alignItems:'center', marginBottom:16, gap:4 }}>
+          <div style={{ display:'flex', alignItems:'center', marginBottom:20, gap:4 }}>
             {[['대기','대기'],['이동중','이동중'],['진행중','진행중'],['완료','완료']].map(([s,l],i)=>{
               const order = ['대기','이동중','진행중','완료']
               const cur = order.indexOf(schedule.status)
@@ -2223,54 +2247,52 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
               const textColor = active ? blue : done ? green : muted
               return (
                 <Fragment key={s}>
-                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, flex:1 }}>
-                    <div style={{ width:10, height:10, borderRadius:'50%', background: done||active ? dotColor : '#f1f5f9', border:`2px solid ${dotColor}` }}/>
-                    <div style={{ fontSize:10, fontWeight: active ? 700 : 400, color:textColor, whiteSpace:'nowrap' }}>{l}</div>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, flex:1 }}>
+                    <div style={{ width:12, height:12, borderRadius:'50%', background: done||active ? dotColor : '#f1f5f9', border:`2px solid ${dotColor}` }}/>
+                    <div style={{ fontSize:11, fontWeight: active ? 700 : 400, color:textColor, whiteSpace:'nowrap' }}>{l}</div>
                   </div>
-                  {i < 3 && <div style={{ flex:2, height:2, background: done ? green : border, marginBottom:14 }}/>}
+                  {i < 3 && <div style={{ flex:2, height:2, background: done ? green : border, marginBottom:16 }}/>}
                 </Fragment>
               )
             })}
           </div>
 
-          {/* ── STEP 1: 대기 → 출발 ── */}
-          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:12, marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          {/* ── STEP 1: 출발 ── */}
+          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:14, marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:44 }}>
               <div>
-                <div style={{ fontSize:13, fontWeight:600 }}>① 출발</div>
+                <div style={{ fontSize:15, fontWeight:700, color:textC }}>① 출발</div>
                 {schedule.depart_time
-                  ? <div style={{ fontSize:12, color:green, fontFamily:'monospace', marginTop:2 }}>🚛 {schedule.depart_time} 출발</div>
-                  : <div style={{ fontSize:12, color:muted, marginTop:2 }}>현장으로 출발 시 클릭</div>}
+                  ? <div style={{ fontSize:14, color:green, fontFamily:'monospace', marginTop:4 }}>🚛 {schedule.depart_time} 출발</div>
+                  : <div style={{ fontSize:13, color:muted, marginTop:4 }}>현장으로 출발 시 클릭</div>}
               </div>
-              <div style={{ display:'flex', gap:6 }}>
+              <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                 {isReady && (
-                  <Btn onClick={openDepartModal} color={blue} style={{ padding:'9px 18px', fontSize:14 }}>🚛 출발</Btn>
+                  <Btn onClick={openDepartModal} color={blue} style={{ padding:'11px 20px', fontSize:15 }}>🚛 출발</Btn>
                 )}
                 {(isMoving||isWorking||isDone) && schedule.depart_time && (
                   <button onClick={()=>setShowCancelDepart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'5px 10px', fontSize:11, color:muted, cursor:'pointer' }}>
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'7px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
                     출발 취소
                   </button>
                 )}
               </div>
             </div>
-            {/* SMS 상태 + ETA 인라인 편집 */}
+            {/* SMS 상태 + ETA */}
             {(isMoving||isWorking||isDone) && (
-              <div style={{ marginTop:8 }}>
-                {/* ETA 인라인 편집 행 */}
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, padding:'6px 10px', background:'#f0f9ff', borderRadius:8, border:`1px solid #bae6fd` }}>
-                  <span style={{ fontSize:12, color:muted, whiteSpace:'nowrap' }}>🕐 도착 예상</span>
+              <div style={{ marginTop:10 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, padding:'8px 12px', background:'#f0f9ff', borderRadius:8, border:`1px solid #bae6fd` }}>
+                  <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>🕐 도착 예상</span>
                   <EtaInlineEdit eta={schedule.eta} onSave={v=>onUpdate({ eta:v })}/>
                 </div>
-                {/* SMS 상태 */}
-                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', background:schedule.sms_sent?'#f0fdf4':'#f8fafc', borderRadius:8, border:`1px solid ${schedule.sms_sent?'#bbf7d0':border}` }}>
-                  <span>💬</span>
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px', background:schedule.sms_sent?'#f0fdf4':'#f8fafc', borderRadius:8, border:`1px solid ${schedule.sms_sent?'#bbf7d0':border}` }}>
+                  <span style={{ fontSize:16 }}>💬</span>
                   {schedule.sms_sent
-                    ? <div style={{ flex:1, fontSize:12 }}><span style={{ fontWeight:600, color:green }}>문자 발송됨</span><span style={{ color:muted, marginLeft:6 }}>{schedule.cname}</span></div>
-                    : <div style={{ flex:1, fontSize:12, color:muted }}>현장 담당자 문자 미발송</div>
+                    ? <div style={{ flex:1, fontSize:13 }}><span style={{ fontWeight:600, color:green }}>문자 발송됨</span><span style={{ color:muted, marginLeft:6 }}>{schedule.cname}</span></div>
+                    : <div style={{ flex:1, fontSize:13, color:muted }}>문자 미발송</div>
                   }
                   <button onClick={openResendModal}
-                    style={{ background:schedule.sms_sent?'none':green, color:schedule.sms_sent?muted:'#fff', border:`1px solid ${schedule.sms_sent?border:green}`, borderRadius:6, padding:'4px 10px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    style={{ background:schedule.sms_sent?'none':green, color:schedule.sms_sent?muted:'#fff', border:`1px solid ${schedule.sms_sent?border:green}`, borderRadius:6, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                     {schedule.sms_sent?'재발송':'💬 발송'}
                   </button>
                 </div>
@@ -2278,31 +2300,31 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
             )}
           </div>
 
-          {/* ── STEP 2: 이동중 → 작업 시작 ── */}
-          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:12, marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          {/* ── STEP 2: 작업 시작 ── */}
+          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:14, marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:44 }}>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, fontWeight:600, marginBottom:4 }}>② 작업 시작</div>
+                <div style={{ fontSize:15, fontWeight:700, color:textC, marginBottom:4 }}>② 작업 시작</div>
                 {(isWorking||isDone) && schedule.start_time ? (
-                  <DriverTimeEdit
-                    label="시작"
-                    value={schedule.start_time}
-                    color={green}
-                    onSave={v=>onUpdate({ start_time:v||null })}/>
+                  <DriverTimeEdit label="시작" value={schedule.start_time} color={green} onSave={v=>onUpdate({ start_time:v||null })}/>
                 ) : (
-                  <div style={{ fontSize:12, color:isMoving?blue:muted, marginTop:2 }}>
+                  <div style={{ fontSize:13, color:isMoving?blue:muted, marginTop:4 }}>
                     {isMoving ? '현장 도착 후 클릭' : '출발 후 활성화'}
                   </div>
                 )}
-                {schedule.est_waste && <div style={{ fontSize:11, color:muted, marginTop:4 }}>예상물량 {schedule.est_waste}{schedule.est_duration?` · ${schedule.est_duration}`:''}</div>}
+                {schedule.est_waste && (
+                  <div style={{ fontSize:12, color:muted, marginTop:6 }}>
+                    예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration ? ` · ${schedule.est_duration}` : ''}
+                  </div>
+                )}
               </div>
-              <div style={{ display:'flex', gap:6, marginLeft:8 }}>
+              <div style={{ display:'flex', gap:6, marginLeft:12, alignItems:'center' }}>
                 {isMoving && (
-                  <Btn onClick={openWorkModal} color={amber} style={{ padding:'9px 18px', fontSize:14 }}>▶ 작업 시작</Btn>
+                  <Btn onClick={openWorkModal} color={amber} style={{ padding:'11px 20px', fontSize:15 }}>▶ 작업 시작</Btn>
                 )}
                 {(isWorking||isDone) && schedule.start_time && (
                   <button onClick={()=>setShowCancelStart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'5px 10px', fontSize:11, color:muted, cursor:'pointer' }}>
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'7px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
                     취소
                   </button>
                 )}
@@ -2310,17 +2332,15 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
             </div>
           </div>
 
-          {/* ── STEP 3: 진행중 → 완료 ── */}
+          {/* ── STEP 3: 업무 완료 ── */}
           <div>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-              <div style={{ fontSize:13, fontWeight:600 }}>③ 업무 완료</div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:44, marginBottom:12 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:textC }}>③ 업무 완료</div>
               {isDone && (
-                <div style={{ display:'flex', gap:6 }}>
-                  <button onClick={()=>setShowCancelEnd(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'5px 10px', fontSize:11, color:muted, cursor:'pointer' }}>
-                    종료 취소
-                  </button>
-                </div>
+                <button onClick={()=>setShowCancelEnd(true)}
+                  style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'7px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
+                  종료 취소
+                </button>
               )}
             </div>
 
