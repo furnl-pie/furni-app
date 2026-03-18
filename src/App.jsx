@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.2</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.3</div>
       </div>
     </div>
   )
@@ -388,35 +388,43 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   // 일정 복사
   const [copyModal, setCopyModal] = useState(null) // 복사할 schedule 객체
   const openCopyModal = (s) => {
-    setCopyModal({ ...s, _copyDate: s.date, _copyDriver: s.driver_id || '', _copyTime: s.time, _copyWaste: s.waste })
+    setCopyModal({ ...s, _copyDate: s.date, _copyDriver: s.driver_id || '', _copyTime: s.time, _copyWaste: s.waste, _mode: 'copy' })
   }
   const confirmCopy = () => {
     if (!copyModal) return
-    const newS = {
-      ...copyModal,
-      id: undefined,
+    const isMove = copyModal._mode === 'move'
+    const newData = {
       date: copyModal._copyDate,
       time: copyModal._copyTime,
       waste: copyModal._copyWaste,
       driver_id: copyModal._copyDriver || null,
-      status:'대기',
-      depart_time:null, start_time:null, end_time:null,
-      eta:null, sms_sent:false,
-      photos:[], work_photos:[],
-      driver_note:'',
-      est_waste:'', est_duration:'', final_waste:'',
-      order: sorted.length,
     }
-    delete newS.id
-    delete newS._copyDate
-    delete newS._copyDriver
-    delete newS._copyTime
-    delete newS._copyWaste
-    delete newS._id
-    onAddMany([newS])
+    if (isMove) {
+      // 이동: 기존 일정 업데이트
+      onUpdate(copyModal.id, newData)
+    } else {
+      // 복사: 새 일정 생성
+      const newS = {
+        ...copyModal,
+        ...newData,
+        id: undefined,
+        status:'대기',
+        depart_time:null, start_time:null, end_time:null,
+        eta:null, sms_sent:false,
+        photos:[], work_photos:[],
+        driver_note:'',
+        est_waste:'', est_duration:'', final_waste:'',
+        order: sorted.length,
+      }
+      delete newS.id
+      delete newS._copyDate; delete newS._copyDriver
+      delete newS._copyTime; delete newS._copyWaste
+      delete newS._mode; delete newS._id
+      onAddMany([newS])
+    }
     setCopyModal(null)
   }
-  const [filterDriver, setFD]     = useState('all')
+  const [filterDriver, setFD]     = useState(new Set()) // 빈 Set = 전체
   const [filterDate, setFDate]    = useState(today)
   const [editingId, setEditingId] = useState(null)
 
@@ -451,11 +459,24 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   const drivers = users.filter(u => u.role === 'driver')
 
   const filtered = schedules.filter(s => {
-    if (filterDriver === 'unassigned') return !s.driver_id
-    if (filterDriver !== 'all' && s.driver_id !== filterDriver) return false
+    if (filterDriver.size > 0) {
+      // 미배치 선택 여부
+      const unassignedSelected = filterDriver.has('unassigned')
+      if (!s.driver_id && !unassignedSelected) return false
+      if (s.driver_id && !filterDriver.has(s.driver_id) && !filterDriver.has('all')) return false
+    }
     if (filterDate && s.date !== filterDate) return false
     return true
   })
+
+  const toggleDriverFilter = (val) => {
+    setFD(prev => {
+      const next = new Set(prev)
+      if (next.has(val)) next.delete(val)
+      else next.add(val)
+      return next
+    })
+  }
 
   const driverOrder = id => { const i=drivers.findIndex(d=>d.id===id); return i>=0?i:999 }
   const sorted = [...filtered].sort((a,b)=>{
@@ -538,13 +559,30 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 style={{ ...iStyle, width:'auto', height:38 }}/>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-              <span style={{ fontSize:11, fontWeight:600, color:muted }}>기사</span>
-              <select value={filterDriver} onChange={e=>setFD(e.target.value)}
-                style={{ ...iStyle, width:'auto', height:38 }}>
-                <option value="all">전체 기사</option>
-                <option value="unassigned">미배치만</option>
-                {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              <span style={{ fontSize:11, fontWeight:600, color:muted }}>기사 {filterDriver.size > 0 && <span style={{ color:blue }}>({filterDriver.size}명 선택)</span>}</span>
+              <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
+                <button
+                  onClick={()=>setFD(new Set())}
+                  style={{ height:34, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.size===0?navy:border}`, background:filterDriver.size===0?navy:'#fff', color:filterDriver.size===0?'#fff':muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  전체
+                </button>
+                <button
+                  onClick={()=>toggleDriverFilter('unassigned')}
+                  style={{ height:34, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.has('unassigned')?red:'#fecaca'}`, background:filterDriver.has('unassigned')?'#fef2f2':'#fff', color:filterDriver.has('unassigned')?red:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  미배치
+                </button>
+                {drivers.map((d,i) => {
+                  const chip = driverChip(d.id, drivers)
+                  const on = filterDriver.has(d.id)
+                  return (
+                    <button key={d.id}
+                      onClick={()=>toggleDriverFilter(d.id)}
+                      style={{ height:34, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on ? chip?.border : border}`, background:on ? chip?.bg : '#fff', color:on ? chip?.color : muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      {d.name}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {/* 구분선 */}
@@ -762,14 +800,26 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       {showDriverMgr && <DriverMgrModal drivers={drivers} schedules={schedules} onAdd={onAddDriver} onUpdate={onUpdateDriver} onDelete={onDeleteDriver} onClose={()=>setDriverMgr(false)}/>}
       {showAdminSettings && <AdminSettingsModal user={user} onUpdateDriver={onUpdateDriver} onClose={()=>setAdminSettings(false)}/>}
 
-      {/* 일정 복사 모달 */}
+      {/* 일정 복사/이동 모달 */}
       {copyModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
-          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:380, padding:24 }}>
-            <div style={{ fontSize:16, fontWeight:700, color:navy, marginBottom:4 }}>⧉ 일정 복사</div>
-            <div style={{ fontSize:13, color:muted, marginBottom:20, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{copyModal.address}</div>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:400, padding:24 }}>
+            {/* 탭 */}
+            <div style={{ display:'flex', gap:0, marginBottom:20, background:'#f1f5f9', borderRadius:10, padding:4 }}>
+              {[['copy','⧉ 복사'], ['move','→ 이동']].map(([mode, label]) => (
+                <button key={mode}
+                  onClick={()=>setCopyModal(p=>({...p, _mode:mode}))}
+                  style={{ flex:1, padding:'9px 0', borderRadius:8, border:'none', fontSize:14, fontWeight:700, cursor:'pointer', background:copyModal._mode===mode?'#fff':'transparent', color:copyModal._mode===mode?navy:muted, boxShadow:copyModal._mode===mode?'0 1px 4px rgba(0,0,0,.1)':'none', transition:'all .15s' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+            <div style={{ fontSize:13, color:muted, marginBottom:16, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              {copyModal._mode === 'move' ? '🔀 이동할 위치 설정' : '⧉ 복사본 설정'} — {copyModal.address}
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
               <div>
                 <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>날짜</div>
                 <input type="date" value={copyModal._copyDate}
@@ -785,7 +835,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
               </div>
             </div>
 
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:12 }}>
               <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>폐기물양</div>
               <input value={copyModal._copyWaste}
                 onChange={e=>setCopyModal(p=>({...p, _copyWaste:e.target.value}))}
@@ -803,9 +853,17 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
               </select>
             </div>
 
+            {copyModal._mode === 'move' && (
+              <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:8, padding:'8px 12px', marginBottom:16, fontSize:12, color:amber }}>
+                ⚠ 이동 시 기존 일정의 날짜·시간·기사가 변경됩니다
+              </div>
+            )}
+
             <div style={{ display:'flex', gap:10 }}>
               <Btn onClick={()=>setCopyModal(null)} outline color={muted} style={{ flex:1 }}>취소</Btn>
-              <Btn onClick={confirmCopy} color={navy} style={{ flex:2 }}>복사 등록</Btn>
+              <Btn onClick={confirmCopy} color={copyModal._mode==='move'?amber:navy} style={{ flex:2 }}>
+                {copyModal._mode === 'move' ? '이동' : '복사 등록'}
+              </Btn>
             </div>
           </div>
         </div>
