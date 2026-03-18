@@ -1258,12 +1258,12 @@ function DriverTimeEdit({ label, value, color, onSave }) {
     )
   }
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:8, padding:'2px 0' }}>
-      <span style={{ fontSize:13, fontFamily:'monospace', fontWeight:600, color: value?color:muted }}>
-        {value ? `${label}: ${value}` : `${label}: 미기록`}
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'2px 0' }}>
+      <span style={{ fontSize:15, fontFamily:'monospace', fontWeight:700, color: value?color:muted }}>
+        {value ? `${label}:  ${value}` : `${label}: 미기록`}
       </span>
       <button onClick={start}
-        style={{ background:'none', border:`1px solid ${border}`, borderRadius:5, padding:'2px 8px', fontSize:11, color:muted, cursor:'pointer' }}>
+        style={{ background:'none', border:`1px solid ${border}`, borderRadius:6, padding:'4px 10px', fontSize:13, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
         ✏️ 수정
       </button>
     </div>
