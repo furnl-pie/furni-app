@@ -46,6 +46,51 @@ const iStyle = {
 }
 
 // ── 공용 컴포넌트 ────────────────────────────────────────────────
+function TruckIcon({ width=110, height=70 }) {
+  // 캐빈 앞부분이 각진 정통 카고트럭 스타일
+  return (
+    <svg width={width} height={height} viewBox="0 0 120 76" xmlns="http://www.w3.org/2000/svg">
+      {/* 적재함 박스 */}
+      <rect x="28" y="12" width="74" height="42" rx="2" fill="#f0f4f8" stroke="#c0ccd8" strokeWidth="1.2"/>
+      {/* 적재함 내부 패널선 */}
+      <line x1="54" y1="12" x2="54" y2="54" stroke="#c0ccd8" strokeWidth="0.7"/>
+      <line x1="76" y1="12" x2="76" y2="54" stroke="#c0ccd8" strokeWidth="0.7"/>
+      {/* 적재함 상단 라인 */}
+      <rect x="28" y="12" width="74" height="5" rx="2" fill="#dde5ee"/>
+      {/* 캐빈 — 각진 박스형 */}
+      <rect x="6" y="22" width="26" height="32" rx="3" fill="#1b3a5c"/>
+      {/* 캐빈 지붕 경사 */}
+      <polygon points="6,22 28,12 28,22" fill="#1b3a5c"/>
+      {/* 앞유리 */}
+      <polygon points="10,22 24,14 24,22" fill="#7eb8e8" opacity="0.85"/>
+      {/* 사이드 창문 */}
+      <rect x="8" y="25" width="10" height="8" rx="1.5" fill="#7eb8e8" opacity="0.7"/>
+      {/* 도어 구분선 */}
+      <line x1="20" y1="22" x2="20" y2="54" stroke="#0f2740" strokeWidth="0.8"/>
+      {/* 범퍼 */}
+      <rect x="4" y="50" width="28" height="5" rx="1" fill="#0f2740"/>
+      {/* 사이드 미러 */}
+      <rect x="2" y="26" width="5" height="4" rx="1" fill="#2a5a8c"/>
+      {/* 차대 */}
+      <rect x="6" y="54" width="96" height="4" rx="1" fill="#8899aa"/>
+      {/* 앞바퀴 */}
+      <circle cx="20" cy="62" r="10" fill="#222"/>
+      <circle cx="20" cy="62" r="6" fill="#444"/>
+      <circle cx="20" cy="62" r="2.5" fill="#aaa"/>
+      {/* 뒷바퀴 (더블) */}
+      <circle cx="75" cy="62" r="10" fill="#222"/>
+      <circle cx="75" cy="62" r="6" fill="#444"/>
+      <circle cx="75" cy="62" r="2.5" fill="#aaa"/>
+      <circle cx="93" cy="62" r="10" fill="#222"/>
+      <circle cx="93" cy="62" r="6" fill="#444"/>
+      <circle cx="93" cy="62" r="2.5" fill="#aaa"/>
+      {/* FN퍼니 텍스트 */}
+      <rect x="32" y="26" width="66" height="20" rx="2" fill="#1b3a5c" opacity="0.08"/>
+      <text x="65" y="40" textAnchor="middle" fontSize="12" fontWeight="800" fill="#1b3a5c" fontFamily="'Noto Sans KR', sans-serif" letterSpacing="1">FN퍼니</text>
+    </svg>
+  )
+}
+
 function Badge({ status }) {
   const s = STATUS_CFG[status] || STATUS_CFG['대기']
   return (
@@ -266,36 +311,7 @@ function LoginPage({ onLogin, users }) {
       <div style={{ background:'#fff', borderRadius:20, padding:36, width:'100%', maxWidth:360, position:'relative' }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
           <div style={{ marginBottom:10, display:'flex', justifyContent:'center' }}>
-            <svg width="110" height="72" viewBox="0 0 110 72" xmlns="http://www.w3.org/2000/svg">
-              {/* 적재함 */}
-              <rect x="30" y="18" width="68" height="34" rx="3" fill="#ffffff" stroke="#ddd" strokeWidth="1"/>
-              {/* 캡 */}
-              <rect x="8" y="26" width="26" height="26" rx="4" fill="#ffffff" stroke="#ddd" strokeWidth="1"/>
-              {/* 캡 지붕 곡선 */}
-              <path d="M10 26 Q14 14 30 18 L30 26 Z" fill="#f0f0f0" stroke="#ddd" strokeWidth="1"/>
-              {/* 앞유리 */}
-              <path d="M13 26 Q16 17 27 19 L27 26 Z" fill="#b8d4f0" stroke="#ccc" strokeWidth="0.5"/>
-              {/* 사이드 미러 */}
-              <rect x="5" y="28" width="5" height="4" rx="1" fill="#ccc"/>
-              {/* 도어 라인 */}
-              <line x1="27" y1="26" x2="27" y2="52" stroke="#ddd" strokeWidth="0.8"/>
-              {/* 차체 하단 라인 */}
-              <rect x="8" y="49" width="90" height="5" rx="1" fill="#e0e0e0"/>
-              {/* 앞바퀴 */}
-              <circle cx="22" cy="56" r="9" fill="#333"/>
-              <circle cx="22" cy="56" r="5" fill="#666"/>
-              <circle cx="22" cy="56" r="2" fill="#999"/>
-              {/* 뒷바퀴1 */}
-              <circle cx="72" cy="56" r="9" fill="#333"/>
-              <circle cx="72" cy="56" r="5" fill="#666"/>
-              <circle cx="72" cy="56" r="2" fill="#999"/>
-              {/* 뒷바퀴2 */}
-              <circle cx="90" cy="56" r="9" fill="#333"/>
-              <circle cx="90" cy="56" r="5" fill="#666"/>
-              <circle cx="90" cy="56" r="2" fill="#999"/>
-              {/* FN퍼니 텍스트 (적재함) */}
-              <text x="64" y="39" textAnchor="middle" fontSize="11" fontWeight="700" fill="#1b3a5c" fontFamily="sans-serif">FN퍼니</text>
-            </svg>
+            <TruckIcon width={120} height={76}/>
           </div>
           <div style={{ fontSize:22, fontWeight:700, color:navy }}>동태관리</div>
           <div style={{ fontSize:13, color:muted, marginTop:4 }}>FN퍼니 일정 관리</div>
@@ -331,7 +347,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.2.2</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.2.3</div>
       </div>
     </div>
   )
@@ -426,7 +442,10 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       {/* 헤더 */}
       <div style={{ background:navy, color:'#fff', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontSize:20, fontWeight:700 }}>🚚 동태관리</div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <TruckIcon width={52} height={33}/>
+            <div style={{ fontSize:20, fontWeight:700 }}>동태관리</div>
+          </div>
           <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자</div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -2359,16 +2378,20 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
     <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:navy, color:'#fff', padding:'16px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div>
-            <div style={{ fontSize:20, fontWeight:700 }}>🚚 동태관리</div>
-            <div style={{ fontSize:15, opacity:.7, marginTop:2 }}>{user.name} 기사님 · {user.phone}</div>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <TruckIcon width={52} height={33}/>
+            <div>
+              <div style={{ fontSize:20, fontWeight:700 }}>동태관리</div>
+              <div style={{ fontSize:15, opacity:.8, marginTop:1, fontWeight:600 }}>{user.name} 기사님</div>
+              <div style={{ fontSize:12, opacity:.6, marginTop:1 }}>{user.phone}</div>
+            </div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
             <button onClick={()=>setPwModal(true)}
-              style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 12px', fontSize:12, cursor:'pointer' }}>
+              style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 12px', fontSize:10, cursor:'pointer' }}>
               🔒 비밀번호
             </button>
-            <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:12 }}>로그아웃</Btn>
+            <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:10 }}>로그아웃</Btn>
           </div>
         </div>
         <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)}
@@ -3207,7 +3230,7 @@ export default function App() {
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:36, marginBottom:16 }}>🚚</div>
+        <div style={{ fontSize:36, marginBottom:16 }}><TruckIcon width={80} height={50}/></div>
         <div style={{ fontSize:16, fontWeight:600, color:'#1b3a5c', marginBottom:8 }}>데이터 불러오는 중...</div>
         <div style={{ fontSize:13, color:'#64748b' }}>Firebase에 연결 중입니다</div>
       </div>
