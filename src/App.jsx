@@ -2438,7 +2438,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
           </div>
 
           {/* ── STEP 1: 출발 ── */}
-          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
+          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:0 }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:0 }}>
               {/* 번호 고정 컬럼 */}
               <div style={{ width:32, flexShrink:0, paddingTop:1 }}>
@@ -2487,7 +2487,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
           </div>
 
           {/* ── STEP 2: 작업 시작 ── */}
-          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
+          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:0 }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:0 }}>
               <div style={{ width:32, flexShrink:0, paddingTop:1 }}>
                 <span style={{ fontSize:15, fontWeight:700, color:textC }}>②</span>
@@ -2606,7 +2606,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
             {isDone && (
               <div>
                 <div style={{ background:'#f0fdf4', border:`1px solid #86efac`, borderRadius:10, padding:'12px 14px', marginBottom:10 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:green, marginBottom:8 }}>✅ 업무 완료</div>
+                  <div style={{ fontSize:16, fontWeight:700, color:green, marginBottom:8 }}>✅ 업무 완료</div>
                   {/* 종료 시간 수정 가능 */}
                   <DriverTimeEdit label="종료" value={schedule.end_time} color={green} onSave={v=>onUpdate({ end_time:v||null })}/>
                   {/* 총 작업 시간 */}
@@ -2617,14 +2617,14 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                     const h = Math.floor(diff/60), m = diff%60
                     const total = h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`
                     return (
-                      <div style={{ marginTop:6, fontSize:12, color:blue, fontWeight:600 }}>
+                      <div style={{ marginTop:6, fontSize:14, color:blue, fontWeight:600 }}>
                         ⏱ {schedule.start_time} ~ {schedule.end_time}
-                        <span style={{ marginLeft:8, background:'#dbeafe', padding:'2px 8px', borderRadius:10, fontSize:11 }}>총 {total}</span>
+                        <span style={{ marginLeft:8, background:'#dbeafe', padding:'2px 8px', borderRadius:10, fontSize:13 }}>총 {total}</span>
                       </div>
                     )
                   })()}
                   {schedule.final_waste && (
-                    <div style={{ fontSize:12, color:amber, fontWeight:600, marginTop:4 }}>📦 최종 물량: {schedule.final_waste}</div>
+                    <div style={{ fontSize:15, color:amber, fontWeight:700, marginTop:6 }}>📦 최종 물량: {schedule.final_waste}</div>
                   )}
                 </div>
                 {!editingDone && (
