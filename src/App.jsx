@@ -346,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.8</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.9</div>
       </div>
     </div>
   )
@@ -2618,6 +2618,24 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
 
             {inputMode==='manual' && (
               <div style={{ overflowY:'auto', flex:1 }}>
+                {/* 날짜 일괄 변경 */}
+                <div style={{ padding:'8px 12px', background:'#eff6ff', borderBottom:`1px solid #bfdbfe`, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                  <span style={{ fontSize:12, fontWeight:600, color:blue, whiteSpace:'nowrap' }}>📅 날짜 일괄 변경</span>
+                  <input type="date"
+                    defaultValue={today}
+                    id="bulkDateInput"
+                    style={{ ...is, width:'auto', fontSize:12, borderColor:'#93c5fd' }}
+                  />
+                  <button
+                    onClick={()=>{
+                      const val = document.getElementById('bulkDateInput')?.value
+                      if (val) setRows(prev => prev.map(r => ({...r, date:val})))
+                    }}
+                    style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 14px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    전체 적용
+                  </button>
+                  <span style={{ fontSize:11, color:'#3b82f6', opacity:.7 }}>모든 행의 날짜를 한번에 바꿉니다</span>
+                </div>
                 <div style={{ overflowX:'auto' }}>
                   <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12, minWidth:820 }}>
                     <thead>
