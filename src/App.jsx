@@ -346,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.3</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.4</div>
       </div>
     </div>
   )
@@ -692,61 +692,99 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
         {/* 카드 뷰 */}
         {listView === 'card' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {sorted.length === 0 && (
               <div style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</div>
             )}
-            {sorted.map(s => {
-              const chip = s.driver_id ? driverChip(s.driver_id, drivers) : null
-              const lc = s.status==='완료' ? green : s.status==='진행중' ? amber : s.status==='이동중' ? blue : border
-              const isDeleteChecked = checkedIds.has(s.id)
-              const isAssignChecked = assignChecked.has(s.id)
-              return (
-                <div key={s.id}
-                  onClick={()=>{
-                    if (deleteMode) { toggleCheck(s.id); return }
-                    if (assignMode) { toggleAssignCheck(s.id); return }
-                    setSelId(s.id); setView('detail')
-                  }}
-                  style={{
-                    background: isDeleteChecked?'#fef2f2': isAssignChecked?'#f0fdf4':'#fff',
-                    borderRadius:12, border:`1px solid ${border}`,
-                    borderLeft:`5px solid ${lc}`,
-                    padding:'14px 16px', cursor:'pointer',
-                    transition:'background .1s'
-                  }}>
-                  {/* 헤더 행 */}
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      {s.driver_id
-                        ? <span style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 10px', fontSize:13, fontWeight:700 }}>{userName(s.driver_id)}</span>
-                        : <span style={{ background:'#fef2f2', color:red, borderRadius:20, padding:'2px 10px', fontSize:13, fontWeight:700, border:'1px dashed #fca5a5' }}>미배치</span>
-                      }
-                      {s.co_driver_id && (
-                        <span style={{ fontSize:12, background:'#dbeafe', color:blue, padding:'2px 8px', borderRadius:10, fontWeight:600 }}>+{userName(s.co_driver_id)}</span>
-                      )}
-                      <Badge status={s.status}/>
+            {(() => {
+              // 기사별 그룹핑
+              const groups = []
+              let lastId = '__none__'
+              sorted.forEach(s => {
+                const gid = s.driver_id || '__unassigned__'
+                if (gid !== lastId) { groups.push({ driverId: s.driver_id||null, items:[] }); lastId = gid }
+                groups[groups.length-1].items.push(s)
+              })
+              return groups.map(g => {
+                const chip = g.driverId ? driverChip(g.driverId, drivers) : null
+                return (
+                  <div key={g.driverId||'unassigned'}>
+                    {/* 기사 그룹 헤더 */}
+                    <div style={{
+                      display:'flex', alignItems:'center', gap:8, padding:'6px 12px',
+                      background: chip ? chip.bg : '#fef2f2',
+                      borderRadius:10, marginBottom:8,
+                      border:`1px solid ${chip ? chip.border : '#fecaca'}`
+                    }}>
+                      <span style={{ fontSize:13, fontWeight:700, color: chip ? chip.color : red }}>
+                        {g.driverId ? `▸ ${userName(g.driverId)}` : '▸ 미배치'}
+                      </span>
+                      <span style={{ fontSize:12, color: chip ? chip.color : red, opacity:.65 }}>
+                        {g.items.length}건
+                      </span>
                     </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <span style={{ fontFamily:'monospace', fontSize:16, fontWeight:700, color:navy }}>{s.time}</span>
-                      <button onClick={e=>{ e.stopPropagation(); openCopyModal(s) }}
-                        style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
-                        이동/복사
-                      </button>
+                    {/* 카드 목록 (드래그앤드롭) */}
+                    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                      {g.items.map(s => {
+                        const lc = s.status==='완료' ? green : s.status==='진행중' ? amber : s.status==='이동중' ? blue : border
+                        const isDeleteChecked = checkedIds.has(s.id)
+                        const isAssignChecked = assignChecked.has(s.id)
+                        const isDragOver = dragOverRowId === s.id
+                        return (
+                          <div key={s.id}
+                            draggable={!deleteMode && !assignMode}
+                            onDragStart={()=>handleDragStart(s.id)}
+                            onDragOver={e=>handleDragOver(e, s.id)}
+                            onDragLeave={handleDragLeaveRow}
+                            onDrop={handleDrop}
+                            onClick={()=>{
+                              if (deleteMode) { toggleCheck(s.id); return }
+                              if (assignMode) { toggleAssignCheck(s.id); return }
+                              setSelId(s.id); setView('detail')
+                            }}
+                            style={{
+                              background: isDragOver?'#eff6ff': isDeleteChecked?'#fef2f2': isAssignChecked?'#f0fdf4':'#fff',
+                              borderRadius:12,
+                              border:`1px solid ${isDragOver?blue:border}`,
+                              borderLeft:`5px solid ${isDragOver?blue:lc}`,
+                              padding:'12px 14px',
+                              cursor: !deleteMode&&!assignMode ? 'grab' : 'pointer',
+                              outline: isDragOver?`2px dashed ${blue}`:'none',
+                              transition:'all .1s',
+                            }}>
+                            {/* 헤더 행 */}
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <Badge status={s.status}/>
+                                {s.co_driver_id && (
+                                  <span style={{ fontSize:12, background:'#dbeafe', color:blue, padding:'2px 7px', borderRadius:10, fontWeight:600 }}>2인·{userName(s.co_driver_id)}</span>
+                                )}
+                              </div>
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <span style={{ fontFamily:'monospace', fontSize:16, fontWeight:700, color:navy }}>{s.time}</span>
+                                <button onClick={e=>{ e.stopPropagation(); openCopyModal(s) }}
+                                  style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                                  이동/복사
+                                </button>
+                              </div>
+                            </div>
+                            {/* 주소 */}
+                            <div style={{ fontSize:15, fontWeight:600, color:textC, marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.address}</div>
+                            {/* 서브 정보 */}
+                            <div style={{ display:'flex', gap:10, fontSize:13, color:muted, flexWrap:'wrap', alignItems:'center' }}>
+                              <span>{s.cname}</span>
+                              <span>폐기물 {s.waste}</span>
+                              <span style={{ fontSize:11, color:'#94a3b8' }}>{s.date}</span>
+                              {s.start_time && <span style={{ color:green, fontFamily:'monospace', fontSize:12 }}>▶ {s.start_time}{s.end_time?` ~ ${s.end_time}`:''}</span>}
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
-                  {/* 주소 */}
-                  <div style={{ fontSize:15, fontWeight:600, color:textC, marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.address}</div>
-                  {/* 서브 정보 */}
-                  <div style={{ display:'flex', gap:12, fontSize:13, color:muted, flexWrap:'wrap' }}>
-                    <span>{s.cname}</span>
-                    <span>폐기물 {s.waste}</span>
-                    <span style={{ fontSize:11, color:'#94a3b8' }}>{s.date}</span>
-                    {s.start_time && <span style={{ color:green, fontFamily:'monospace' }}>▶ {s.start_time}{s.end_time?` ~ ${s.end_time}`:''}</span>}
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })
+            })()}
           </div>
         )}
 
