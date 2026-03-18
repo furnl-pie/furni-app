@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.2.1</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.2.2</div>
       </div>
     </div>
   )
@@ -426,8 +426,8 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       {/* 헤더 */}
       <div style={{ background:navy, color:'#fff', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontSize:16, fontWeight:700 }}>🚚 동태관리</div>
-          <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자: {user.name}</div>
+          <div style={{ fontSize:20, fontWeight:700 }}>🚚 동태관리</div>
+          <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자</div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
           <Btn onClick={()=>setDriverMgr(true)} outline color="#7dd3fc" style={{ padding:'7px 14px', fontSize:13 }}>👤 기사 관리</Btn>
@@ -740,25 +740,11 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   )
 }
 
-// ── 기사 계정 관리 모달 ─────────────────────────────────────────────
 // ── 관리자 계정 설정 모달 ─────────────────────────────────────────
 function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
-  const [tab,     setTab]     = useState('pw')   // 'id' | 'pw'
-  const [idForm,  setIdForm]  = useState({ newId:'', pw:'' })
-  const [pwForm,  setPwForm]  = useState({ current:'', next:'', confirm:'' })
-  const [err,     setErr]     = useState('')
-  const [ok,      setOk]      = useState('')
-
-  const changeId = () => {
-    setErr(''); setOk('')
-    if (!idForm.newId.trim()) return setErr('새 아이디를 입력하세요')
-    if (idForm.pw !== user.pw) return setErr('현재 비밀번호가 올바르지 않습니다')
-    if (USERS.some(u => u.id === idForm.newId && u.id !== user.id)) return setErr('이미 사용 중인 아이디입니다')
-    onUpdateDriver(user.id, { id: idForm.newId })
-    setOk('아이디가 변경되었습니다. 다시 로그인해주세요.')
-    setIdForm({ newId:'', pw:'' })
-    setTimeout(onClose, 1800)
-  }
+  const [pwForm, setPwForm] = useState({ current:'', next:'', confirm:'' })
+  const [err,    setErr]    = useState('')
+  const [ok,     setOk]     = useState('')
 
   const changePw = () => {
     setErr(''); setOk('')
@@ -771,24 +757,13 @@ function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
     setTimeout(() => setOk(''), 2000)
   }
 
-  const tabStyle = active => ({
-    flex:1, padding:'9px 0', fontSize:14, fontWeight:active?700:500,
-    background: active ? navy : 'transparent',
-    color: active ? '#fff' : muted,
-    border:'none', borderBottom: active ? 'none' : `2px solid ${border}`,
-    cursor:'pointer', borderRadius: active ? '8px 8px 0 0' : 0, transition:'all .15s'
-  })
-
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:360 }}>
-        {/* 헤더 */}
         <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <div style={{ fontSize:16, fontWeight:700, color:navy }}>⚙️ 관리자 계정 설정</div>
           <button onClick={onClose} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
         </div>
-
-        {/* 현재 계정 정보 */}
         <div style={{ padding:'12px 20px', background:'#f8fafc', borderBottom:`1px solid ${border}`, display:'flex', alignItems:'center', gap:12 }}>
           <div style={{ width:40, height:40, borderRadius:'50%', background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:blue }}>
             {user.name.slice(0,1)}
@@ -800,57 +775,26 @@ function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
             </div>
           </div>
         </div>
-
-        {/* 탭 */}
-        <div style={{ display:'flex', padding:'0 20px', paddingTop:16, gap:4 }}>
-          <button style={tabStyle(tab==='pw')} onClick={()=>{ setTab('pw'); setErr(''); setOk('') }}>비밀번호 변경</button>
-          <button style={tabStyle(tab==='id')} onClick={()=>{ setTab('id'); setErr(''); setOk('') }}>아이디 변경</button>
-        </div>
-
-        <div style={{ padding:'16px 20px 20px' }}>
-          {tab === 'pw' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <div>
-                <div style={{ fontSize:12, color:muted, marginBottom:4 }}>현재 비밀번호</div>
-                <input type="password" value={pwForm.current} onChange={e=>{ setPwForm(p=>({...p,current:e.target.value})); setErr('') }}
-                  placeholder="현재 비밀번호" style={iStyle}/>
-              </div>
-              <div>
-                <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호</div>
-                <input type="password" value={pwForm.next} onChange={e=>{ setPwForm(p=>({...p,next:e.target.value})); setErr('') }}
-                  placeholder="새 비밀번호 (4자 이상)" style={iStyle}/>
-              </div>
-              <div>
-                <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호 확인</div>
-                <input type="password" value={pwForm.confirm} onChange={e=>{ setPwForm(p=>({...p,confirm:e.target.value})); setErr('') }}
-                  onKeyDown={e=>e.key==='Enter'&&changePw()} placeholder="비밀번호 재입력" style={iStyle}/>
-              </div>
-              {err && <div style={{ fontSize:12, color:red, background:'#fef2f2', padding:'8px 12px', borderRadius:8 }}>⚠ {err}</div>}
-              {ok  && <div style={{ fontSize:12, color:green, background:'#f0fdf4', padding:'8px 12px', borderRadius:8 }}>✓ {ok}</div>}
-              <Btn onClick={changePw} style={{ width:'100%', padding:12, fontSize:15 }}>변경하기</Btn>
-            </div>
-          )}
-
-          {tab === 'id' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:8, padding:'8px 12px', fontSize:12, color:amber }}>
-                ⚠ 아이디 변경 후 자동으로 로그아웃됩니다
-              </div>
-              <div>
-                <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 아이디</div>
-                <input value={idForm.newId} onChange={e=>{ setIdForm(p=>({...p,newId:e.target.value.replace(/\s/g,'')})); setErr('') }}
-                  placeholder="한글·영문·숫자·_ 가능" style={{ ...iStyle, fontFamily:'monospace' }}/>
-              </div>
-              <div>
-                <div style={{ fontSize:12, color:muted, marginBottom:4 }}>현재 비밀번호 (본인 확인)</div>
-                <input type="password" value={idForm.pw} onChange={e=>{ setIdForm(p=>({...p,pw:e.target.value})); setErr('') }}
-                  onKeyDown={e=>e.key==='Enter'&&changeId()} placeholder="현재 비밀번호" style={iStyle}/>
-              </div>
-              {err && <div style={{ fontSize:12, color:red, background:'#fef2f2', padding:'8px 12px', borderRadius:8 }}>⚠ {err}</div>}
-              {ok  && <div style={{ fontSize:12, color:green, background:'#f0fdf4', padding:'8px 12px', borderRadius:8 }}>✓ {ok}</div>}
-              <Btn onClick={changeId} color={amber} style={{ width:'100%', padding:12, fontSize:15 }}>아이디 변경</Btn>
-            </div>
-          )}
+        <div style={{ padding:'16px 20px 20px', display:'flex', flexDirection:'column', gap:12 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:textC, marginBottom:2 }}>비밀번호 변경</div>
+          <div>
+            <div style={{ fontSize:12, color:muted, marginBottom:4 }}>현재 비밀번호</div>
+            <input type="password" value={pwForm.current} onChange={e=>{ setPwForm(p=>({...p,current:e.target.value})); setErr('') }}
+              placeholder="현재 비밀번호" style={iStyle}/>
+          </div>
+          <div>
+            <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호</div>
+            <input type="password" value={pwForm.next} onChange={e=>{ setPwForm(p=>({...p,next:e.target.value})); setErr('') }}
+              placeholder="새 비밀번호 (4자 이상)" style={iStyle}/>
+          </div>
+          <div>
+            <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호 확인</div>
+            <input type="password" value={pwForm.confirm} onChange={e=>{ setPwForm(p=>({...p,confirm:e.target.value})); setErr('') }}
+              onKeyDown={e=>e.key==='Enter'&&changePw()} placeholder="비밀번호 재입력" style={iStyle}/>
+          </div>
+          {err && <div style={{ fontSize:12, color:red, background:'#fef2f2', padding:'8px 12px', borderRadius:8 }}>⚠ {err}</div>}
+          {ok  && <div style={{ fontSize:12, color:green, background:'#f0fdf4', padding:'8px 12px', borderRadius:8 }}>✓ {ok}</div>}
+          <Btn onClick={changePw} style={{ width:'100%', padding:12, fontSize:15 }}>변경하기</Btn>
         </div>
       </div>
     </div>
@@ -2416,8 +2360,8 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
       <div style={{ background:navy, color:'#fff', padding:'16px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <div>
-            <div style={{ fontSize:16, fontWeight:700 }}>🚚 동태관리</div>
-            <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>{user.name} 기사님 · {user.phone}</div>
+            <div style={{ fontSize:20, fontWeight:700 }}>🚚 동태관리</div>
+            <div style={{ fontSize:15, opacity:.7, marginTop:2 }}>{user.name} 기사님 · {user.phone}</div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
             <button onClick={()=>setPwModal(true)}
@@ -2428,15 +2372,15 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
           </div>
         </div>
         <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)}
-          style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', fontSize:14, width:'100%', boxSizing:'border-box' }}/>
+          style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:14, width:'100%', boxSizing:'border-box' }}/>
       </div>
 
       <div style={{ padding:16, maxWidth:480, margin:'0 auto' }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
           {[['대기',cnt('대기'),muted],['진행중',cnt('진행중'),amber],['완료',cnt('완료'),green]].map(([l,v,c])=>(
             <Card key={l} style={{ textAlign:'center', padding:'12px 6px' }}>
-              <div style={{ fontSize:22, fontWeight:700, color:c }}>{v}</div>
-              <div style={{ fontSize:11, color:muted }}>{l}</div>
+              <div style={{ fontSize:25, fontWeight:700, color:c }}>{v}</div>
+              <div style={{ fontSize:14, color:muted }}>{l}</div>
             </Card>
           ))}
         </div>
@@ -2456,13 +2400,13 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
               style={{ background:'#fff', borderRadius:12, border:`1px solid ${border}`, borderLeft:`4px solid ${lc}`, padding:'14px 16px', marginBottom:12, cursor:'pointer' }}
             >
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-                <span style={{ fontFamily:'monospace', fontSize:16, fontWeight:700, color:navy }}>{s.time}</span>
+                <span style={{ fontFamily:'monospace', fontSize:18, fontWeight:700, color:navy }}>{s.time}</span>
                 <Badge status={s.status}/>
               </div>
-              <div style={{ fontSize:14, fontWeight:600, marginBottom:4, color:textC }}>{s.address}</div>
-              <div style={{ fontSize:12, color:muted }}>폐기물 {s.waste} · 담당: {s.cname}</div>
+              <div style={{ fontSize:16, fontWeight:600, marginBottom:4, color:textC }}>{s.address}</div>
+              <div style={{ fontSize:14, color:muted }}>폐기물 {s.waste} · 담당: {s.cname}</div>
               {s.start_time && (
-                <div style={{ fontSize:11, color:green, marginTop:6, fontFamily:'monospace' }}>
+                <div style={{ fontSize:13, color:green, marginTop:6, fontFamily:'monospace' }}>
                   ▶ {s.start_time}{s.end_time ? ` → ■ ${s.end_time}` : ' (진행중)'}
                 </div>
               )}
