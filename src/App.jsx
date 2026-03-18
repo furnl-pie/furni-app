@@ -547,24 +547,28 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
       {/* 삭제 모드 하단 플로팅 바 */}
       {deleteMode && (
-        <div style={{ position:'fixed', bottom:0, left:0, right:0, background:navy, padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', zIndex:500, boxShadow:'0 -4px 20px rgba(0,0,0,.2)', fontFamily:"'Noto Sans KR', sans-serif" }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ position:'fixed', bottom:0, left:0, right:0, background:navy, padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', zIndex:500, boxShadow:'0 -4px 20px rgba(0,0,0,.2)', fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <span style={{ color:'#fff', fontSize:14, fontWeight:600 }}>
               {checkedIds.size > 0 ? `${checkedIds.size}건 선택됨` : '삭제할 일정을 선택하세요'}
             </span>
             {checkedIds.size > 0 && (
               <button onClick={()=>setCheckedIds(new Set())}
-                style={{ background:'rgba(255,255,255,.15)', border:'none', color:'rgba(255,255,255,.8)', borderRadius:6, padding:'4px 10px', fontSize:12, cursor:'pointer' }}>
+                style={{ height:36, padding:'0 12px', background:'rgba(255,255,255,.15)', border:'none', color:'rgba(255,255,255,.85)', borderRadius:7, fontSize:12, cursor:'pointer' }}>
                 선택 해제
               </button>
             )}
           </div>
-          <div style={{ display:'flex', gap:10 }}>
-            <Btn onClick={exitDeleteMode} outline color="#aac" style={{ padding:'9px 18px' }}>취소</Btn>
-            <Btn onClick={()=>setDelConfirm(true)} color={red}
-              disabled={checkedIds.size===0} style={{ padding:'9px 18px' }}>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={exitDeleteMode}
+              style={{ height:36, padding:'0 16px', background:'transparent', border:'1px solid rgba(255,255,255,.4)', color:'rgba(255,255,255,.85)', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+              취소
+            </button>
+            <button onClick={()=>{ if(checkedIds.size>0) setDelConfirm(true) }}
+              disabled={checkedIds.size===0}
+              style={{ height:36, padding:'0 18px', background:checkedIds.size>0?red:'#6b7280', border:'none', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, cursor:checkedIds.size>0?'pointer':'not-allowed' }}>
               🗑 {checkedIds.size}건 삭제
-            </Btn>
+            </button>
           </div>
         </div>
       )}
@@ -1217,13 +1221,33 @@ function CopyAddress({ address }) {
 async function downloadAllPhotos(photos, prefix = '완료사진') {
   for (let i = 0; i < photos.length; i++) {
     const src = photos[i]
-    const a = document.createElement('a')
-    a.href = src
-    a.download = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    await new Promise(r => setTimeout(r, 150))
+    try {
+      // Cloudinary/외부 URL은 fetch → blob으로 다운로드 (PC 웹 호환)
+      if (src.startsWith('http')) {
+        const res = await fetch(src)
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } else {
+        // base64 (로컬 미리보기)
+        const a = document.createElement('a')
+        a.href = src
+        a.download = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      }
+    } catch {
+      // 실패 시 새 탭으로 열기 (CORS 제한 등)
+      window.open(src, '_blank')
+    }
+    await new Promise(r => setTimeout(r, 200))
   }
 }
 
@@ -2188,20 +2212,20 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
   return (
     <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ background:navy, color:'#fff', padding:'14px 20px', display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={onBack} style={{ background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
+      <div style={{ background:navy, color:'#fff', padding:'16px 20px', display:'flex', alignItems:'center', gap:12 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', color:'#fff', fontSize:26, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:16, fontWeight:700 }}>일정 상세</div>
-          <div style={{ fontSize:12, opacity:.7 }}>{schedule.time} 출발 예정</div>
+          <div style={{ fontSize:18, fontWeight:700 }}>일정 상세</div>
+          <div style={{ fontSize:14, opacity:.7 }}>{schedule.time} 출발 예정</div>
         </div>
         <Badge status={schedule.status}/>
       </div>
 
-      <div style={{ padding:16, maxWidth:480, margin:'0 auto' }}>
+      <div style={{ padding:16, maxWidth:520, margin:'0 auto' }}>
 
         {/* 현장 정보 */}
         <Card style={{ marginBottom:12 }}>
-          <div style={{ fontSize:12, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:10 }}>현장 정보</div>
+          <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>현장 정보</div>
           <div style={{ marginBottom:14 }}><CopyAddress address={schedule.address}/></div>
           <Row label="예정 시간"   value={`${schedule.date}  ${schedule.time}`}/>
           <Row label="폐기물량"    value={schedule.waste}/>
@@ -2209,7 +2233,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
           <Row label="연락처"      value={schedule.cphone}/>
           {schedule.memo && <Row label="메모" value={schedule.memo}/>}
           <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none', display:'block', marginTop:16 }}>
-            <div style={{ background:green, color:'#fff', borderRadius:10, padding:15, textAlign:'center', fontWeight:700, fontSize:17 }}>
+            <div style={{ background:green, color:'#fff', borderRadius:10, padding:16, textAlign:'center', fontWeight:700, fontSize:18 }}>
               📞 {schedule.cname}에게 전화
             </div>
           </a>
@@ -2218,7 +2242,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         {/* 일정 참고 사진 */}
         {(schedule.schedule_photos||[]).length > 0 && (
           <Card style={{ marginBottom:12 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>
               📎 현장 참고 사진 ({schedule.schedule_photos.length}장)
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
@@ -2234,10 +2258,10 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
         {/* 업무 기록 */}
         <Card>
-          <div style={{ fontSize:12, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:14 }}>업무 기록</div>
+          <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:16 }}>업무 기록</div>
 
-          {/* ─ 스텝 표시 바 ─ */}
-          <div style={{ display:'flex', alignItems:'center', marginBottom:20, gap:4 }}>
+          {/* ─ 스텝 바 ─ */}
+          <div style={{ display:'flex', alignItems:'center', marginBottom:22, gap:4 }}>
             {[['대기','대기'],['이동중','이동중'],['진행중','진행중'],['완료','완료']].map(([s,l],i)=>{
               const order = ['대기','이동중','진행중','완료']
               const cur = order.indexOf(schedule.status)
@@ -2248,51 +2272,48 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
               return (
                 <Fragment key={s}>
                   <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, flex:1 }}>
-                    <div style={{ width:12, height:12, borderRadius:'50%', background: done||active ? dotColor : '#f1f5f9', border:`2px solid ${dotColor}` }}/>
-                    <div style={{ fontSize:11, fontWeight: active ? 700 : 400, color:textColor, whiteSpace:'nowrap' }}>{l}</div>
+                    <div style={{ width:14, height:14, borderRadius:'50%', background: done||active ? dotColor : '#f1f5f9', border:`2px solid ${dotColor}` }}/>
+                    <div style={{ fontSize:12, fontWeight: active?700:400, color:textColor, whiteSpace:'nowrap' }}>{l}</div>
                   </div>
-                  {i < 3 && <div style={{ flex:2, height:2, background: done ? green : border, marginBottom:16 }}/>}
+                  {i < 3 && <div style={{ flex:2, height:2, background: done ? green : border, marginBottom:18 }}/>}
                 </Fragment>
               )
             })}
           </div>
 
           {/* ── STEP 1: 출발 ── */}
-          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:14, marginBottom:14 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:44 }}>
+          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:54 }}>
               <div>
-                <div style={{ fontSize:15, fontWeight:700, color:textC }}>① 출발</div>
+                <div style={{ fontSize:17, fontWeight:700, color:textC }}>① 출발</div>
                 {schedule.depart_time
-                  ? <div style={{ fontSize:14, color:green, fontFamily:'monospace', marginTop:4 }}>🚛 {schedule.depart_time} 출발</div>
-                  : <div style={{ fontSize:13, color:muted, marginTop:4 }}>현장으로 출발 시 클릭</div>}
+                  ? <div style={{ fontSize:15, color:green, fontFamily:'monospace', marginTop:5 }}>🚛 {schedule.depart_time} 출발</div>
+                  : <div style={{ fontSize:14, color:muted, marginTop:5 }}>현장으로 출발 시 클릭</div>}
               </div>
-              <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                {isReady && (
-                  <Btn onClick={openDepartModal} color={blue} style={{ padding:'11px 20px', fontSize:15 }}>🚛 출발</Btn>
-                )}
+              <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'13px 22px', fontSize:16 }}>🚛 출발</Btn>}
                 {(isMoving||isWorking||isDone) && schedule.depart_time && (
                   <button onClick={()=>setShowCancelDepart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'7px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'9px 14px', fontSize:13, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
                     출발 취소
                   </button>
                 )}
               </div>
             </div>
-            {/* SMS 상태 + ETA */}
             {(isMoving||isWorking||isDone) && (
-              <div style={{ marginTop:10 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, padding:'8px 12px', background:'#f0f9ff', borderRadius:8, border:`1px solid #bae6fd` }}>
-                  <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>🕐 도착 예상</span>
+              <div style={{ marginTop:12 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, padding:'10px 14px', background:'#f0f9ff', borderRadius:8, border:`1px solid #bae6fd` }}>
+                  <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>🕐 도착 예상</span>
                   <EtaInlineEdit eta={schedule.eta} onSave={v=>onUpdate({ eta:v })}/>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px', background:schedule.sms_sent?'#f0fdf4':'#f8fafc', borderRadius:8, border:`1px solid ${schedule.sms_sent?'#bbf7d0':border}` }}>
-                  <span style={{ fontSize:16 }}>💬</span>
+                <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background:schedule.sms_sent?'#f0fdf4':'#f8fafc', borderRadius:8, border:`1px solid ${schedule.sms_sent?'#bbf7d0':border}` }}>
+                  <span style={{ fontSize:18 }}>💬</span>
                   {schedule.sms_sent
-                    ? <div style={{ flex:1, fontSize:13 }}><span style={{ fontWeight:600, color:green }}>문자 발송됨</span><span style={{ color:muted, marginLeft:6 }}>{schedule.cname}</span></div>
-                    : <div style={{ flex:1, fontSize:13, color:muted }}>문자 미발송</div>
+                    ? <div style={{ flex:1, fontSize:14 }}><span style={{ fontWeight:700, color:green }}>문자 발송됨</span><span style={{ color:muted, marginLeft:8 }}>{schedule.cname}</span></div>
+                    : <div style={{ flex:1, fontSize:14, color:muted }}>문자 미발송</div>
                   }
                   <button onClick={openResendModal}
-                    style={{ background:schedule.sms_sent?'none':green, color:schedule.sms_sent?muted:'#fff', border:`1px solid ${schedule.sms_sent?border:green}`, borderRadius:6, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    style={{ background:schedule.sms_sent?'none':green, color:schedule.sms_sent?muted:'#fff', border:`1px solid ${schedule.sms_sent?border:green}`, borderRadius:7, padding:'8px 14px', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                     {schedule.sms_sent?'재발송':'💬 발송'}
                   </button>
                 </div>
@@ -2301,30 +2322,28 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
           </div>
 
           {/* ── STEP 2: 작업 시작 ── */}
-          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:14, marginBottom:14 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:44 }}>
+          <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:54 }}>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:15, fontWeight:700, color:textC, marginBottom:4 }}>② 작업 시작</div>
+                <div style={{ fontSize:17, fontWeight:700, color:textC, marginBottom:6 }}>② 작업 시작</div>
                 {(isWorking||isDone) && schedule.start_time ? (
                   <DriverTimeEdit label="시작" value={schedule.start_time} color={green} onSave={v=>onUpdate({ start_time:v||null })}/>
                 ) : (
-                  <div style={{ fontSize:13, color:isMoving?blue:muted, marginTop:4 }}>
+                  <div style={{ fontSize:14, color:isMoving?blue:muted }}>
                     {isMoving ? '현장 도착 후 클릭' : '출발 후 활성화'}
                   </div>
                 )}
                 {schedule.est_waste && (
-                  <div style={{ fontSize:12, color:muted, marginTop:6 }}>
-                    예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration ? ` · ${schedule.est_duration}` : ''}
+                  <div style={{ fontSize:13, color:muted, marginTop:6 }}>
+                    예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration?` · ${schedule.est_duration}`:''}
                   </div>
                 )}
               </div>
-              <div style={{ display:'flex', gap:6, marginLeft:12, alignItems:'center' }}>
-                {isMoving && (
-                  <Btn onClick={openWorkModal} color={amber} style={{ padding:'11px 20px', fontSize:15 }}>▶ 작업 시작</Btn>
-                )}
+              <div style={{ display:'flex', gap:8, marginLeft:14, alignItems:'center' }}>
+                {isMoving && <Btn onClick={openWorkModal} color={amber} style={{ padding:'13px 22px', fontSize:16 }}>▶ 작업 시작</Btn>}
                 {(isWorking||isDone) && schedule.start_time && (
                   <button onClick={()=>setShowCancelStart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'7px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'9px 14px', fontSize:13, color:muted, cursor:'pointer' }}>
                     취소
                   </button>
                 )}
@@ -2334,11 +2353,11 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
           {/* ── STEP 3: 업무 완료 ── */}
           <div>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:44, marginBottom:12 }}>
-              <div style={{ fontSize:15, fontWeight:700, color:textC }}>③ 업무 완료</div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:54, marginBottom:14 }}>
+              <div style={{ fontSize:17, fontWeight:700, color:textC }}>③ 업무 완료</div>
               {isDone && (
                 <button onClick={()=>setShowCancelEnd(true)}
-                  style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'7px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
+                  style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'9px 14px', fontSize:13, color:muted, cursor:'pointer' }}>
                   종료 취소
                 </button>
               )}
