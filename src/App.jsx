@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.3</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.4</div>
       </div>
     </div>
   )
@@ -456,7 +456,9 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   )
   const exitDeleteMode = () => { setDeleteMode(false); setCheckedIds(new Set()) }
 
-  const drivers = users.filter(u => u.role === 'driver')
+  const drivers = users
+    .filter(u => u.role === 'driver')
+    .sort((a,b) => (a.driverOrder||0) - (b.driverOrder||0))
 
   const filtered = schedules.filter(s => {
     if (filterDriver.size > 0) {
@@ -1001,7 +1003,7 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
     if (!form.loginId||!form.name||!form.phone||!form.pw) return alert('아이디·이름·연락처·비밀번호를 모두 입력하세요')
     if (!/^[a-z0-9_\uAC00-\uD7A3\u3130-\u318F]+$/.test(form.loginId)) { setIdErr('한글·영문·숫자·_만 사용 가능합니다 (공백 불가)'); return }
     if (USERS.some(u=>u.id===form.loginId)) { setIdErr('이미 사용 중인 아이디입니다'); return }
-    onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw })
+    onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw, role:'driver', driverOrder: Date.now() })
     setForm({ loginId:'', name:'', phone:'', pw:'' }); setAdding(false)
   }
   const startEdit = d => { setEditId(d.id); setEditForm({ loginId:d.id, name:d.name, phone:d.phone, pw:d.pw }) }
@@ -1021,7 +1023,7 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
         <div style={{ overflowY:'auto', flex:1, padding:20 }}>
           {/* 기사 목록 */}
           <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
-            {drivers.map(d=>(
+            {drivers.map((d, i)=>(
               <div key={d.id} style={{ background:'#f8fafc', borderRadius:10, border:`1px solid ${border}`, overflow:'hidden' }}>
                 {editId===d.id ? (
                   <div style={{ padding:'12px 14px', display:'flex', flexDirection:'column', gap:8 }}>
@@ -1051,6 +1053,33 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
                   </div>
                 ) : (
                   <div style={{ padding:'12px 14px', display:'flex', alignItems:'center', gap:12 }}>
+                    {/* 순서 변경 버튼 */}
+                    <div style={{ display:'flex', flexDirection:'column', gap:2, flexShrink:0 }}>
+                      <button
+                        disabled={i===0}
+                        onClick={()=>{
+                          const prev = drivers[i-1]
+                          const tA = d.driverOrder ?? i
+                          const tB = prev.driverOrder ?? (i-1)
+                          onUpdate(d.id, { driverOrder: tB })
+                          onUpdate(prev.id, { driverOrder: tA })
+                        }}
+                        style={{ background:'none', border:`1px solid ${border}`, borderRadius:4, width:22, height:22, fontSize:11, cursor:i===0?'default':'pointer', color:i===0?'#ccc':muted, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        ▲
+                      </button>
+                      <button
+                        disabled={i===drivers.length-1}
+                        onClick={()=>{
+                          const next = drivers[i+1]
+                          const tA = d.driverOrder ?? i
+                          const tB = next.driverOrder ?? (i+1)
+                          onUpdate(d.id, { driverOrder: tB })
+                          onUpdate(next.id, { driverOrder: tA })
+                        }}
+                        style={{ background:'none', border:`1px solid ${border}`, borderRadius:4, width:22, height:22, fontSize:11, cursor:i===drivers.length-1?'default':'pointer', color:i===drivers.length-1?'#ccc':muted, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        ▼
+                      </button>
+                    </div>
                     <div style={{ width:38, height:38, borderRadius:'50%', background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, fontWeight:700, color:blue, flexShrink:0 }}>
                       {d.name.slice(0,1)}
                     </div>
