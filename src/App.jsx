@@ -346,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.7</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.8</div>
       </div>
     </div>
   )
@@ -769,6 +769,24 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                                 <Badge status={s.status}/>
+                                {/* 기사 연필 배정 */}
+                                <span onClick={e=>e.stopPropagation()}>
+                                  {editingId===s.id ? (
+                                    <select autoFocus
+                                      defaultValue={s.driver_id||''}
+                                      onChange={e=>{ onUpdate(s.id,{driver_id:e.target.value||null}); setEditingId(null) }}
+                                      onBlur={()=>setEditingId(null)}
+                                      style={{ fontSize:12, padding:'4px 8px', border:`1.5px solid ${blue}`, borderRadius:6, outline:'none', cursor:'pointer', maxWidth:110 }}>
+                                      <option value="">— 미배치 —</option>
+                                      {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+                                    </select>
+                                  ) : (
+                                    <button onClick={e=>{ e.stopPropagation(); setEditingId(s.id) }}
+                                      style={{ background:'none', border:`1px solid ${border}`, borderRadius:6, padding:'3px 7px', fontSize:11, color:muted, cursor:'pointer' }}>
+                                      ✏️
+                                    </button>
+                                  )}
+                                </span>
                                 {s.co_driver_id && (
                                   <span style={{ fontSize:12, background:'#dbeafe', color:blue, padding:'2px 7px', borderRadius:10, fontWeight:600 }}>2인·{userName(s.co_driver_id)}</span>
                                 )}
@@ -789,24 +807,6 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                               <span>폐기물 {s.waste}</span>
                               <span style={{ fontSize:11, color:'#94a3b8' }}>{s.date}</span>
                               {s.start_time && <span style={{ color:green, fontFamily:'monospace', fontSize:12 }}>▶ {s.start_time}{s.end_time?` ~ ${s.end_time}`:''}</span>}
-                              {/* 기사 연필 배정 */}
-                              <span onClick={e=>e.stopPropagation()} style={{ marginLeft:'auto', flexShrink:0 }}>
-                                {editingId===s.id ? (
-                                  <select autoFocus
-                                    defaultValue={s.driver_id||''}
-                                    onChange={e=>{ onUpdate(s.id,{driver_id:e.target.value||null}); setEditingId(null) }}
-                                    onBlur={()=>setEditingId(null)}
-                                    style={{ fontSize:12, padding:'4px 8px', border:`1.5px solid ${blue}`, borderRadius:6, outline:'none', cursor:'pointer', maxWidth:110 }}>
-                                    <option value="">— 미배치 —</option>
-                                    {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
-                                  </select>
-                                ) : (
-                                  <button onClick={e=>{ e.stopPropagation(); setEditingId(s.id) }}
-                                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:6, padding:'3px 8px', fontSize:11, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
-                                    ✏️ 기사
-                                  </button>
-                                )}
-                              </span>
                             </div>
                           </div>
                         )
