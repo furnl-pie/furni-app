@@ -11,6 +11,18 @@ const DRIVER_ORDER_PRESET = [
   '김일석','양승민','박종태','이동수','문정완','강희순','승호진','정효진',
   '이상구','김남선','석유현','최권호','한태섭','최기언','민병근','이선우','박성민'
 ]
+// 프리셋 기반 순서값 계산 (▲▼로 저장한 driverOrder는 0~9999 범위, Date.now() 등 큰 값은 무시)
+function getDriverSortKey(d) {
+  const presetIdx = DRIVER_ORDER_PRESET.indexOf(d.name)
+  // driverOrder가 0~9999 범위면 수동 조정값으로 사용
+  if (d.driverOrder != null && d.driverOrder >= 0 && d.driverOrder < 10000) {
+    return d.driverOrder
+  }
+  // 프리셋에 있으면 프리셋 순서 (100 단위 간격)
+  if (presetIdx >= 0) return presetIdx * 100
+  // 둘 다 없으면 맨 뒤
+  return 99999
+}
 
 const today = new Date().toISOString().slice(0,10)
 
@@ -338,7 +350,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.5</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.6</div>
       </div>
     </div>
   )
@@ -394,7 +406,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   // 일정 복사
   const [copyModal, setCopyModal] = useState(null) // 복사할 schedule 객체
   const openCopyModal = (s) => {
-    setCopyModal({ ...s, _copyDate: s.date, _copyDriver: s.driver_id || '', _copyTime: s.time, _copyWaste: s.waste, _mode: 'copy' })
+    setCopyModal({ ...s, _copyDate: s.date, _copyDriver: s.driver_id || '', _copyTime: s.time, _copyWaste: s.waste, _mode: 'move' })
   }
   const confirmCopy = () => {
     if (!copyModal) return
@@ -464,11 +476,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
   const drivers = users
     .filter(u => u.role === 'driver')
-    .sort((a,b) => {
-      const ao = a.driverOrder ?? (DRIVER_ORDER_PRESET.indexOf(a.name) >= 0 ? DRIVER_ORDER_PRESET.indexOf(a.name) * 1000 : 99999)
-      const bo = b.driverOrder ?? (DRIVER_ORDER_PRESET.indexOf(b.name) >= 0 ? DRIVER_ORDER_PRESET.indexOf(b.name) * 1000 : 99999)
-      return ao - bo
-    })
+    .sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
 
   const filtered = schedules.filter(s => {
     if (filterDriver.size > 0) {
@@ -820,7 +828,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
           <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:400, padding:24 }}>
             {/* 탭 */}
             <div style={{ display:'flex', gap:0, marginBottom:20, background:'#f1f5f9', borderRadius:10, padding:4 }}>
-              {[['copy','⧉ 복사'], ['move','→ 이동']].map(([mode, label]) => (
+              {[['move','이동'], ['copy','복사']].map(([mode, label]) => (
                 <button key={mode}
                   onClick={()=>setCopyModal(p=>({...p, _mode:mode}))}
                   style={{ flex:1, padding:'9px 0', borderRadius:8, border:'none', fontSize:14, fontWeight:700, cursor:'pointer', background:copyModal._mode===mode?'#fff':'transparent', color:copyModal._mode===mode?navy:muted, boxShadow:copyModal._mode===mode?'0 1px 4px rgba(0,0,0,.1)':'none', transition:'all .15s' }}>
@@ -1071,10 +1079,8 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
                         disabled={i===0}
                         onClick={()=>{
                           const prev = drivers[i-1]
-                          // 현재 순서값 기준으로 교환 (없으면 인덱스 기반 부여)
-                          const orders = drivers.map((d,idx) => d.driverOrder ?? idx * 1000)
-                          onUpdate(d.id, { driverOrder: orders[i-1] })
-                          onUpdate(prev.id, { driverOrder: orders[i] })
+                          onUpdate(d.id,    { driverOrder: (i-1) * 100 })
+                          onUpdate(prev.id, { driverOrder: i * 100 })
                         }}
                         style={{ background:'none', border:`1px solid ${border}`, borderRadius:4, width:22, height:22, fontSize:11, cursor:i===0?'default':'pointer', color:i===0?'#ccc':muted, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
                         ▲
@@ -1083,9 +1089,8 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
                         disabled={i===drivers.length-1}
                         onClick={()=>{
                           const next = drivers[i+1]
-                          const orders = drivers.map((d,idx) => d.driverOrder ?? idx * 1000)
-                          onUpdate(d.id, { driverOrder: orders[i+1] })
-                          onUpdate(next.id, { driverOrder: orders[i] })
+                          onUpdate(d.id,    { driverOrder: (i+1) * 100 })
+                          onUpdate(next.id, { driverOrder: i * 100 })
                         }}
                         style={{ background:'none', border:`1px solid ${border}`, borderRadius:4, width:22, height:22, fontSize:11, cursor:i===drivers.length-1?'default':'pointer', color:i===drivers.length-1?'#ccc':muted, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
                         ▼
