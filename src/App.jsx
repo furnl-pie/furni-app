@@ -2439,18 +2439,18 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
           {/* ── STEP 1: 출발 ── */}
           <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', minHeight:54, gap:12 }}>
-              <div style={{ paddingTop:2 }}>
-                <div style={{ fontSize:18, fontWeight:700, color:textC, marginBottom:6 }}>① 출발</div>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom: (isMoving||isWorking||isDone) ? 12 : 0 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:16, fontWeight:700, color:textC, marginBottom:4 }}>① 출발</div>
                 {schedule.depart_time
-                  ? <div style={{ fontSize:17, color:green, fontFamily:'monospace' }}>🚛 {schedule.depart_time} 출발</div>
-                  : <div style={{ fontSize:15, color:muted }}>현장으로 출발 시 클릭</div>}
+                  ? <div style={{ fontSize:15, color:green, fontFamily:'monospace' }}>🚛 {schedule.depart_time} 출발</div>
+                  : <div style={{ fontSize:14, color:muted }}>현장으로 출발 시 클릭</div>}
               </div>
-              <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0, paddingTop:2 }}>
-                {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'13px 22px', fontSize:16 }}>🚛 출발</Btn>}
+              <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+                {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'10px 18px', fontSize:15 }}>🚛 출발</Btn>}
                 {(isMoving||isWorking||isDone) && schedule.depart_time && (
                   <button onClick={()=>setShowCancelDepart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'9px 14px', fontSize:13, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'8px 12px', fontSize:13, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
                     출발 취소
                   </button>
                 )}
@@ -2479,27 +2479,27 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
           {/* ── STEP 2: 작업 시작 ── */}
           <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', minHeight:54, gap:12 }}>
-              <div style={{ flex:1, minWidth:0, paddingTop:2 }}>
-                <div style={{ fontSize:18, fontWeight:700, color:textC, marginBottom:6 }}>② 작업 시작</div>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:16, fontWeight:700, color:textC, marginBottom:4 }}>② 작업 시작</div>
                 {(isWorking||isDone) && schedule.start_time ? (
                   <DriverTimeEdit label="시작" value={schedule.start_time} color={green} onSave={v=>onUpdate({ start_time:v||null })}/>
                 ) : (
-                  <div style={{ fontSize:15, color:isMoving?blue:muted }}>
+                  <div style={{ fontSize:14, color:isMoving?blue:muted }}>
                     {isMoving ? '현장 도착 후 클릭' : '출발 후 활성화'}
                   </div>
                 )}
                 {schedule.est_waste && (
-                  <div style={{ fontSize:14, color:muted, marginTop:6 }}>
+                  <div style={{ fontSize:13, color:muted, marginTop:4 }}>
                     예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration?` · ${schedule.est_duration}`:''}
                   </div>
                 )}
               </div>
-              <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0, paddingTop:2 }}>
-                {isMoving && <Btn onClick={openWorkModal} color={amber} style={{ padding:'13px 22px', fontSize:16 }}>▶ 작업 시작</Btn>}
+              <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+                {isMoving && <Btn onClick={openWorkModal} color={amber} style={{ padding:'10px 18px', fontSize:15 }}>▶ 작업 시작</Btn>}
                 {(isWorking||isDone) && schedule.start_time && (
                   <button onClick={()=>setShowCancelStart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'9px 14px', fontSize:13, color:muted, cursor:'pointer' }}>
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'8px 12px', fontSize:13, color:muted, cursor:'pointer' }}>
                     취소
                   </button>
                 )}
@@ -2509,11 +2509,13 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
           {/* ── STEP 3: 업무 완료 ── */}
           <div>
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', minHeight:54, marginBottom:14, gap:12 }}>
-              <div style={{ fontSize:18, fontWeight:700, color:textC, paddingTop:2 }}>③ 업무 완료</div>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:14 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:16, fontWeight:700, color:textC }}>③ 업무 완료</div>
+              </div>
               {isDone && (
                 <button onClick={()=>setShowCancelEnd(true)}
-                  style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'9px 14px', fontSize:13, color:muted, cursor:'pointer', flexShrink:0 }}>
+                  style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'8px 12px', fontSize:13, color:muted, cursor:'pointer', flexShrink:0 }}>
                   종료 취소
                 </button>
               )}
@@ -2660,15 +2662,10 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                   </>
                 ) : (
                   <>
-                    {(schedule.final_waste||schedule.driver_note) && (
+                    {schedule.driver_note && (
                       <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:8, padding:'10px 12px', marginBottom:10 }}>
-                        {schedule.final_waste && <div style={{ fontSize:12, fontWeight:700, color:amber, marginBottom:4 }}>📦 최종 물량: {schedule.final_waste}</div>}
-                        {schedule.driver_note && (
-                          <>
-                            <div style={{ fontSize:11, fontWeight:700, color:amber, marginBottom:4 }}>📋 특이사항</div>
-                            <div style={{ fontSize:13, color:textC, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{schedule.driver_note}</div>
-                          </>
-                        )}
+                        <div style={{ fontSize:11, fontWeight:700, color:amber, marginBottom:4 }}>📋 특이사항</div>
+                        <div style={{ fontSize:13, color:textC, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{schedule.driver_note}</div>
                       </div>
                     )}
                     {displayPhotos.length > 0 && (
