@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.7</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.0</div>
       </div>
     </div>
   )
@@ -347,6 +347,46 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   const [showModal, setModal]     = useState(false)
   const [showDriverMgr, setDriverMgr] = useState(false)
   const [showAdminSettings, setAdminSettings] = useState(false)
+
+  // 드래그앤드롭
+  const dragId = useRef(null)
+  const dragOverId = useRef(null)
+
+  const handleDragStart = (id) => { dragId.current = id }
+  const handleDragOver  = (e, id) => { e.preventDefault(); dragOverId.current = id }
+  const handleDrop      = (e) => {
+    e.preventDefault()
+    const from = dragId.current
+    const to   = dragOverId.current
+    if (!from || !to || from === to) return
+    // 드래그된 항목의 order를 드롭 위치 항목의 order로 교환
+    const fromS = sorted.find(s=>s.id===from)
+    const toS   = sorted.find(s=>s.id===to)
+    if (!fromS || !toS) return
+    const fromOrder = fromS.order ?? sorted.indexOf(fromS)
+    const toOrder   = toS.order   ?? sorted.indexOf(toS)
+    onUpdate(from, { order: toOrder })
+    onUpdate(to,   { order: fromOrder })
+    dragId.current = null
+    dragOverId.current = null
+  }
+
+  // 일정 복사
+  const copySchedule = (s) => {
+    const newS = {
+      ...s,
+      id: undefined,
+      status:'대기',
+      depart_time:null, start_time:null, end_time:null,
+      eta:null, sms_sent:false,
+      photos:[], work_photos:[],
+      driver_note:'',
+      est_waste:'', est_duration:'', final_waste:'',
+      order: sorted.length,
+    }
+    delete newS.id
+    onAddMany([newS])
+  }
   const [filterDriver, setFD]     = useState('all')
   const [filterDate, setFDate]    = useState(today)
   const [editingId, setEditingId] = useState(null)
@@ -565,14 +605,14 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                       </button>
                     </th>
                   )}
-                  {['기사','상태','현장담당자','날짜·시간','주소','폐기물량','시작','완료'].map(h=>(
+                  {['기사','상태','현장담당자','날짜·시간','주소','폐기물량','시작','완료',''].map(h=>(
                     <th key={h} style={{ padding:'10px 12px', textAlign:'left', fontWeight:600, color:muted, fontSize:12, whiteSpace:'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {sorted.length===0 && (
-                  <tr><td colSpan={8} style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</td></tr>
+                  <tr><td colSpan={9} style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</td></tr>
                 )}
                 {sorted.map(s => {
                   const showDiv = s.driver_id !== lastDriverId
@@ -589,7 +629,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                       {/* 기사 그룹 헤더 */}
                       {showDiv && (
                         <tr>
-                          <td colSpan={(deleteMode||assignMode) ? 9 : 8} style={{
+                          <td colSpan={(deleteMode||assignMode) ? 10 : 9} style={{
                             padding:'5px 14px', fontSize:11, fontWeight:700, letterSpacing:.4,
                             background: chip ? chip.bg : '#fef2f2',
                             color: chip ? chip.color : red,
@@ -604,6 +644,10 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                         </tr>
                       )}
                       <tr
+                        draggable={!deleteMode && !assignMode && !isEdit}
+                        onDragStart={()=>handleDragStart(s.id)}
+                        onDragOver={e=>handleDragOver(e, s.id)}
+                        onDrop={handleDrop}
                         onClick={()=>{
                           if (deleteMode) { toggleCheck(s.id); return }
                           if (assignMode) { toggleAssignCheck(s.id); return }
@@ -612,10 +656,10 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                         }}
                         style={{
                           borderBottom:`1px solid ${border}`,
-                          cursor: 'pointer',
+                          cursor: (!deleteMode&&!assignMode&&!isEdit) ? 'grab' : 'pointer',
                           background: isDeleteChecked ? '#fef2f2' : isAssignChecked ? '#f0fdf4' : '#fff',
                           borderLeft: deleteMode ? `4px solid ${isDeleteChecked ? red : '#e2e8f0'}` : assignMode ? `4px solid ${isAssignChecked ? '#059669' : '#e2e8f0'}` : 'none',
-                          transition: 'background .1s, border-left .1s',
+                          transition: 'background .1s',
                         }}
                         onMouseEnter={e=>{ if(!isEdit) e.currentTarget.style.background = isDeleteChecked?'#fee2e2':isAssignChecked?'#dcfce7':'#f8fafc' }}
                         onMouseLeave={e=>{ e.currentTarget.style.background = isDeleteChecked?'#fef2f2':isAssignChecked?'#f0fdf4':'#fff' }}
@@ -666,6 +710,13 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                         <td style={{ padding:'8px 12px', color:muted, whiteSpace:'nowrap' }}>{s.waste}</td>
                         <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.start_time?green:'#ccc' }}>{s.start_time||'-'}</td>
                         <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.end_time?blue:'#ccc' }}>{s.end_time||'-'}</td>
+                        <td style={{ padding:'4px 8px', whiteSpace:'nowrap' }} onClick={e=>e.stopPropagation()}>
+                          <button onClick={()=>copySchedule(s)}
+                            title="일정 복사"
+                            style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                            ⧉ 복사
+                          </button>
+                        </td>
                       </tr>
                     </Fragment>
                   )
