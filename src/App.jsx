@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.0.0</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.0.1</div>
       </div>
     </div>
   )
@@ -750,7 +750,7 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
 
   const submitAdd = () => {
     if (!form.loginId||!form.name||!form.phone||!form.pw) return alert('아이디·이름·연락처·비밀번호를 모두 입력하세요')
-    if (!/^[a-z0-9_]+$/.test(form.loginId)) { setIdErr('영문 소문자·숫자·_만 사용 가능합니다'); return }
+    if (!/^[a-z0-9_\uAC00-\uD7A3\u3130-\u318F]+$/.test(form.loginId)) { setIdErr('한글·영문·숫자·_만 사용 가능합니다 (공백 불가)'); return }
     if (USERS.some(u=>u.id===form.loginId)) { setIdErr('이미 사용 중인 아이디입니다'); return }
     onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw })
     setForm({ loginId:'', name:'', phone:'', pw:'' }); setAdding(false)
@@ -838,9 +838,9 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
               <div style={{ fontSize:13, fontWeight:700, color:blue, marginBottom:14 }}>+ 새 기사 등록</div>
               {/* 아이디 */}
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:11, color:muted, marginBottom:4 }}>로그인 아이디 * <span style={{ color:'#94a3b8' }}>(영문 소문자·숫자·_ 가능)</span></div>
-                <input value={form.loginId} onChange={e=>setF('loginId',e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,''))}
-                  placeholder="예: kim01" style={{ ...iStyle, fontFamily:'monospace', borderColor: idErr?red:undefined }}/>
+                <div style={{ fontSize:11, color:muted, marginBottom:4 }}>로그인 아이디 * <span style={{ color:'#94a3b8' }}>(한글·영문·숫자·_ 가능, 공백 불가)</span></div>
+                <input value={form.loginId} onChange={e=>setF('loginId', e.target.value.replace(/\s/g,''))}
+                  placeholder="예: 김기사 또는 kim01" style={{ ...iStyle, fontFamily:'monospace', borderColor: idErr?red:undefined }}/>
                 {idErr && <div style={{ fontSize:11, color:red, marginTop:4 }}>⚠ {idErr}</div>}
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
