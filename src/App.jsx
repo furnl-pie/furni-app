@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.1</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.2</div>
       </div>
     </div>
   )
@@ -629,25 +629,25 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                             </div>
                           </td>
                         )}
-                        <td style={{ padding:'8px 10px', minWidth:130 }} onClick={e=>{ if(!deleteMode) e.stopPropagation() }}>
+                        <td style={{ padding:'8px 8px', minWidth:80, width:90 }} onClick={e=>{ if(!deleteMode) e.stopPropagation() }}>
                           {isEdit ? (
                             <select autoFocus
                               defaultValue={s.driver_id||''}
                               onChange={e=>{ onUpdate(s.id,{driver_id:e.target.value||null}); setEditingId(null) }}
                               onBlur={()=>setEditingId(null)}
-                              style={{ fontSize:12, padding:'5px 8px', border:`1.5px solid ${blue}`, borderRadius:6, outline:'none', minWidth:110, cursor:'pointer' }}
+                              style={{ fontSize:12, padding:'4px 6px', border:`1.5px solid ${blue}`, borderRadius:6, outline:'none', minWidth:90, cursor:'pointer' }}
                             >
                               <option value="">— 미배치 —</option>
                               {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
                           ) : (
-                            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:2 }}>
                               {s.driver_id
-                                ? <span style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 9px', fontSize:12, fontWeight:600 }}>{userName(s.driver_id)}</span>
-                                : <span style={{ background:'#fef2f2', color:red, borderRadius:20, padding:'2px 9px', fontSize:12, fontWeight:600, border:'1px dashed #fca5a5' }}>미배치</span>
+                                ? <span style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 7px', fontSize:12, fontWeight:600, whiteSpace:'nowrap' }}>{userName(s.driver_id)}</span>
+                                : <span style={{ background:'#fef2f2', color:red, borderRadius:20, padding:'2px 7px', fontSize:12, fontWeight:600, border:'1px dashed #fca5a5', whiteSpace:'nowrap' }}>미배치</span>
                               }
                               <button onClick={e=>{ e.stopPropagation(); setEditingId(s.id) }} title="기사 변경"
-                                style={{ background:'none', border:'none', cursor:'pointer', fontSize:11, color:muted, padding:'2px 3px', borderRadius:3, lineHeight:1 }}>✏️</button>
+                                style={{ background:'none', border:'none', cursor:'pointer', fontSize:10, color:muted, padding:'1px 2px', borderRadius:3, lineHeight:1, flexShrink:0 }}>✏️</button>
                             </div>
                           )}
                         </td>
