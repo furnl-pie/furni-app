@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.2</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.3</div>
       </div>
     </div>
   )
@@ -908,7 +908,13 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const [showBilling, setShowBilling] = useState(false)
   const [billingForm, setBillingForm] = useState({ workers:'1', amount:'', unit:'', total:'' })
   const [billCopied, setBillCopied]   = useState(false)
-  const setBF = (k,v) => setBillingForm(p=>({...p,[k]:v}))
+  const setBF = (k,v) => setBillingForm(p => {
+    const next = {...p, [k]:v}
+    const a = parseFloat(next.amount) || 0
+    const u = parseFloat(next.unit)   || 0
+    next.total = (a + u) > 0 ? String(a + u) : ''
+    return next
+  })
 
   // ── 일정 정보 편집 상태 ──
   const [editInfo, setEditInfo] = useState(false)
@@ -1373,10 +1379,13 @@ ${billingForm.total}만원 (부가세 포함)
 
                   {/* 합계 */}
                   <div>
-                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>합계 (부가세 포함)</div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>합계 (부가세 포함)
+                      <span style={{ fontWeight:400, color:'#94a3b8', marginLeft:6 }}>자동 계산됨</span>
+                    </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <input type="number" value={billingForm.total} onChange={e=>setBF('total',e.target.value)}
-                        placeholder="최종 금액" style={{ ...iStyle, fontSize:17, fontWeight:700, textAlign:'right', flex:1, borderColor: billingForm.total ? navy : undefined }}/>
+                      <input type="number" value={billingForm.total}
+                        onChange={e=>setBillingForm(p=>({...p, total:e.target.value}))}
+                        placeholder="자동 합산" style={{ ...iStyle, fontSize:17, fontWeight:700, textAlign:'right', flex:1, borderColor: billingForm.total ? navy : undefined }}/>
                       <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
                   </div>
