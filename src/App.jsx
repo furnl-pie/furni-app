@@ -40,7 +40,9 @@ const STATUS_CFG = {
 
 const iStyle = {
   width:'100%', padding:'9px 12px', border:`1px solid ${border}`,
-  borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', background:'#f8fafc',
+  borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box',
+  background:'#f8fafc', color:'#1e293b', WebkitTextFillColor:'#1e293b',
+  colorScheme:'light', appearance:'none', WebkitAppearance:'none',
 }
 
 // ── 공용 컴포넌트 ────────────────────────────────────────────────
@@ -163,15 +165,59 @@ function Lightbox({ photos, index, onClose }) {
 // 로그인 화면
 // ══════════════════════════════════════════════════════════════
 function LoginPage({ onLogin, users }) {
-  const [id, setId] = useState('')
-  const [pw, setPw] = useState('')
-  const [err, setErr] = useState('')
+  const [id,        setId]        = useState(() => localStorage.getItem('saved_id') || '')
+  const [pw,        setPw]        = useState(() => localStorage.getItem('saved_pw') || '')
+  const [saveId,    setSaveId]    = useState(() => localStorage.getItem('save_id') === '1')
+  const [savePw,    setSavePw]    = useState(() => localStorage.getItem('save_pw') === '1')
+  const [autoLogin, setAutoLogin] = useState(() => localStorage.getItem('auto_login') === '1')
+  const [err,       setErr]       = useState('')
+
+  // 자동로그인 처리
+  useEffect(() => {
+    if (autoLogin && users.length > 0) {
+      const savedId = localStorage.getItem('saved_id') || ''
+      const savedPw = localStorage.getItem('saved_pw') || ''
+      if (savedId && savedPw) {
+        const u = users.find(u => u.id === savedId && u.pw === savedPw)
+        if (u) onLogin(u)
+      }
+    }
+  }, [users])
 
   const go = () => {
     const u = users.find(u => u.id === id && u.pw === pw)
     if (!u) return setErr('아이디 또는 비밀번호가 올바르지 않습니다')
+    // 저장 처리
+    if (saveId)    { localStorage.setItem('saved_id', id); localStorage.setItem('save_id','1') }
+    else           { localStorage.removeItem('saved_id');   localStorage.setItem('save_id','0') }
+    if (savePw)    { localStorage.setItem('saved_pw', pw); localStorage.setItem('save_pw','1') }
+    else           { localStorage.removeItem('saved_pw');   localStorage.setItem('save_pw','0') }
+    if (autoLogin) { localStorage.setItem('auto_login','1') }
+    else           { localStorage.setItem('auto_login','0') }
     onLogin(u)
   }
+
+  const toggleSaveId = () => {
+    const v = !saveId; setSaveId(v)
+    if (!v) { setSavePw(false); setAutoLogin(false) }
+  }
+  const toggleSavePw = () => {
+    const v = !savePw; setSavePw(v)
+    if (!v) setAutoLogin(false)
+    if (v && !saveId) setSaveId(true)
+  }
+  const toggleAutoLogin = () => {
+    const v = !autoLogin; setAutoLogin(v)
+    if (v) { setSaveId(true); setSavePw(true) }
+  }
+
+  const chkStyle = (on) => ({
+    width:18, height:18, borderRadius:4,
+    background: on ? navy : '#fff',
+    border: `2px solid ${on ? navy : '#cbd5e1'}`,
+    display:'inline-flex', alignItems:'center', justifyContent:'center',
+    cursor:'pointer', flexShrink:0, transition:'all .15s',
+  })
 
   return (
     <div style={{ minHeight:'100vh', background:navy, display:'flex', alignItems:'center', justifyContent:'center', padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
@@ -182,21 +228,35 @@ function LoginPage({ onLogin, users }) {
           <div style={{ fontSize:13, color:muted, marginTop:4 }}>지입기사 일정 관리</div>
         </div>
         <Field label="아이디">
-          <input value={id} onChange={e=>setId(e.target.value)} placeholder="아이디" style={iStyle}/>
+          <input value={id} onChange={e=>{ setId(e.target.value); setErr('') }}
+            onKeyDown={e=>e.key==='Enter'&&go()} placeholder="아이디"
+            style={{ ...iStyle, color:'#1e293b', WebkitTextFillColor:'#1e293b' }}/>
         </Field>
         <Field label="비밀번호">
-          <input type="password" value={pw} onChange={e=>setPw(e.target.value)}
-            onKeyDown={e=>e.key==='Enter'&&go()} placeholder="비밀번호" style={iStyle}/>
+          <input type="password" value={pw} onChange={e=>{ setPw(e.target.value); setErr('') }}
+            onKeyDown={e=>e.key==='Enter'&&go()} placeholder="비밀번호"
+            style={{ ...iStyle, color:'#1e293b', WebkitTextFillColor:'#1e293b' }}/>
         </Field>
+
+        {/* 저장 옵션 */}
+        <div style={{ display:'flex', gap:16, marginBottom:16, flexWrap:'wrap' }}>
+          {[
+            [saveId,    toggleSaveId,    '아이디 저장'],
+            [savePw,    toggleSavePw,    '비밀번호 저장'],
+            [autoLogin, toggleAutoLogin, '자동 로그인'],
+          ].map(([on, fn, label]) => (
+            <div key={label} onClick={fn}
+              style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', userSelect:'none' }}>
+              <div style={chkStyle(on)}>
+                {on && <span style={{ color:'#fff', fontSize:11, fontWeight:700, lineHeight:1 }}>✓</span>}
+              </div>
+              <span style={{ fontSize:13, color: on ? textC : muted, fontWeight: on ? 600 : 400 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ marginTop:20, padding:14, background:'#f8fafc', borderRadius:10, fontSize:12, color:muted, lineHeight:1.8 }}>
-          <div style={{ fontWeight:600, marginBottom:4, color:textC }}>테스트 계정</div>
-          <div>관리자: <b>a1</b> / <b>admin</b></div>
-          <div>김민준 기사: <b>d1</b> / <b>1111</b></div>
-          <div>이서준 기사: <b>d2</b> / <b>2222</b></div>
-          <div>박도현 기사: <b>d3</b> / <b>3333</b></div>
-        </div>
       </div>
     </div>
   )
@@ -2832,6 +2892,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 // ══════════════════════════════════════════════════════════════
 export default function App() {
   const [user, setUser] = useState(null)
+  const [showLogoutConfirm, setLogoutConfirm] = useState(false)
   const {
     users, schedules, loading, error,
     addSchedules, updateSchedule, deleteSchedules,
@@ -2840,6 +2901,24 @@ export default function App() {
 
   // 헬퍼 함수들이 최신 users를 참조하도록 동기화
   USERS = users
+
+  // 안드로이드 뒤로가기 → 로그인 상태면 로그아웃 팝업
+  useEffect(() => {
+    if (!user) return
+    window.history.pushState({ root: true }, '')
+    const handler = (e) => {
+      e.preventDefault()
+      setLogoutConfirm(true)
+    }
+    window.addEventListener('popstate', handler)
+    return () => window.removeEventListener('popstate', handler)
+  }, [user])
+
+  const doLogout = () => {
+    localStorage.setItem('auto_login', '0')
+    setUser(null)
+    setLogoutConfirm(false)
+  }
 
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
@@ -2863,22 +2942,62 @@ export default function App() {
 
   if (!user) return <LoginPage onLogin={u=>setUser(u)} users={users}/>
 
-  if (user.role==='admin')
-    return <AdminApp
-      user={user} users={users} schedules={schedules}
-      onAddMany={addSchedules}
-      onUpdate={(id, patch) => updateSchedule(id, patch)}
-      onDelete={deleteSchedules}
-      onAddDriver={addDriver}
-      onUpdateDriver={updateDriver}
-      onDeleteDriver={deleteDriver}
-      onLogout={()=>setUser(null)}
-    />
+  const logoutHandler = () => {
+    localStorage.setItem('auto_login', '0')
+    setUser(null)
+  }
 
-  return <DriverApp
-    user={user} schedules={schedules}
-    onUpdate={(id, patch) => updateSchedule(id, patch)}
-    onUpdateDriver={updateDriver}
-    onLogout={()=>setUser(null)}
-  />
+  return (
+    <>
+      {/* 안드로이드 입력 글씨 색상 강제 고정 */}
+      <style>{`
+        input, select, textarea {
+          color: #1e293b !important;
+          -webkit-text-fill-color: #1e293b !important;
+          color-scheme: light !important;
+        }
+        input::placeholder { color: #94a3b8 !important; -webkit-text-fill-color: #94a3b8 !important; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
+      `}</style>
+      {user.role==='admin'
+        ? <AdminApp
+            user={user} users={users} schedules={schedules}
+            onAddMany={addSchedules}
+            onUpdate={(id, patch) => updateSchedule(id, patch)}
+            onDelete={deleteSchedules}
+            onAddDriver={addDriver}
+            onUpdateDriver={updateDriver}
+            onDeleteDriver={deleteDriver}
+            onLogout={logoutHandler}
+          />
+        : <DriverApp
+            user={user} schedules={schedules}
+            onUpdate={(id, patch) => updateSchedule(id, patch)}
+            onUpdateDriver={updateDriver}
+            onLogout={logoutHandler}
+          />
+      }
+
+      {/* 안드로이드 뒤로가기 로그아웃 팝업 */}
+      {showLogoutConfirm && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:300, padding:28, textAlign:'center' }}>
+            <div style={{ fontSize:32, marginBottom:12 }}>👋</div>
+            <div style={{ fontSize:16, fontWeight:700, color:textC, marginBottom:8 }}>로그아웃 할까요?</div>
+            <div style={{ fontSize:13, color:muted, marginBottom:24 }}>{user.name}님으로 로그인 중입니다</div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={()=>{ setLogoutConfirm(false); window.history.pushState({ root:true }, '') }}
+                style={{ flex:1, padding:'11px 0', borderRadius:8, border:`1px solid ${border}`, background:'#f8fafc', color:muted, fontSize:14, fontWeight:600, cursor:'pointer' }}>
+                취소
+              </button>
+              <button onClick={doLogout}
+                style={{ flex:2, padding:'11px 0', borderRadius:8, border:'none', background:navy, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>
+                로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
