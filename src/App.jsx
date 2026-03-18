@@ -6,21 +6,17 @@ const INIT_USERS = [
 ]
 let USERS = INIT_USERS
 
-// 기사 등록 순서 프리셋 (Firebase 기존 기사 정렬용)
+// 기사 등록 순서 프리셋
 const DRIVER_ORDER_PRESET = [
   '김일석','양승민','박종태','이동수','문정완','강희순','승호진','정효진',
   '이상구','김남선','석유현','최권호','한태섭','최기언','민병근','이선우','박성민'
 ]
-// 프리셋 기반 순서값 계산 (▲▼로 저장한 driverOrder는 0~9999 범위, Date.now() 등 큰 값은 무시)
+// 프리셋에 있는 기사 → 무조건 프리셋 순서
+// 프리셋에 없는 신규 기사 → driverOrder 또는 맨 뒤
 function getDriverSortKey(d) {
   const presetIdx = DRIVER_ORDER_PRESET.indexOf(d.name)
-  // driverOrder가 0~9999 범위면 수동 조정값으로 사용
-  if (d.driverOrder != null && d.driverOrder >= 0 && d.driverOrder < 10000) {
-    return d.driverOrder
-  }
-  // 프리셋에 있으면 프리셋 순서 (100 단위 간격)
-  if (presetIdx >= 0) return presetIdx * 100
-  // 둘 다 없으면 맨 뒤
+  if (presetIdx >= 0) return presetIdx  // 프리셋 우선 (0~16)
+  if (d.driverOrder != null) return 100 + d.driverOrder  // 신규기사는 프리셋 뒤
   return 99999
 }
 
@@ -350,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.0</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.1</div>
       </div>
     </div>
   )
