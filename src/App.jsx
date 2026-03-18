@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.1</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.2</div>
       </div>
     </div>
   )
@@ -907,6 +907,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   // ── 청구 모달 ──
   const [showBilling, setShowBilling] = useState(false)
   const [billingForm, setBillingForm] = useState({ workers:'1', amount:'', unit:'', total:'' })
+  const [billCopied, setBillCopied]   = useState(false)
   const setBF = (k,v) => setBillingForm(p=>({...p,[k]:v}))
 
   // ── 일정 정보 편집 상태 ──
@@ -1301,11 +1302,10 @@ ${billingForm.total}만원 (부가세 포함)
 *청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^
 기업 351-112230-01-015 주식회사 퍼니환경개발`
 
-        const [copied, setCopied] = useState(false)
         const copy = () => {
           navigator.clipboard.writeText(buildText()).then(() => {
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
+            setBillCopied(true)
+            setTimeout(() => setBillCopied(false), 2000)
           })
         }
 
@@ -1394,8 +1394,8 @@ ${billingForm.total}만원 (부가세 포함)
 
                 <div style={{ display:'flex', gap:10 }}>
                   <Btn onClick={()=>setShowBilling(false)} outline color={muted} style={{ flex:1, fontSize:14 }}>닫기</Btn>
-                  <Btn onClick={copy} color={copied?green:navy} style={{ flex:2, fontSize:15 }}>
-                    {copied ? '✓ 복사됨!' : '📋 클립보드 복사'}
+                  <Btn onClick={copy} color={billCopied?green:navy} style={{ flex:2, fontSize:15 }}>
+                    {billCopied ? '✓ 복사됨!' : '📋 클립보드 복사'}
                   </Btn>
                 </div>
               </div>
