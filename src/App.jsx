@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.2</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.4</div>
       </div>
     </div>
   )
@@ -1789,7 +1789,12 @@ function parseKakaoChat(text) {
 }
 
 // ── 일괄 등록 모달 (2단계: 일정 입력 → 기사 배치) ─────────────────
-const newRow = () => ({ _id: Math.random().toString(36).slice(2), date:today, time:'09:00', address:'', waste:'', cname:'', cphone:'', memo:'', driver_hint:'', driver_note:'' })
+const newRow = () => {
+  const now = new Date()
+  const hh = String(now.getHours()).padStart(2,'0')
+  const mm = String(now.getMinutes()).padStart(2,'0')
+  return { _id: Math.random().toString(36).slice(2), date:today, time:`${hh}:${mm}`, address:'', waste:'', cname:'', cphone:'', memo:'', driver_hint:'', driver_note:'' }
+}
 
 function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   const [step, setStep]       = useState(1)
@@ -1880,7 +1885,7 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
       .map(row => ({
         _id:         Math.random().toString(36).slice(2),
         date:        parseDate(get(row,'date')),
-        time:        parseKoreanTime(get(row,'time')) || '09:00',
+        time:        parseKoreanTime(get(row,'time')) || get(row,'time') || '',
         address:     get(row,'address'),
         waste:       get(row,'waste'),
         cname:       get(row,'cname'),
@@ -2460,6 +2465,8 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const [showWorkModal, setWorkModal] = useState(false)
   const [estWaste,    setEstWaste]    = useState('')
   const [estDuration, setEstDuration] = useState('')
+  const [sitePhotos,  setSitePhotos]  = useState([])
+  const sitePhotoRef = useRef()
 
   const [showResendModal, setResendModal] = useState(false)
 
@@ -2491,12 +2498,29 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const openWorkModal = () => {
     setEstWaste('')
     setEstDuration('')
+    setSitePhotos([])
     setWorkModal(true)
   }
 
   const confirmWork = () => {
-    onUpdate({ status:'진행중', start_time: nowTime(), est_waste: estWaste, est_duration: estDuration })
+    const existingPhotos = schedule.schedule_photos || []
+    onUpdate({
+      status:'진행중',
+      start_time: nowTime(),
+      est_waste: estWaste,
+      est_duration: estDuration,
+      ...(sitePhotos.length > 0 ? { schedule_photos: [...existingPhotos, ...sitePhotos] } : {})
+    })
     setWorkModal(false)
+  }
+
+  const addSitePhotos = async e => {
+    const files = Array.from(e.target.files)
+    for (const f of files) {
+      const resized = await resizeImage(f)
+      setSitePhotos(prev => [...prev, resized])
+    }
+    e.target.value = ''
   }
 
   const openResendModal = () => {
@@ -2980,10 +3004,38 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                 placeholder="직접 입력 (예: 4시간 30분)" style={{ ...iStyle, fontSize:15 }}/>
             </div>
 
+            <div style={{ marginBottom:22 }}>
+              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8 }}>현장 사진 (선택)</div>
+              {sitePhotos.length > 0 ? (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
+                  {sitePhotos.map((src,i)=>(
+                    <div key={i} style={{ position:'relative', aspectRatio:'1' }}>
+                      <img src={src} alt={`현장${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:8, border:`1px solid ${border}` }}/>
+                      <button onClick={()=>setSitePhotos(prev=>prev.filter((_,j)=>j!==i))}
+                        style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.65)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
+                    </div>
+                  ))}
+                  <div onClick={()=>sitePhotoRef.current?.click()}
+                    style={{ aspectRatio:'1', border:`2px dashed ${border}`, borderRadius:8, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', cursor:'pointer', background:'#f8fafc' }}>
+                    <div style={{ fontSize:20 }}>+</div>
+                    <div style={{ fontSize:10, color:muted }}>추가</div>
+                  </div>
+                </div>
+              ) : (
+                <div onClick={()=>sitePhotoRef.current?.click()}
+                  style={{ border:`2px dashed #93c5fd`, borderRadius:10, padding:16, textAlign:'center', cursor:'pointer', background:'#f0f9ff' }}>
+                  <div style={{ fontSize:24, marginBottom:4 }}>📷</div>
+                  <div style={{ fontSize:13, color:'#1d4ed8', fontWeight:600 }}>현장 사진 촬영 / 추가</div>
+                  <div style={{ fontSize:11, color:muted, marginTop:2 }}>탭하여 촬영 또는 갤러리에서 선택</div>
+                </div>
+              )}
+            </div>
+
             <div style={{ display:'flex', gap:10 }}>
               <Btn onClick={()=>setWorkModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
               <Btn onClick={confirmWork} color={amber} style={{ flex:2, fontSize:16 }}>작업 시작</Btn>
             </div>
+            <input ref={sitePhotoRef} type="file" accept="image/*" multiple onChange={addSitePhotos} style={{ display:'none' }}/>
           </div>
         </div>
       )}
