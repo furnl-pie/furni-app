@@ -1,4 +1,5 @@
 import { useState, useRef, Fragment } from "react"
+import { useAppData } from './hooks/useAppData'
 
 // ── 초기 계정 (런타임에 state로 관리됨) ──────────────────────────
 const INIT_USERS = [
@@ -2653,44 +2654,53 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 // 앱 루트
 // ══════════════════════════════════════════════════════════════
 export default function App() {
-  const [user, setUser]           = useState(null)
-  const [users, setUsers]         = useState(INIT_USERS)
-  const [schedules, setSchedules] = useState(INIT_SCHEDULES)
+  const [user, setUser] = useState(null)
+  const {
+    users, schedules, loading, error,
+    addSchedules, updateSchedule, deleteSchedules,
+    addDriver, updateDriver, deleteDriver,
+  } = useAppData()
 
-  // 헬퍼 함수들이 최신 users를 참조하도록 동기화
   USERS = users
 
-  const updateSchedule = (id, patch) =>
-    setSchedules(prev => prev.map(s => s.id===id ? {...s,...patch} : s))
+  if (loading) return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:36, marginBottom:16 }}>🚛</div>
+        <div style={{ fontSize:16, fontWeight:600, color:'#1b3a5c', marginBottom:8 }}>데이터 불러오는 중...</div>
+        <div style={{ fontSize:13, color:'#64748b' }}>Firebase에 연결 중입니다</div>
+      </div>
+    </div>
+  )
 
-  const addSchedules = list =>
-    setSchedules(prev => [
-      ...prev,
-      ...list.map(s => ({ id:'s'+Date.now()+Math.random().toString(36).slice(2), photos:[], schedule_photos:[], driver_note:'', ...s }))
-    ])
-
-  const deleteSchedules = ids =>
-    setSchedules(prev => prev.filter(s => !ids.includes(s.id)))
-
-  const addDriver = d =>
-    setUsers(prev => [...prev, { role:'driver', ...d }])
-
-  const updateDriver = (id, patch) =>
-    setUsers(prev => prev.map(u => u.id===id ? {...u,...patch} : u))
-
-  const deleteDriver = id => {
-    setUsers(prev => prev.filter(u => u.id!==id))
-    // 해당 기사 배치된 일정은 미배치로
-    setSchedules(prev => prev.map(s => s.driver_id===id ? {...s, driver_id:null} : s))
-  }
+  if (error) return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#fef2f2', fontFamily:"'Noto Sans KR', sans-serif" }}>
+      <div style={{ textAlign:'center', padding:24 }}>
+        <div style={{ fontSize:36, marginBottom:12 }}>⚠️</div>
+        <div style={{ fontSize:15, fontWeight:600, color:'#dc2626', marginBottom:8 }}>연결 오류</div>
+        <div style={{ fontSize:13, color:'#64748b' }}>{error}</div>
+      </div>
+    </div>
+  )
 
   if (!user) return <LoginPage onLogin={u=>setUser(u)} users={users}/>
 
   if (user.role==='admin')
-    return <AdminApp user={user} users={users} schedules={schedules}
-      onAddMany={addSchedules} onUpdate={updateSchedule} onDelete={deleteSchedules}
-      onAddDriver={addDriver} onUpdateDriver={updateDriver} onDeleteDriver={deleteDriver}
-      onLogout={()=>setUser(null)}/>
+    return <AdminApp
+      user={user} users={users} schedules={schedules}
+      onAddMany={addSchedules}
+      onUpdate={(id, patch) => updateSchedule(id, patch)}
+      onDelete={deleteSchedules}
+      onAddDriver={addDriver}
+      onUpdateDriver={updateDriver}
+      onDeleteDriver={deleteDriver}
+      onLogout={()=>setUser(null)}
+    />
 
-  return <DriverApp user={user} schedules={schedules} onUpdate={updateSchedule} onUpdateDriver={updateDriver} onLogout={()=>setUser(null)}/>
+  return <DriverApp
+    user={user} schedules={schedules}
+    onUpdate={(id, patch) => updateSchedule(id, patch)}
+    onUpdateDriver={updateDriver}
+    onLogout={()=>setUser(null)}
+  />
 }
