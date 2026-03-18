@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.0.1</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.1.0</div>
       </div>
     </div>
   )
@@ -904,6 +904,11 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const spFileRef = useRef()
   const dropRef   = useRef()
 
+  // ── 청구 모달 ──
+  const [showBilling, setShowBilling] = useState(false)
+  const [billingForm, setBillingForm] = useState({ workers:'1', amount:'', unit:'', total:'' })
+  const setBF = (k,v) => setBillingForm(p=>({...p,[k]:v}))
+
   // ── 일정 정보 편집 상태 ──
   const [editInfo, setEditInfo] = useState(false)
   const [infoForm, setInfoForm] = useState({
@@ -1206,7 +1211,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
             <Row label="최종 물량" value={schedule.final_waste} valueColor={amber}/>
           )}
 
-          {/* 완료 시: 작업시간 통합 표시 */}
+          {/* 완료 시: 작업시간 통합 표시 + 청구 버튼 */}
           {schedule.start_time && schedule.end_time && (() => {
             const toMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m }
             const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
@@ -1214,14 +1219,22 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
             const h = Math.floor(diff/60), m = diff%60
             const total = h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`
             return (
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0 4px', fontSize:13 }}>
-                <span style={{ color:muted }}>작업 시간</span>
-                <span style={{ fontWeight:600, color:blue }}>
-                  {schedule.start_time} ~ {schedule.end_time}
-                  <span style={{ marginLeft:8, background:'#dbeafe', color:blue, fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:700 }}>
-                    총 {total}
+              <div style={{ padding:'8px 0 4px' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13 }}>
+                  <span style={{ color:muted }}>작업 시간</span>
+                  <span style={{ fontWeight:600, color:blue }}>
+                    {schedule.start_time} ~ {schedule.end_time}
+                    <span style={{ marginLeft:8, background:'#dbeafe', color:blue, fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:700 }}>
+                      총 {total}
+                    </span>
                   </span>
-                </span>
+                </div>
+                <div style={{ display:'flex', justifyContent:'flex-end', marginTop:10 }}>
+                  <button onClick={()=>setShowBilling(true)}
+                    style={{ background:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+                    💰 청구서 작성
+                  </button>
+                </div>
               </div>
             )
           })()}
@@ -1258,6 +1271,126 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           </Card>
         )}
       </div>
+
+      {/* ── 청구서 모달 ── */}
+      {showBilling && (() => {
+        const toMin = t => { if(!t) return 0; const [h,m] = t.split(':').map(Number); return h*60+m }
+        const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
+        const h = Math.floor(diff/60), m = diff%60
+        const workTime = diff > 0 ? (h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`) : ''
+
+        const buildText = () =>
+`[FN퍼니 작업보고]
+작업날짜: ${schedule.date} ${schedule.time}
+업체명: ${schedule.cname}
+작업인원: ${billingForm.workers}인
+현장주소: ${schedule.address}
+작업시간: ${workTime}
+성상: 혼합
+페기물양: ${schedule.final_waste || schedule.waste || ''}
+특이사항: ${schedule.driver_note || '없음'}
+
+<청구금액>
+ > ${billingForm.amount}만원
+${billingForm.workers}인 > ${billingForm.unit}만원
+${billingForm.total}만원 (부가세 포함)
+*청구내역이나 업무관련 의견 편하게 말씀해주세요
+적극 재검토 하겠습니다^^
+기업 351-112230-01-015 주식회사 퍼니환경개발`
+
+        const copy = () => {
+          navigator.clipboard.writeText(buildText())
+            .then(() => alert('클립보드에 복사되었습니다!'))
+        }
+
+        return (
+          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:3000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
+            <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:440, maxHeight:'90vh', overflowY:'auto' }}>
+              {/* 헤더 */}
+              <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, background:'#fff', zIndex:1 }}>
+                <div style={{ fontSize:16, fontWeight:700, color:navy }}>💰 청구서 작성</div>
+                <button onClick={()=>setShowBilling(false)} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
+              </div>
+
+              <div style={{ padding:'16px 20px' }}>
+                {/* 자동입력 미리보기 */}
+                <div style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, color:muted, lineHeight:1.9, fontFamily:'monospace' }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:navy, marginBottom:6 }}>[FN퍼니 작업보고]</div>
+                  <div>작업날짜: <span style={{ color:textC }}>{schedule.date} {schedule.time}</span></div>
+                  <div>업체명: <span style={{ color:textC }}>{schedule.cname}</span></div>
+                  <div>작업인원: <span style={{ color:textC }}>{billingForm.workers}인</span></div>
+                  <div>현장주소: <span style={{ color:textC }}>{schedule.address}</span></div>
+                  <div>작업시간: <span style={{ color:textC }}>{workTime}</span></div>
+                  <div>성상: <span style={{ color:textC }}>혼합</span></div>
+                  <div>페기물양: <span style={{ color:textC }}>{schedule.final_waste || schedule.waste || ''}</span></div>
+                  <div>특이사항: <span style={{ color:textC }}>{schedule.driver_note || '없음'}</span></div>
+                </div>
+
+                {/* 입력 필드들 */}
+                <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>작업인원</div>
+                    <div style={{ display:'flex', gap:8 }}>
+                      {['1','2','3','4'].map(n=>(
+                        <button key={n} onClick={()=>setBF('workers',n)}
+                          style={{ flex:1, padding:'9px 0', borderRadius:8, border:`1.5px solid ${billingForm.workers===n?navy:border}`, background:billingForm.workers===n?navy:'#f8fafc', color:billingForm.workers===n?'#fff':muted, fontSize:14, fontWeight:700, cursor:'pointer' }}>
+                          {n}인
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <div>
+                      <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>금액 (만원)</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <input type="number" value={billingForm.amount} onChange={e=>setBF('amount',e.target.value)}
+                          placeholder="0" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right' }}/>
+                        <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>{billingForm.workers}인 금액 (만원)</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <input type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
+                          placeholder="0" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right' }}/>
+                        <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:5 }}>합계 (부가세 포함, 만원)</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <input type="number" value={billingForm.total} onChange={e=>setBF('total',e.target.value)}
+                        placeholder="0" style={{ ...iStyle, fontSize:16, fontWeight:700, textAlign:'right', borderColor: billingForm.total ? navy : undefined }}/>
+                      <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 미리보기 청구금액 */}
+                <div style={{ background:'#eff6ff', border:`1px solid #bfdbfe`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, fontFamily:'monospace', lineHeight:2 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:4 }}>&lt;청구금액&gt;</div>
+                  <div style={{ color:textC }}> &gt; {billingForm.amount||'__'}만원</div>
+                  <div style={{ color:textC }}>{billingForm.workers}인 &gt; {billingForm.unit||'__'}만원</div>
+                  <div style={{ color:textC, fontWeight:700 }}>{billingForm.total||'__'}만원 (부가세 포함)</div>
+                  <div style={{ color:muted, fontSize:11, marginTop:4 }}>*청구내역이나 업무관련 의견 편하게 말씀해주세요</div>
+                  <div style={{ color:muted, fontSize:11 }}>적극 재검토 하겠습니다^^</div>
+                  <div style={{ color:navy, fontSize:11, fontWeight:600 }}>기업 351-112230-01-015 주식회사 퍼니환경개발</div>
+                </div>
+
+                <div style={{ display:'flex', gap:10 }}>
+                  <Btn onClick={()=>setShowBilling(false)} outline color={muted} style={{ flex:1, fontSize:14 }}>닫기</Btn>
+                  <Btn onClick={copy} color={navy} style={{ flex:2, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                    📋 클립보드 복사
+                  </Btn>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {lightbox!==null && <Lightbox photos={lbPhotos} index={lightbox} onClose={()=>setLightbox(null)}/>}
     </div>
