@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.4</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.5</div>
       </div>
     </div>
   )
@@ -1678,13 +1678,13 @@ function parseKoreanTime(raw) {
     const [h,m] = s.split(':').map(Number)
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
   }
-  // "오전7시30분", "오후3시", "오전9시", "오후중" 등
+  // "오전중", "오후중", "시간엄수", "미정" 등 → 원본 그대로
   const isAm = s.includes('오전')
   const isPm = s.includes('오후')
   const hm = s.replace(/오전|오후|중/g,'')
   const hMatch = hm.match(/(\d+)시/)
   const mMatch = hm.match(/(\d+)분/)
-  if (!hMatch) return ''
+  if (!hMatch) return s  // 숫자 시간 없으면 원본 반환
   let h = parseInt(hMatch[1])
   const m = mMatch ? parseInt(mMatch[1]) : 0
   if (isPm && h < 12) h += 12
@@ -2579,7 +2579,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
     e.target.value = ''
   }
   const removePhoto = idx => setPhotos(prev => prev.filter((_,i)=>i!==idx))
-  const handleDone = () => { onUpdate({ status:'완료', end_time:nowTime(), photos, driver_note:driverNote, final_waste:finalWaste }); onBack() }
+  const handleDone = () => { onUpdate({ status:'완료', end_time:nowTime(), photos, driver_note:driverNote, final_waste:finalWaste }) }
   const saveEdit   = () => { onUpdate({ photos, driver_note:driverNote, final_waste:finalWaste }); setEditingDone(false) }
 
   const isReady    = schedule.status === '대기'
@@ -2729,6 +2729,21 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
               {schedule.est_waste && (
                 <div style={{ fontSize:14, color:muted, marginTop:4 }}>
                   예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration?` · ${schedule.est_duration}`:''}
+                </div>
+              )}
+              {(isWorking||isDone) && (schedule.schedule_photos||[]).length > 0 && (
+                <div style={{ marginTop:10 }}>
+                  <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
+                    현장 사진 ({schedule.schedule_photos.length}장)
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
+                    {schedule.schedule_photos.map((src,i)=>(
+                      <div key={i} onClick={()=>openLb('schedule_ref',i)}
+                        style={{ aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}`, cursor:'pointer' }}>
+                        <img src={src} alt={`현장${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -2896,21 +2911,55 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                         <div style={{ fontSize:13, color:textC, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{schedule.driver_note}</div>
                       </div>
                     )}
-                    {displayPhotos.length > 0 && (
-                      <div>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                          <span style={{ fontSize:12, color:muted }}>완료 사진 ({displayPhotos.length}장)</span>
-                          <button onClick={()=>downloadAllPhotos(displayPhotos, '완료사진')}
-                            style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                            ⬇ 전체 저장
-                          </button>
+                    {(() => {
+                      const sitePics = schedule.schedule_photos || []
+                      const donePics = displayPhotos
+                      const allPics = [...sitePics, ...donePics]
+                      if (allPics.length === 0) return null
+                      return (
+                        <div>
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                            <span style={{ fontSize:12, color:muted }}>
+                              {sitePics.length > 0 && `현장 ${sitePics.length}장`}
+                              {sitePics.length > 0 && donePics.length > 0 && ' · '}
+                              {donePics.length > 0 && `완료 ${donePics.length}장`}
+                            </span>
+                            {donePics.length > 0 && (
+                              <button onClick={()=>downloadAllPhotos(donePics, '완료사진')}
+                                style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                                ⬇ 완료사진 저장
+                              </button>
+                            )}
+                          </div>
+                          {sitePics.length > 0 && (
+                            <div style={{ marginBottom:6 }}>
+                              <div style={{ fontSize:11, color:muted, marginBottom:4 }}>📍 현장 사진</div>
+                              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
+                                {sitePics.map((src,i)=>(
+                                  <div key={i} onClick={()=>openLb('schedule_ref',i)}
+                                    style={{ aspectRatio:'1', cursor:'pointer', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
+                                    <img src={src} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {donePics.length > 0 && (
+                            <div>
+                              <div style={{ fontSize:11, color:muted, marginBottom:4 }}>✅ 완료 사진</div>
+                              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
+                                {donePics.map((src,i)=>(
+                                  <div key={i} onClick={()=>openLb('complete',i)}
+                                    style={{ aspectRatio:'1', cursor:'pointer', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
+                                    <img src={src} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <SlidePhotoViewer
-                          photos={displayPhotos}
-                          onOpen={i => openLb('complete', i)}
-                        />
-                      </div>
-                    )}
+                      )
+                    })()}
                   </>
                 )}
               </div>
