@@ -1223,29 +1223,41 @@ async function downloadAllPhotos(photos, prefix = '완료사진') {
     const src = photos[i]
     const filename = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
     try {
+      let blob
       if (src.includes('cloudinary.com')) {
-        // Cloudinary: fl_attachment 삽입 → 브라우저가 직접 파일 저장
-        const dlUrl = src.replace('/upload/', `/upload/fl_attachment:${filename.replace(/\.jpg$/,'').replace(/[^a-zA-Z0-9_-]/g,'_')}/`)
-        const a = document.createElement('a')
-        a.href = dlUrl; a.download = filename
-        document.body.appendChild(a); a.click(); document.body.removeChild(a)
+        // Cloudinary: fl_attachment로 다운로드 강제
+        const safePrefix = filename.replace(/\.jpg$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')
+        const dlUrl = src.replace('/upload/', `/upload/fl_attachment:${safePrefix}/`)
+        const res = await fetch(dlUrl)
+        blob = await res.blob()
       } else if (src.startsWith('http')) {
-        const res  = await fetch(src)
-        const blob = await res.blob()
-        const url  = URL.createObjectURL(blob)
-        const a    = document.createElement('a')
-        a.href = url; a.download = filename
-        document.body.appendChild(a); a.click(); document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        const res = await fetch(src)
+        blob = await res.blob()
       } else {
-        const a = document.createElement('a')
-        a.href = src; a.download = filename
-        document.body.appendChild(a); a.click(); document.body.removeChild(a)
+        // base64 → blob 변환
+        const arr = src.split(',')
+        const mime = arr[0].match(/:(.*?);/)[1]
+        const bstr = atob(arr[1])
+        const u8 = new Uint8Array(bstr.length)
+        for (let j = 0; j < bstr.length; j++) u8[j] = bstr.charCodeAt(j)
+        blob = new Blob([u8], { type: mime })
       }
-    } catch {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      // revokeObjectURL은 약간 뒤에 해야 다운로드가 시작됨
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (e) {
+      console.error('다운로드 실패:', filename, e)
       window.open(src, '_blank')
     }
-    await new Promise(r => setTimeout(r, 300))
+    // 브라우저 다운로드 제한 방지: 충분한 딜레이
+    await new Promise(r => setTimeout(r, 800))
   }
 }
 
@@ -2545,25 +2557,25 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36 }}>
             <div style={{ width:36, height:4, background:border, borderRadius:2, margin:'0 auto 18px' }}/>
-            <div style={{ fontSize:17, fontWeight:700, color:navy, marginBottom:4 }}>🚛 출발 보고</div>
-            <div style={{ fontSize:13, color:muted, marginBottom:18 }}>{schedule.address}</div>
+            <div style={{ fontSize:19, fontWeight:700, color:navy, marginBottom:6 }}>🚛 출발 보고</div>
+            <div style={{ fontSize:15, color:muted, marginBottom:18 }}>{schedule.address}</div>
             <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8 }}>도착 예상 시간</div>
+              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8 }}>도착 예상 시간</div>
               <EtaModalInput eta={eta} onChange={v=>{ setEta(v); setSmsPreview(buildSms(v)) }}/>
             </div>
             <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
                 💬 현장 담당자 발송 문자
-                <span style={{ background:'#dcfce7', color:green, fontSize:10, padding:'2px 7px', borderRadius:4, fontWeight:700 }}>자동 발송</span>
+                <span style={{ background:'#dcfce7', color:green, fontSize:12, padding:'2px 8px', borderRadius:4, fontWeight:700 }}>자동 발송</span>
               </div>
               <div style={{ background:'#f0fdf4', border:`1px solid #bbf7d0`, borderRadius:10, padding:'12px 14px' }}>
-                <div style={{ fontSize:12, color:'#166534', lineHeight:1.85, whiteSpace:'pre-wrap', fontFamily:'monospace' }}>{smsPreview}</div>
+                <div style={{ fontSize:13, color:'#166534', lineHeight:1.85, whiteSpace:'pre-wrap', fontFamily:'monospace' }}>{smsPreview}</div>
               </div>
-              <div style={{ fontSize:11, color:muted, marginTop:5 }}>📱 {schedule.cname} ({schedule.cphone})</div>
+              <div style={{ fontSize:13, color:muted, marginTop:6 }}>📱 {schedule.cname} ({schedule.cphone})</div>
             </div>
             <div style={{ display:'flex', gap:10 }}>
-              <Btn onClick={()=>setDepartModal(false)} outline color={muted} style={{ flex:1 }}>취소</Btn>
-              <Btn onClick={confirmDepart} color={blue} style={{ flex:2, fontSize:15 }}>출발 · 문자 발송</Btn>
+              <Btn onClick={()=>setDepartModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
+              <Btn onClick={confirmDepart} color={blue} style={{ flex:2, fontSize:16 }}>출발 · 문자 발송</Btn>
             </div>
           </div>
         </div>
@@ -2574,32 +2586,30 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36, maxHeight:'85vh', overflowY:'auto' }}>
             <div style={{ width:36, height:4, background:border, borderRadius:2, margin:'0 auto 18px' }}/>
-            <div style={{ fontSize:17, fontWeight:700, color:navy, marginBottom:4 }}>▶ 작업 시작</div>
-            <div style={{ fontSize:13, color:muted, marginBottom:20 }}>{schedule.address}</div>
+            <div style={{ fontSize:19, fontWeight:700, color:navy, marginBottom:6 }}>▶ 작업 시작</div>
+            <div style={{ fontSize:15, color:muted, marginBottom:20 }}>{schedule.address}</div>
 
             {/* 예상 물량 선택 */}
             <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:10 }}>예상 물량 (선택)</div>
+              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:10 }}>예상 물량 (선택)</div>
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                {/* 소량 행 */}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
                   {['소량','소량 이상', null].map((v, i) => v === null ? (
                     <div key={i}/>
                   ) : (
                     <button key={v} onClick={()=>setEstWaste(estWaste===v ? '' : v)}
-                      style={{ padding:'9px 0', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', border:`1.5px solid ${estWaste===v?amber:border}`, background:estWaste===v?'#fef3c7':'#f8fafc', color:estWaste===v?amber:muted }}>
+                      style={{ padding:'11px 0', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', border:`1.5px solid ${estWaste===v?amber:border}`, background:estWaste===v?'#fef3c7':'#f8fafc', color:estWaste===v?amber:muted }}>
                       {v}
                     </button>
                   ))}
                 </div>
-                {/* 나머지 행: 정량 | 이하 | 이상 */}
                 {['1/6차','1/3차','1/2차','2/3차','1차'].map(qty => (
                   <div key={qty} style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
                     {[qty, `${qty} 이하`, `${qty} 이상`].map((v, i) => {
                       const active = estWaste === v
                       return (
                         <button key={v} onClick={()=>setEstWaste(active ? '' : v)}
-                          style={{ padding:'9px 0', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', border:`1.5px solid ${active?amber:border}`, background:active?'#fef3c7':'#f8fafc', color:active?amber:muted }}>
+                          style={{ padding:'11px 0', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', border:`1.5px solid ${active?amber:border}`, background:active?'#fef3c7':'#f8fafc', color:active?amber:muted }}>
                           {i===0 ? qty : i===1 ? '이하' : '이상'}
                         </button>
                       )
@@ -2608,7 +2618,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                 ))}
               </div>
               {estWaste && (
-                <div style={{ marginTop:10, fontSize:13, color:amber, fontWeight:600, textAlign:'center', background:'#fffbeb', padding:'8px', borderRadius:8 }}>
+                <div style={{ marginTop:10, fontSize:14, color:amber, fontWeight:600, textAlign:'center', background:'#fffbeb', padding:'9px', borderRadius:8 }}>
                   선택됨: {estWaste}
                 </div>
               )}
@@ -2616,22 +2626,22 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
             {/* 예상 작업 시간 */}
             <div style={{ marginBottom:22 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8 }}>예상 작업 시간 (선택)</div>
+              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8 }}>예상 작업 시간 (선택)</div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:7, marginBottom:8 }}>
                 {['30분','1시간','1시간 30분','2시간','2시간 30분','3시간','3시간 30분','4시간'].map(t=>(
                   <button key={t} onClick={()=>setEstDuration(estDuration===t ? '' : t)}
-                    style={{ padding:'9px 0', borderRadius:8, border:`1.5px solid ${estDuration===t?blue:border}`, background:estDuration===t?'#dbeafe':'#f8fafc', color:estDuration===t?blue:muted, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                    style={{ padding:'11px 0', borderRadius:8, border:`1.5px solid ${estDuration===t?blue:border}`, background:estDuration===t?'#dbeafe':'#f8fafc', color:estDuration===t?blue:muted, fontSize:13, fontWeight:600, cursor:'pointer' }}>
                     {t}
                   </button>
                 ))}
               </div>
               <input value={estDuration} onChange={e=>setEstDuration(e.target.value)}
-                placeholder="직접 입력 (예: 4시간 30분)" style={{ ...iStyle, fontSize:13 }}/>
+                placeholder="직접 입력 (예: 4시간 30분)" style={{ ...iStyle, fontSize:15 }}/>
             </div>
 
             <div style={{ display:'flex', gap:10 }}>
-              <Btn onClick={()=>setWorkModal(false)} outline color={muted} style={{ flex:1 }}>취소</Btn>
-              <Btn onClick={confirmWork} color={amber} style={{ flex:2, fontSize:15 }}>작업 시작</Btn>
+              <Btn onClick={()=>setWorkModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
+              <Btn onClick={confirmWork} color={amber} style={{ flex:2, fontSize:16 }}>작업 시작</Btn>
             </div>
           </div>
         </div>
@@ -2642,29 +2652,27 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2100, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36, maxHeight:'85vh', overflowY:'auto' }}>
             <div style={{ width:36, height:4, background:border, borderRadius:2, margin:'0 auto 18px' }}/>
-            <div style={{ fontSize:17, fontWeight:700, color:navy, marginBottom:4 }}>📦 최종 물량 선택</div>
-            <div style={{ fontSize:13, color:muted, marginBottom:18 }}>{schedule.address}</div>
+            <div style={{ fontSize:19, fontWeight:700, color:navy, marginBottom:6 }}>📦 최종 물량 선택</div>
+            <div style={{ fontSize:15, color:muted, marginBottom:18 }}>{schedule.address}</div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:16 }}>
-              {/* 소량 행 */}
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
                 {['소량','소량 이상', null].map((v, i) => v === null ? (
                   <div key={i}/>
                 ) : (
                   <button key={v} onClick={()=>setFinalWaste(finalWaste===v?'':v)}
-                    style={{ padding:'10px 0', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', border:`1.5px solid ${finalWaste===v?amber:border}`, background:finalWaste===v?'#fef3c7':'#f8fafc', color:finalWaste===v?amber:muted, transition:'all .1s' }}>
+                    style={{ padding:'12px 0', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', border:`1.5px solid ${finalWaste===v?amber:border}`, background:finalWaste===v?'#fef3c7':'#f8fafc', color:finalWaste===v?amber:muted, transition:'all .1s' }}>
                     {v}
                   </button>
                 ))}
               </div>
-              {/* 나머지 행: 정량 | 이하 | 이상 */}
               {['1/6차','1/3차','1/2차','2/3차','1차'].map(qty => (
                 <div key={qty} style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
                   {[qty, `${qty} 이하`, `${qty} 이상`].map((v, i) => {
                     const active = finalWaste === v
                     return (
                       <button key={v} onClick={()=>setFinalWaste(active?'':v)}
-                        style={{ padding:'10px 0', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', border:`1.5px solid ${active?amber:border}`, background:active?'#fef3c7':'#f8fafc', color:active?amber:muted, transition:'all .1s' }}>
+                        style={{ padding:'12px 0', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', border:`1.5px solid ${active?amber:border}`, background:active?'#fef3c7':'#f8fafc', color:active?amber:muted, transition:'all .1s' }}>
                         {i===0 ? qty : i===1 ? '이하' : '이상'}
                       </button>
                     )
@@ -2673,19 +2681,16 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
               ))}
             </div>
 
-            {/* 선택된 값 표시 */}
-            <div style={{ background: finalWaste?'#fffbeb':'#f8fafc', border:`1px solid ${finalWaste?'#fde68a':border}`, borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:14, fontWeight:700, color:finalWaste?amber:muted, textAlign:'center', minHeight:42 }}>
+            <div style={{ background: finalWaste?'#fffbeb':'#f8fafc', border:`1px solid ${finalWaste?'#fde68a':border}`, borderRadius:8, padding:'12px 14px', marginBottom:16, fontSize:15, fontWeight:700, color:finalWaste?amber:muted, textAlign:'center', minHeight:46 }}>
               {finalWaste ? `선택됨: ${finalWaste}` : '선택 안함'}
             </div>
 
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={()=>{ setFinalWaste(''); setFinalWasteModal(false) }}
-                style={{ flex:1, padding:'11px 0', borderRadius:8, border:`1px solid ${border}`, background:'#f8fafc', color:muted, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                style={{ flex:1, padding:'13px 0', borderRadius:8, border:`1px solid ${border}`, background:'#f8fafc', color:muted, fontSize:15, fontWeight:600, cursor:'pointer' }}>
                 초기화
               </button>
-              <Btn onClick={()=>setFinalWasteModal(false)} color={amber} style={{ flex:2, fontSize:15 }}>
-                확인
-              </Btn>
+              <Btn onClick={()=>setFinalWasteModal(false)} color={amber} style={{ flex:2, fontSize:16 }}>확인</Btn>
             </div>
           </div>
         </div>
@@ -2696,18 +2701,18 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36 }}>
             <div style={{ width:36, height:4, background:border, borderRadius:2, margin:'0 auto 18px' }}/>
-            <div style={{ fontSize:17, fontWeight:700, color:navy, marginBottom:4 }}>💬 {schedule.sms_sent?'문자 재발송':'문자 발송'}</div>
-            <div style={{ fontSize:13, color:muted, marginBottom:18 }}>{schedule.address}</div>
+            <div style={{ fontSize:19, fontWeight:700, color:navy, marginBottom:6 }}>💬 {schedule.sms_sent?'문자 재발송':'문자 발송'}</div>
+            <div style={{ fontSize:15, color:muted, marginBottom:18 }}>{schedule.address}</div>
             <div style={{ marginBottom:16 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8 }}>도착 예상 시간</div>
+              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8 }}>도착 예상 시간</div>
               <EtaModalInput eta={eta} onChange={v=>{ setEta(v); setSmsPreview(buildSms(v)) }}/>
             </div>
             <div style={{ background:'#f0fdf4', border:`1px solid #bbf7d0`, borderRadius:10, padding:'12px 14px', marginBottom:20 }}>
-              <div style={{ fontSize:12, color:'#166534', lineHeight:1.85, whiteSpace:'pre-wrap', fontFamily:'monospace' }}>{smsPreview}</div>
+              <div style={{ fontSize:13, color:'#166534', lineHeight:1.85, whiteSpace:'pre-wrap', fontFamily:'monospace' }}>{smsPreview}</div>
             </div>
             <div style={{ display:'flex', gap:10 }}>
-              <Btn onClick={()=>setResendModal(false)} outline color={muted} style={{ flex:1 }}>취소</Btn>
-              <Btn onClick={confirmResend} color={green} style={{ flex:2, fontSize:15 }}>발송</Btn>
+              <Btn onClick={()=>setResendModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
+              <Btn onClick={confirmResend} color={green} style={{ flex:2, fontSize:16 }}>발송</Btn>
             </div>
           </div>
         </div>
@@ -2715,17 +2720,17 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
       {/* ── 취소 확인 다이얼로그 ── */}
       {[
-        [showCancelDepart, setShowCancelDepart, cancelDepart, '출발을 취소할까요?',   '출발 시간이 삭제되고 대기 상태로 돌아갑니다.',           '출발 취소', red],
-        [showCancelStart,  setShowCancelStart,  cancelStart,  '작업 시작을 취소할까요?', '시작 시간이 삭제되고 이동중 상태로 돌아갑니다.',       '시작 취소', red],
-        [showCancelEnd,    setShowCancelEnd,    cancelEnd,    '업무 종료를 취소할까요?', '종료 시간이 삭제되고 진행중으로 돌아갑니다.',          '종료 취소', amber],
+        [showCancelDepart, setShowCancelDepart, cancelDepart, '출발을 취소할까요?',   '출발 시간이 삭제되고 대기 상태로 돌아갑니다.',     '출발 취소', red],
+        [showCancelStart,  setShowCancelStart,  cancelStart,  '작업 시작을 취소할까요?', '시작 시간이 삭제되고 이동중 상태로 돌아갑니다.', '시작 취소', red],
+        [showCancelEnd,    setShowCancelEnd,    cancelEnd,    '업무 종료를 취소할까요?', '종료 시간이 삭제되고 진행중으로 돌아갑니다.',   '종료 취소', amber],
       ].map(([show, setShow, action, title, desc, label, color]) => show ? (
         <div key={title} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20 }}>
-          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:320, padding:24 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:textC, marginBottom:8 }}>{title}</div>
-            <div style={{ fontSize:13, color:muted, lineHeight:1.7, marginBottom:20 }}>{desc}</div>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:320, padding:28 }}>
+            <div style={{ fontSize:17, fontWeight:700, color:textC, marginBottom:10 }}>{title}</div>
+            <div style={{ fontSize:15, color:muted, lineHeight:1.7, marginBottom:22 }}>{desc}</div>
             <div style={{ display:'flex', gap:8 }}>
-              <Btn onClick={()=>setShow(false)} outline color={muted} style={{ flex:1 }}>아니요</Btn>
-              <Btn onClick={action} color={color} style={{ flex:2 }}>{label}</Btn>
+              <Btn onClick={()=>setShow(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>아니요</Btn>
+              <Btn onClick={action} color={color} style={{ flex:2, fontSize:15 }}>{label}</Btn>
             </div>
           </div>
         </div>
