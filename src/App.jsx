@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.0</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.1</div>
       </div>
     </div>
   )
@@ -351,31 +351,52 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   // 드래그앤드롭
   const dragId = useRef(null)
   const dragOverId = useRef(null)
+  const [dragOverRowId, setDragOverRowId] = useState(null)
 
   const handleDragStart = (id) => { dragId.current = id }
-  const handleDragOver  = (e, id) => { e.preventDefault(); dragOverId.current = id }
-  const handleDrop      = (e) => {
+  const handleDragOver  = (e, id) => {
     e.preventDefault()
+    dragOverId.current = id
+    setDragOverRowId(id)
+  }
+  const handleDragLeaveRow = () => setDragOverRowId(null)
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setDragOverRowId(null)
     const from = dragId.current
     const to   = dragOverId.current
     if (!from || !to || from === to) return
-    // 드래그된 항목의 order를 드롭 위치 항목의 order로 교환
     const fromS = sorted.find(s=>s.id===from)
     const toS   = sorted.find(s=>s.id===to)
     if (!fromS || !toS) return
-    const fromOrder = fromS.order ?? sorted.indexOf(fromS)
-    const toOrder   = toS.order   ?? sorted.indexOf(toS)
-    onUpdate(from, { order: toOrder })
-    onUpdate(to,   { order: fromOrder })
+
+    if (fromS.driver_id !== toS.driver_id) {
+      // 다른 기사 → 기사 변경 + to의 order 근처로 이동
+      const toOrder = toS.order ?? sorted.indexOf(toS)
+      onUpdate(from, { driver_id: toS.driver_id, order: toOrder - 0.5 })
+    } else {
+      // 같은 기사 → 순서 교환
+      const fromOrder = fromS.order ?? sorted.indexOf(fromS)
+      const toOrder   = toS.order   ?? sorted.indexOf(toS)
+      onUpdate(from, { order: toOrder })
+      onUpdate(to,   { order: fromOrder })
+    }
     dragId.current = null
     dragOverId.current = null
   }
 
   // 일정 복사
-  const copySchedule = (s) => {
+  const [copyModal, setCopyModal] = useState(null) // 복사할 schedule 객체
+  const openCopyModal = (s) => {
+    setCopyModal({ ...s, _copyDate: s.date, _copyDriver: s.driver_id || '' })
+  }
+  const confirmCopy = () => {
+    if (!copyModal) return
     const newS = {
-      ...s,
+      ...copyModal,
       id: undefined,
+      date: copyModal._copyDate,
+      driver_id: copyModal._copyDriver || null,
       status:'대기',
       depart_time:null, start_time:null, end_time:null,
       eta:null, sms_sent:false,
@@ -385,7 +406,11 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       order: sorted.length,
     }
     delete newS.id
+    delete newS._copyDate
+    delete newS._copyDriver
+    delete newS._id
     onAddMany([newS])
+    setCopyModal(null)
   }
   const [filterDriver, setFD]     = useState('all')
   const [filterDate, setFDate]    = useState(today)
@@ -647,6 +672,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                         draggable={!deleteMode && !assignMode && !isEdit}
                         onDragStart={()=>handleDragStart(s.id)}
                         onDragOver={e=>handleDragOver(e, s.id)}
+                        onDragLeave={handleDragLeaveRow}
                         onDrop={handleDrop}
                         onClick={()=>{
                           if (deleteMode) { toggleCheck(s.id); return }
@@ -657,12 +683,13 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                         style={{
                           borderBottom:`1px solid ${border}`,
                           cursor: (!deleteMode&&!assignMode&&!isEdit) ? 'grab' : 'pointer',
-                          background: isDeleteChecked ? '#fef2f2' : isAssignChecked ? '#f0fdf4' : '#fff',
-                          borderLeft: deleteMode ? `4px solid ${isDeleteChecked ? red : '#e2e8f0'}` : assignMode ? `4px solid ${isAssignChecked ? '#059669' : '#e2e8f0'}` : 'none',
+                          background: dragOverRowId===s.id ? '#eff6ff' : isDeleteChecked ? '#fef2f2' : isAssignChecked ? '#f0fdf4' : '#fff',
+                          borderLeft: dragOverRowId===s.id ? `4px solid ${blue}` : deleteMode ? `4px solid ${isDeleteChecked ? red : '#e2e8f0'}` : assignMode ? `4px solid ${isAssignChecked ? '#059669' : '#e2e8f0'}` : 'none',
                           transition: 'background .1s',
+                          outline: dragOverRowId===s.id ? `2px dashed ${blue}` : 'none',
                         }}
-                        onMouseEnter={e=>{ if(!isEdit) e.currentTarget.style.background = isDeleteChecked?'#fee2e2':isAssignChecked?'#dcfce7':'#f8fafc' }}
-                        onMouseLeave={e=>{ e.currentTarget.style.background = isDeleteChecked?'#fef2f2':isAssignChecked?'#f0fdf4':'#fff' }}
+                        onMouseEnter={e=>{ if(!isEdit&&dragOverRowId!==s.id) e.currentTarget.style.background = isDeleteChecked?'#fee2e2':isAssignChecked?'#dcfce7':'#f8fafc' }}
+                        onMouseLeave={e=>{ e.currentTarget.style.background = dragOverRowId===s.id?'#eff6ff':isDeleteChecked?'#fef2f2':isAssignChecked?'#f0fdf4':'#fff' }}
                       >
                         {/* 선택 상태 셀 */}
                         {(deleteMode||assignMode) && (
@@ -711,7 +738,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                         <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.start_time?green:'#ccc' }}>{s.start_time||'-'}</td>
                         <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.end_time?blue:'#ccc' }}>{s.end_time||'-'}</td>
                         <td style={{ padding:'4px 8px', whiteSpace:'nowrap' }} onClick={e=>e.stopPropagation()}>
-                          <button onClick={()=>copySchedule(s)}
+                          <button onClick={()=>openCopyModal(s)}
                             title="일정 복사"
                             style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                             ⧉ 복사
@@ -730,6 +757,44 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       {showModal && <BulkScheduleModal drivers={drivers} onAddMany={list=>{ onAddMany(list); setModal(false) }} onClose={()=>setModal(false)}/>}
       {showDriverMgr && <DriverMgrModal drivers={drivers} schedules={schedules} onAdd={onAddDriver} onUpdate={onUpdateDriver} onDelete={onDeleteDriver} onClose={()=>setDriverMgr(false)}/>}
       {showAdminSettings && <AdminSettingsModal user={user} onUpdateDriver={onUpdateDriver} onClose={()=>setAdminSettings(false)}/>}
+
+      {/* 일정 복사 모달 */}
+      {copyModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:380, padding:24 }}>
+            <div style={{ fontSize:16, fontWeight:700, color:navy, marginBottom:4 }}>⧉ 일정 복사</div>
+            <div style={{ fontSize:13, color:muted, marginBottom:20, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{copyModal.address}</div>
+
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>복사할 날짜</div>
+              <input type="date" value={copyModal._copyDate}
+                onChange={e=>setCopyModal(p=>({...p, _copyDate:e.target.value}))}
+                style={{ ...iStyle }}/>
+            </div>
+
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>배정 기사</div>
+              <select value={copyModal._copyDriver}
+                onChange={e=>setCopyModal(p=>({...p, _copyDriver:e.target.value}))}
+                style={{ ...iStyle }}>
+                <option value="">— 미배치 —</option>
+                {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+
+            <div style={{ background:'#f8fafc', borderRadius:10, padding:'10px 14px', marginBottom:20, fontSize:12, color:muted, lineHeight:1.9 }}>
+              <div>시간: <b style={{ color:textC }}>{copyModal.time}</b></div>
+              <div>폐기물: <b style={{ color:textC }}>{copyModal.waste}</b></div>
+              <div>담당자: <b style={{ color:textC }}>{copyModal.cname}</b></div>
+            </div>
+
+            <div style={{ display:'flex', gap:10 }}>
+              <Btn onClick={()=>setCopyModal(null)} outline color={muted} style={{ flex:1 }}>취소</Btn>
+              <Btn onClick={confirmCopy} color={navy} style={{ flex:2 }}>복사 등록</Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 삭제 모드 하단 플로팅 바 */}
       {deleteMode && (
