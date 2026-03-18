@@ -218,6 +218,23 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   const [checkedIds,     setCheckedIds]   = useState(new Set())
   const [showDelConfirm, setDelConfirm]   = useState(false)
 
+  // 일괄 배정 모드
+  const [assignMode,     setAssignMode]   = useState(false)
+  const [assignChecked,  setAssignChecked] = useState(new Set())
+  const [assignTarget,   setAssignTarget]  = useState('')
+
+  const toggleAssignCheck = id => setAssignChecked(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
+  })
+  const toggleAssignAll = () => setAssignChecked(prev =>
+    prev.size === sorted.length ? new Set() : new Set(sorted.map(s=>s.id))
+  )
+  const exitAssignMode = () => { setAssignMode(false); setAssignChecked(new Set()); setAssignTarget('') }
+  const confirmAssign  = () => {
+    assignChecked.forEach(id => onUpdate(id, { driver_id: assignTarget || null }))
+    exitAssignMode()
+  }
+
   const toggleCheck = id => setCheckedIds(prev => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
   })
@@ -265,13 +282,32 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
           <div style={{ fontSize:16, fontWeight:700 }}>🚛 배차 관리 시스템</div>
           <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자: {user.name}</div>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
-          {!deleteMode ? (
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          {!deleteMode && !assignMode ? (
             <>
               <Btn onClick={()=>setModal(true)} style={{ padding:'7px 14px', fontSize:13 }}>+ 일정 등록</Btn>
+              <Btn onClick={()=>setAssignMode(true)} outline color="#6ee7b7" style={{ padding:'7px 14px', fontSize:13 }}>👥 일괄 배정</Btn>
               <Btn onClick={()=>setDriverMgr(true)} outline color="#7dd3fc" style={{ padding:'7px 14px', fontSize:13 }}>👤 기사 관리</Btn>
               <Btn onClick={()=>setDeleteMode(true)} outline color="#f87171" style={{ padding:'7px 14px', fontSize:13 }}>🗑 삭제</Btn>
               <Btn onClick={onLogout} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>로그아웃</Btn>
+            </>
+          ) : assignMode ? (
+            <>
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,.12)', borderRadius:8, padding:'5px 12px' }}>
+                <span style={{ fontSize:13, color:'#6ee7b7', fontWeight:600 }}>일괄 배정</span>
+                <span style={{ fontSize:12, color:'rgba(255,255,255,.7)' }}>{assignChecked.size}건 선택</span>
+              </div>
+              <select value={assignTarget} onChange={e=>setAssignTarget(e.target.value)}
+                style={{ padding:'6px 10px', borderRadius:7, border:'none', fontSize:13, background:'rgba(255,255,255,.9)', color:navy, fontWeight:600, cursor:'pointer' }}>
+                <option value="">— 기사 선택 —</option>
+                {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+              {assignChecked.size > 0 && (
+                <Btn onClick={confirmAssign} color="#059669" style={{ padding:'7px 14px', fontSize:13 }}>
+                  {assignChecked.size}건 배정
+                </Btn>
+              )}
+              <Btn onClick={exitAssignMode} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>취소</Btn>
             </>
           ) : (
             <>
@@ -333,11 +369,11 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
               <thead>
                 <tr style={{ background:'#f8fafc', borderBottom:`1px solid ${border}` }}>
-                  {deleteMode && (
+                  {(deleteMode||assignMode) && (
                     <th style={{ padding:'10px 12px', textAlign:'center', fontSize:11, color:muted, fontWeight:600, width:60 }}>
-                      <button onClick={toggleAll}
-                        style={{ background:checkedIds.size===sorted.length&&sorted.length>0?red:'#e2e8f0', color:'#fff', border:'none', borderRadius:5, padding:'4px 8px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
-                        {checkedIds.size===sorted.length&&sorted.length>0?'전체해제':'전체선택'}
+                      <button onClick={assignMode ? toggleAssignAll : toggleAll}
+                        style={{ background: (assignMode ? assignChecked.size===sorted.length : checkedIds.size===sorted.length)&&sorted.length>0 ? (assignMode?'#059669':red) : '#e2e8f0', color:'#fff', border:'none', borderRadius:5, padding:'4px 8px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+                        {(assignMode ? assignChecked.size===sorted.length : checkedIds.size===sorted.length)&&sorted.length>0 ? '전체해제' : '전체선택'}
                       </button>
                     </th>
                   )}
@@ -357,13 +393,15 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                   const spCnt = (s.schedule_photos||[]).length
                   const cpCnt = (s.photos||[]).length
                   const isEdit = editingId===s.id
+                  const isAssignChecked = assignChecked.has(s.id)
+                  const isDeleteChecked = checkedIds.has(s.id)
 
                   return (
                     <Fragment key={s.id}>
                       {/* 기사 그룹 헤더 */}
                       {showDiv && (
                         <tr>
-                          <td colSpan={deleteMode ? 10 : 9} style={{
+                          <td colSpan={(deleteMode||assignMode) ? 10 : 9} style={{
                             padding:'5px 14px', fontSize:11, fontWeight:700, letterSpacing:.4,
                             background: chip ? chip.bg : '#fef2f2',
                             color: chip ? chip.color : red,
@@ -380,31 +418,31 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                       <tr
                         onClick={()=>{
                           if (deleteMode) { toggleCheck(s.id); return }
+                          if (assignMode) { toggleAssignCheck(s.id); return }
                           if (isEdit) return
                           setSelId(s.id); setView('detail')
                         }}
                         style={{
                           borderBottom:`1px solid ${border}`,
                           cursor: 'pointer',
-                          background: checkedIds.has(s.id) ? '#fef2f2' : '#fff',
-                          borderLeft: deleteMode ? `4px solid ${checkedIds.has(s.id) ? red : '#e2e8f0'}` : 'none',
+                          background: isDeleteChecked ? '#fef2f2' : isAssignChecked ? '#f0fdf4' : '#fff',
+                          borderLeft: deleteMode ? `4px solid ${isDeleteChecked ? red : '#e2e8f0'}` : assignMode ? `4px solid ${isAssignChecked ? '#059669' : '#e2e8f0'}` : 'none',
                           transition: 'background .1s, border-left .1s',
                         }}
-                        onMouseEnter={e=>{ if(!isEdit) e.currentTarget.style.background = checkedIds.has(s.id) ? '#fee2e2' : '#f8fafc' }}
-                        onMouseLeave={e=>{ e.currentTarget.style.background = checkedIds.has(s.id) ? '#fef2f2' : '#fff' }}
+                        onMouseEnter={e=>{ if(!isEdit) e.currentTarget.style.background = isDeleteChecked?'#fee2e2':isAssignChecked?'#dcfce7':'#f8fafc' }}
+                        onMouseLeave={e=>{ e.currentTarget.style.background = isDeleteChecked?'#fef2f2':isAssignChecked?'#f0fdf4':'#fff' }}
                       >
-                        {/* 삭제 모드: 선택 상태 셀 */}
-                        {deleteMode && (
+                        {/* 선택 상태 셀 */}
+                        {(deleteMode||assignMode) && (
                           <td style={{ padding:'0 10px', width:60, textAlign:'center' }}>
                             <div style={{
                               display:'inline-flex', alignItems:'center', justifyContent:'center',
                               width:26, height:26, borderRadius:6,
-                              background: checkedIds.has(s.id) ? red : 'transparent',
-                              border: `2px solid ${checkedIds.has(s.id) ? red : '#cbd5e1'}`,
-                              color:'#fff', fontSize:14, fontWeight:700,
-                              transition:'all .1s'
+                              background: deleteMode ? (isDeleteChecked?red:'transparent') : (isAssignChecked?'#059669':'transparent'),
+                              border: `2px solid ${deleteMode?(isDeleteChecked?red:'#cbd5e1'):(isAssignChecked?'#059669':'#cbd5e1')}`,
+                              color:'#fff', fontSize:14, fontWeight:700, transition:'all .1s'
                             }}>
-                              {checkedIds.has(s.id) && '✓'}
+                              {(deleteMode?isDeleteChecked:isAssignChecked) && '✓'}
                             </div>
                           </td>
                         )}
@@ -1323,9 +1361,17 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   }
   const applyKakao = () => {
     if (!kakaoRows.length) return
+    const autoAssign = {}
+    kakaoRows.forEach(r => {
+      if (r.driver_hint) {
+        const matched = drivers.find(d => d.name.includes(r.driver_hint) || r.driver_hint.includes(d.name))
+        if (matched) autoAssign[r._id] = matched.id
+      }
+    })
     setRows(kakaoRows)
-    setInputMode('manual')
+    setAssigns(autoAssign)
     setKakaoMsg('')
+    setStep(2)
   }
   const colMapRef = useRef(colMap)
   colMapRef.current = colMap
@@ -1377,9 +1423,8 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   }
 
   const goStep2 = () => {
-    const bad = rows.filter(r=>!r.address||!r.waste||!r.cname||!r.cphone)
-    if (bad.length) return alert(`${bad.length}개 일정에 필수 항목(주소·폐기물량·담당자·연락처)이 비어 있습니다.`)
-    // driver_hint로 기사 자동 매핑
+    const bad = rows.filter(r => !r.address)
+    if (bad.length) return alert(`${bad.length}개 일정에 주소가 비어 있습니다.`)
     const autoAssign = {}
     rows.forEach(r => {
       if (r.driver_hint) {
@@ -1391,7 +1436,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
     setStep(2)
   }
 
-  // ── Step 2 helpers ──
   const setAssign = (_id, v) => setAssigns(prev=>({...prev,[_id]:v}))
   const assignAll = dId => { const map={}; rows.forEach(r=>{ map[r._id]=dId }); setAssigns(map) }
 
