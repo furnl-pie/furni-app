@@ -1258,7 +1258,7 @@ function DriverTimeEdit({ label, value, color, onSave }) {
     )
   }
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'2px 0' }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'2px 0' }}>
       <span style={{ fontSize:15, fontFamily:'monospace', fontWeight:700, color: value?color:muted }}>
         {value ? `${label}:  ${value}` : `${label}: 미기록`}
       </span>
