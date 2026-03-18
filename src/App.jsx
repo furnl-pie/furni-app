@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.1</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.2</div>
       </div>
     </div>
   )
@@ -388,7 +388,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   // 일정 복사
   const [copyModal, setCopyModal] = useState(null) // 복사할 schedule 객체
   const openCopyModal = (s) => {
-    setCopyModal({ ...s, _copyDate: s.date, _copyDriver: s.driver_id || '' })
+    setCopyModal({ ...s, _copyDate: s.date, _copyDriver: s.driver_id || '', _copyTime: s.time, _copyWaste: s.waste })
   }
   const confirmCopy = () => {
     if (!copyModal) return
@@ -396,6 +396,8 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       ...copyModal,
       id: undefined,
       date: copyModal._copyDate,
+      time: copyModal._copyTime,
+      waste: copyModal._copyWaste,
       driver_id: copyModal._copyDriver || null,
       status:'대기',
       depart_time:null, start_time:null, end_time:null,
@@ -408,6 +410,8 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
     delete newS.id
     delete newS._copyDate
     delete newS._copyDriver
+    delete newS._copyTime
+    delete newS._copyWaste
     delete newS._id
     onAddMany([newS])
     setCopyModal(null)
@@ -765,14 +769,31 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
             <div style={{ fontSize:16, fontWeight:700, color:navy, marginBottom:4 }}>⧉ 일정 복사</div>
             <div style={{ fontSize:13, color:muted, marginBottom:20, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{copyModal.address}</div>
 
-            <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>복사할 날짜</div>
-              <input type="date" value={copyModal._copyDate}
-                onChange={e=>setCopyModal(p=>({...p, _copyDate:e.target.value}))}
-                style={{ ...iStyle }}/>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+              <div>
+                <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>날짜</div>
+                <input type="date" value={copyModal._copyDate}
+                  onChange={e=>setCopyModal(p=>({...p, _copyDate:e.target.value}))}
+                  style={{ ...iStyle }}/>
+              </div>
+              <div>
+                <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>시간</div>
+                <input value={copyModal._copyTime}
+                  onChange={e=>setCopyModal(p=>({...p, _copyTime:e.target.value}))}
+                  placeholder="09:00 또는 오전중"
+                  style={{ ...iStyle }}/>
+              </div>
             </div>
 
             <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>폐기물양</div>
+              <input value={copyModal._copyWaste}
+                onChange={e=>setCopyModal(p=>({...p, _copyWaste:e.target.value}))}
+                placeholder="예: 1/2차, 2톤"
+                style={{ ...iStyle }}/>
+            </div>
+
+            <div style={{ marginBottom:20 }}>
               <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>배정 기사</div>
               <select value={copyModal._copyDriver}
                 onChange={e=>setCopyModal(p=>({...p, _copyDriver:e.target.value}))}
@@ -780,12 +801,6 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 <option value="">— 미배치 —</option>
                 {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
-            </div>
-
-            <div style={{ background:'#f8fafc', borderRadius:10, padding:'10px 14px', marginBottom:20, fontSize:12, color:muted, lineHeight:1.9 }}>
-              <div>시간: <b style={{ color:textC }}>{copyModal.time}</b></div>
-              <div>폐기물: <b style={{ color:textC }}>{copyModal.waste}</b></div>
-              <div>담당자: <b style={{ color:textC }}>{copyModal.cname}</b></div>
             </div>
 
             <div style={{ display:'flex', gap:10 }}>
