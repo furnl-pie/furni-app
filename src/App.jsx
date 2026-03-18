@@ -346,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.2</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.3</div>
       </div>
     </div>
   )
@@ -361,6 +361,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   const [showModal, setModal]     = useState(false)
   const [showDriverMgr, setDriverMgr] = useState(false)
   const [showAdminSettings, setAdminSettings] = useState(false)
+  const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
 
   // 드래그앤드롭
   const dragId = useRef(null)
@@ -634,13 +635,26 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
               )
             )}
 
-            <div style={{ height:38, display:'flex', alignItems:'center', fontSize:12, color:muted, marginLeft:'auto' }}>
-              {assignMode && assignChecked.size > 0
-                ? <span style={{ color:green, fontWeight:600 }}>{assignChecked.size}건 선택됨</span>
-                : deleteMode && checkedIds.size > 0
-                ? <span style={{ color:red, fontWeight:600 }}>{checkedIds.size}건 선택됨</span>
-                : `총 ${sorted.length}건`
-              }
+            <div style={{ height:38, display:'flex', alignItems:'center', gap:8, fontSize:12, color:muted, marginLeft:'auto' }}>
+              <span>
+                {assignMode && assignChecked.size > 0
+                  ? <span style={{ color:green, fontWeight:600 }}>{assignChecked.size}건 선택됨</span>
+                  : deleteMode && checkedIds.size > 0
+                  ? <span style={{ color:red, fontWeight:600 }}>{checkedIds.size}건 선택됨</span>
+                  : `총 ${sorted.length}건`
+                }
+              </span>
+              {/* 뷰 전환 */}
+              <div style={{ display:'flex', gap:3, background:'#f1f5f9', borderRadius:8, padding:3 }}>
+                <button onClick={()=>setListView('table')}
+                  style={{ padding:'4px 10px', borderRadius:6, border:'none', fontSize:12, fontWeight:600, cursor:'pointer', background:listView==='table'?'#fff':'transparent', color:listView==='table'?navy:muted, boxShadow:listView==='table'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>
+                  ≡ 표
+                </button>
+                <button onClick={()=>setListView('card')}
+                  style={{ padding:'4px 10px', borderRadius:6, border:'none', fontSize:12, fontWeight:600, cursor:'pointer', background:listView==='card'?'#fff':'transparent', color:listView==='card'?navy:muted, boxShadow:listView==='card'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>
+                  ⊞ 카드
+                </button>
+              </div>
             </div>
           </div>
 
@@ -676,7 +690,68 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
           </div>
         </Card>
 
+        {/* 카드 뷰 */}
+        {listView === 'card' && (
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {sorted.length === 0 && (
+              <div style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</div>
+            )}
+            {sorted.map(s => {
+              const chip = s.driver_id ? driverChip(s.driver_id, drivers) : null
+              const lc = s.status==='완료' ? green : s.status==='진행중' ? amber : s.status==='이동중' ? blue : border
+              const isDeleteChecked = checkedIds.has(s.id)
+              const isAssignChecked = assignChecked.has(s.id)
+              return (
+                <div key={s.id}
+                  onClick={()=>{
+                    if (deleteMode) { toggleCheck(s.id); return }
+                    if (assignMode) { toggleAssignCheck(s.id); return }
+                    setSelId(s.id); setView('detail')
+                  }}
+                  style={{
+                    background: isDeleteChecked?'#fef2f2': isAssignChecked?'#f0fdf4':'#fff',
+                    borderRadius:12, border:`1px solid ${border}`,
+                    borderLeft:`5px solid ${lc}`,
+                    padding:'14px 16px', cursor:'pointer',
+                    transition:'background .1s'
+                  }}>
+                  {/* 헤더 행 */}
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      {s.driver_id
+                        ? <span style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 10px', fontSize:13, fontWeight:700 }}>{userName(s.driver_id)}</span>
+                        : <span style={{ background:'#fef2f2', color:red, borderRadius:20, padding:'2px 10px', fontSize:13, fontWeight:700, border:'1px dashed #fca5a5' }}>미배치</span>
+                      }
+                      {s.co_driver_id && (
+                        <span style={{ fontSize:12, background:'#dbeafe', color:blue, padding:'2px 8px', borderRadius:10, fontWeight:600 }}>+{userName(s.co_driver_id)}</span>
+                      )}
+                      <Badge status={s.status}/>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <span style={{ fontFamily:'monospace', fontSize:16, fontWeight:700, color:navy }}>{s.time}</span>
+                      <button onClick={e=>{ e.stopPropagation(); openCopyModal(s) }}
+                        style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                        이동/복사
+                      </button>
+                    </div>
+                  </div>
+                  {/* 주소 */}
+                  <div style={{ fontSize:15, fontWeight:600, color:textC, marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.address}</div>
+                  {/* 서브 정보 */}
+                  <div style={{ display:'flex', gap:12, fontSize:13, color:muted, flexWrap:'wrap' }}>
+                    <span>{s.cname}</span>
+                    <span>폐기물 {s.waste}</span>
+                    <span style={{ fontSize:11, color:'#94a3b8' }}>{s.date}</span>
+                    {s.start_time && <span style={{ color:green, fontFamily:'monospace' }}>▶ {s.start_time}{s.end_time?` ~ ${s.end_time}`:''}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* 테이블 */}
+        {listView === 'table' && (
         <Card style={{ padding:0, overflow:'hidden' }}>
           <div style={{ overflowX:'auto', overflowY:'auto', maxHeight:'70vh' }}>
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:16 }}>
@@ -817,6 +892,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
             </table>
           </div>
         </Card>
+        )}
       </div>
 
       {showModal && <BulkScheduleModal drivers={drivers} onAddMany={list=>{ onAddMany(list); setModal(false) }} onClose={()=>setModal(false)}/>}
