@@ -180,11 +180,11 @@ function SlidePhotoViewer({ photos, onOpen }) {
       />
       {/* 이전 버튼 */}
       {total > 1 && (
-        <button onClick={prev} style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.5)', border:'none', color:'#fff', fontSize:22, width:36, height:36, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
+        <button onClick={prev} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.55)', border:'none', color:'#fff', fontSize:32, width:48, height:48, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
       )}
       {/* 다음 버튼 */}
       {total > 1 && (
-        <button onClick={next} style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.5)', border:'none', color:'#fff', fontSize:22, width:36, height:36, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
+        <button onClick={next} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.55)', border:'none', color:'#fff', fontSize:32, width:48, height:48, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
       )}
       {/* 카운터 */}
       <div style={{ position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)', background:'rgba(0,0,0,.55)', color:'#fff', fontSize:12, fontWeight:600, padding:'3px 10px', borderRadius:12, whiteSpace:'nowrap' }}>
@@ -265,9 +265,40 @@ function LoginPage({ onLogin, users }) {
     <div style={{ minHeight:'100vh', background:navy, display:'flex', alignItems:'center', justifyContent:'center', padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:'#fff', borderRadius:20, padding:36, width:'100%', maxWidth:360, position:'relative' }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
-          <div style={{ fontSize:44, marginBottom:8 }}>🚚</div>
+          <div style={{ marginBottom:10, display:'flex', justifyContent:'center' }}>
+            <svg width="110" height="72" viewBox="0 0 110 72" xmlns="http://www.w3.org/2000/svg">
+              {/* 적재함 */}
+              <rect x="30" y="18" width="68" height="34" rx="3" fill="#ffffff" stroke="#ddd" strokeWidth="1"/>
+              {/* 캡 */}
+              <rect x="8" y="26" width="26" height="26" rx="4" fill="#ffffff" stroke="#ddd" strokeWidth="1"/>
+              {/* 캡 지붕 곡선 */}
+              <path d="M10 26 Q14 14 30 18 L30 26 Z" fill="#f0f0f0" stroke="#ddd" strokeWidth="1"/>
+              {/* 앞유리 */}
+              <path d="M13 26 Q16 17 27 19 L27 26 Z" fill="#b8d4f0" stroke="#ccc" strokeWidth="0.5"/>
+              {/* 사이드 미러 */}
+              <rect x="5" y="28" width="5" height="4" rx="1" fill="#ccc"/>
+              {/* 도어 라인 */}
+              <line x1="27" y1="26" x2="27" y2="52" stroke="#ddd" strokeWidth="0.8"/>
+              {/* 차체 하단 라인 */}
+              <rect x="8" y="49" width="90" height="5" rx="1" fill="#e0e0e0"/>
+              {/* 앞바퀴 */}
+              <circle cx="22" cy="56" r="9" fill="#333"/>
+              <circle cx="22" cy="56" r="5" fill="#666"/>
+              <circle cx="22" cy="56" r="2" fill="#999"/>
+              {/* 뒷바퀴1 */}
+              <circle cx="72" cy="56" r="9" fill="#333"/>
+              <circle cx="72" cy="56" r="5" fill="#666"/>
+              <circle cx="72" cy="56" r="2" fill="#999"/>
+              {/* 뒷바퀴2 */}
+              <circle cx="90" cy="56" r="9" fill="#333"/>
+              <circle cx="90" cy="56" r="5" fill="#666"/>
+              <circle cx="90" cy="56" r="2" fill="#999"/>
+              {/* FN퍼니 텍스트 (적재함) */}
+              <text x="64" y="39" textAnchor="middle" fontSize="11" fontWeight="700" fill="#1b3a5c" fontFamily="sans-serif">FN퍼니</text>
+            </svg>
+          </div>
           <div style={{ fontSize:22, fontWeight:700, color:navy }}>동태관리</div>
-          <div style={{ fontSize:13, color:muted, marginTop:4 }}>지입기사 일정 관리</div>
+          <div style={{ fontSize:13, color:muted, marginTop:4 }}>FN퍼니 일정 관리</div>
         </div>
         <Field label="아이디">
           <input value={id} onChange={e=>{ setId(e.target.value); setErr('') }}
