@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.5</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.6</div>
       </div>
     </div>
   )
@@ -1307,27 +1307,44 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         )}
 
         {/* 완료 사진 */}
-        {completePhotos.length > 0 && (
-          <Card>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:textC }}>완료 사진 ({completePhotos.length}장)</div>
-              <button onClick={()=>downloadAllPhotos(completePhotos, `완료사진_${schedule.address.slice(0,10)}`)}
-                style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
-                ⬇ 전체 다운로드
-              </button>
-            </div>
-            <SlidePhotoViewer
-              photos={completePhotos}
-              onOpen={i => openLightbox('complete', i)}
-            />
-          </Card>
-        )}
-        {schedule.status==='완료' && completePhotos.length===0 && (
-          <Card style={{ textAlign:'center', padding:24, color:muted }}>
-            <div style={{ fontSize:24, marginBottom:6 }}>📷</div>
-            <div style={{ fontSize:13 }}>첨부된 완료 사진이 없습니다</div>
-          </Card>
-        )}
+        {(() => {
+          const workPics = schedule.work_photos || []
+          const allDone = [...workPics, ...completePhotos]
+          if (allDone.length === 0 && schedule.status !== '완료') return null
+          if (allDone.length === 0) return (
+            <Card style={{ textAlign:'center', padding:24, color:muted }}>
+              <div style={{ fontSize:24, marginBottom:6 }}>📷</div>
+              <div style={{ fontSize:13 }}>첨부된 완료 사진이 없습니다</div>
+            </Card>
+          )
+          return (
+            <Card>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:textC }}>
+                  사진
+                  {workPics.length > 0 && <span style={{ fontSize:11, color:muted, marginLeft:6 }}>현장 {workPics.length}장</span>}
+                  {completePhotos.length > 0 && <span style={{ fontSize:11, color:muted, marginLeft:6 }}>완료 {completePhotos.length}장</span>}
+                </div>
+                <button onClick={()=>downloadAllPhotos(allDone, `전체사진_${schedule.address.slice(0,10)}`)}
+                  style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                  ⬇ 전체 다운로드
+                </button>
+              </div>
+              {workPics.length > 0 && (
+                <div style={{ marginBottom:10 }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:muted, marginBottom:6 }}>📍 현장 사진</div>
+                  <SlidePhotoViewer photos={workPics} onOpen={i => openLightbox('complete', i)}/>
+                </div>
+              )}
+              {completePhotos.length > 0 && (
+                <div>
+                  {workPics.length > 0 && <div style={{ fontSize:11, fontWeight:600, color:muted, marginBottom:6, marginTop:8 }}>✅ 완료 사진</div>}
+                  <SlidePhotoViewer photos={completePhotos} onOpen={i => openLightbox('complete', i)}/>
+                </div>
+              )}
+            </Card>
+          )
+        })()}
       </div>
 
       {showBilling && (() => {
@@ -2503,13 +2520,12 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   }
 
   const confirmWork = () => {
-    const existingPhotos = schedule.schedule_photos || []
     onUpdate({
       status:'진행중',
       start_time: nowTime(),
       est_waste: estWaste,
       est_duration: estDuration,
-      ...(sitePhotos.length > 0 ? { schedule_photos: [...existingPhotos, ...sitePhotos] } : {})
+      ...(sitePhotos.length > 0 ? { work_photos: [...(schedule.work_photos||[]), ...sitePhotos] } : {})
     })
     setWorkModal(false)
   }
@@ -2731,14 +2747,14 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                   예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration?` · ${schedule.est_duration}`:''}
                 </div>
               )}
-              {(isWorking||isDone) && (schedule.schedule_photos||[]).length > 0 && (
+              {(isWorking||isDone) && (schedule.work_photos||[]).length > 0 && (
                 <div style={{ marginTop:10 }}>
                   <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
-                    현장 사진 ({schedule.schedule_photos.length}장)
+                    현장 사진 ({schedule.work_photos.length}장)
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
-                    {schedule.schedule_photos.map((src,i)=>(
-                      <div key={i} onClick={()=>openLb('schedule_ref',i)}
+                    {schedule.work_photos.map((src,i)=>(
+                      <div key={i} onClick={()=>openLb('complete',i)}
                         style={{ aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}`, cursor:'pointer' }}>
                         <img src={src} alt={`현장${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                       </div>
@@ -2912,31 +2928,31 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                       </div>
                     )}
                     {(() => {
-                      const sitePics = schedule.schedule_photos || []
+                      const workPics = schedule.work_photos || []
                       const donePics = displayPhotos
-                      const allPics = [...sitePics, ...donePics]
+                      const allPics = [...workPics, ...donePics]
                       if (allPics.length === 0) return null
                       return (
                         <div>
                           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                             <span style={{ fontSize:12, color:muted }}>
-                              {sitePics.length > 0 && `현장 ${sitePics.length}장`}
-                              {sitePics.length > 0 && donePics.length > 0 && ' · '}
+                              {workPics.length > 0 && `현장 ${workPics.length}장`}
+                              {workPics.length > 0 && donePics.length > 0 && ' · '}
                               {donePics.length > 0 && `완료 ${donePics.length}장`}
                             </span>
-                            {donePics.length > 0 && (
-                              <button onClick={()=>downloadAllPhotos(donePics, '완료사진')}
+                            {allPics.length > 0 && (
+                              <button onClick={()=>downloadAllPhotos(allPics, '전체사진')}
                                 style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                                ⬇ 완료사진 저장
+                                ⬇ 전체 다운로드
                               </button>
                             )}
                           </div>
-                          {sitePics.length > 0 && (
-                            <div style={{ marginBottom:6 }}>
+                          {workPics.length > 0 && (
+                            <div style={{ marginBottom:8 }}>
                               <div style={{ fontSize:11, color:muted, marginBottom:4 }}>📍 현장 사진</div>
-                              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
-                                {sitePics.map((src,i)=>(
-                                  <div key={i} onClick={()=>openLb('schedule_ref',i)}
+                              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
+                                {workPics.map((src,i)=>(
+                                  <div key={i} onClick={()=>{ setLbSource('complete'); setLightbox(i) }}
                                     style={{ aspectRatio:'1', cursor:'pointer', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
                                     <img src={src} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                                   </div>
