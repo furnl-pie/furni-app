@@ -350,7 +350,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.6</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.8</div>
       </div>
     </div>
   )
@@ -805,7 +805,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                           <button onClick={()=>openCopyModal(s)}
                             title="일정 복사"
                             style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                            ⧉ 복사
+                            이동/복사
                           </button>
                         </td>
                       </tr>
@@ -1323,9 +1323,19 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                       <span style={{ fontSize:13, color:muted, marginLeft:10 }}>{USERS.find(u=>u.id===schedule.driver_id)?.phone}</span></>
                   : <span style={{ fontSize:14, color:red }}>배치된 기사가 없습니다</span>}
               </div>
-              <Btn onClick={()=>setEditDriver(true)} outline color={blue} style={{ padding:'7px 14px', fontSize:12 }}>
-                {schedule.driver_id?'변경':'배치'}
-              </Btn>
+              <div style={{ display:'flex', gap:8 }}>
+                {schedule.driver_id && USERS.find(u=>u.id===schedule.driver_id)?.phone && (
+                  <a href={`tel:${USERS.find(u=>u.id===schedule.driver_id)?.phone}`}
+                    style={{ textDecoration:'none' }}>
+                    <button style={{ background:green, color:'#fff', border:'none', borderRadius:8, padding:'7px 14px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                      📞 전화
+                    </button>
+                  </a>
+                )}
+                <Btn onClick={()=>setEditDriver(true)} outline color={blue} style={{ padding:'7px 14px', fontSize:12 }}>
+                  {schedule.driver_id?'변경':'배치'}
+                </Btn>
+              </div>
             </div>
           )}
         </div>
@@ -1391,7 +1401,19 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
               <div style={{ marginBottom:12 }}><CopyAddress address={schedule.address}/></div>
               <Row label="날짜 · 시간" value={`${schedule.date}  ${schedule.time}`}/>
               <Row label="폐기물량"     value={schedule.waste}/>
-              <Row label="현장 담당자"  value={`${schedule.cname}  ${schedule.cphone}`}/>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom:`1px solid ${border}`, fontSize:14 }}>
+                <span style={{ color:muted, fontSize:13 }}>현장 담당자</span>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontWeight:500, color:textC }}>{schedule.cname}  {schedule.cphone}</span>
+                  {schedule.cphone && (
+                    <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none' }}>
+                      <button style={{ background:green, color:'#fff', border:'none', borderRadius:7, padding:'4px 12px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                        📞 전화
+                      </button>
+                    </a>
+                  )}
+                </div>
+              </div>
               {schedule.memo && <Row label="관리자 메모" value={schedule.memo}/>}
             </>
           )}
