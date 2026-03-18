@@ -346,7 +346,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.4</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.5</div>
       </div>
     </div>
   )
@@ -532,18 +532,31 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   return (
     <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
       {/* 헤더 */}
-      <div style={{ background:navy, color:'#fff', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div>
+      <div style={{ background:navy, color:'#fff', padding:'12px 16px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          {/* 로고 + 앱명 */}
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <TruckIcon width={52} height={33}/>
-            <div style={{ fontSize:20, fontWeight:700 }}>동태관리</div>
+            <TruckIcon width={44} height={28}/>
+            <div>
+              <div style={{ fontSize:18, fontWeight:700, lineHeight:1.2 }}>동태관리</div>
+              <div style={{ fontSize:11, opacity:.65 }}>관리자</div>
+            </div>
           </div>
-          <div style={{ fontSize:12, opacity:.7, marginTop:2 }}>관리자</div>
-        </div>
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <Btn onClick={()=>setDriverMgr(true)} outline color="#7dd3fc" style={{ padding:'7px 14px', fontSize:13 }}>👤 기사 관리</Btn>
-          <Btn onClick={()=>setAdminSettings(true)} outline color="#a5f3fc" style={{ padding:'7px 14px', fontSize:13 }}>⚙️ 내 계정</Btn>
-          <Btn onClick={onLogout} outline color="#aac" style={{ padding:'7px 14px', fontSize:13 }}>로그아웃</Btn>
+          {/* 버튼 그룹 — 아이콘+짧은 텍스트 */}
+          <div style={{ display:'flex', gap:6 }}>
+            <button onClick={()=>setDriverMgr(true)}
+              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              👤 기사
+            </button>
+            <button onClick={()=>setAdminSettings(true)}
+              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              ⚙️
+            </button>
+            <button onClick={onLogout}
+              style={{ background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.2)', color:'rgba(255,255,255,.8)', borderRadius:8, padding:'7px 11px', fontSize:12, cursor:'pointer', whiteSpace:'nowrap' }}>
+              로그아웃
+            </button>
+          </div>
         </div>
       </div>
 
