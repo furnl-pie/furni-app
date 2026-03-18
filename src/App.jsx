@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.6</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.7</div>
       </div>
     </div>
   )
@@ -392,7 +392,12 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   const sorted = [...filtered].sort((a,b)=>{
     const dd = driverOrder(a.driver_id) - driverOrder(b.driver_id)
     if (dd!==0) return dd
-    return ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))
+    const dateA = a.date||'', dateB = b.date||''
+    if (dateA !== dateB) return dateA.localeCompare(dateB)
+    // 같은 날짜면 order 인덱스 우선, 없으면 time 문자열 비교
+    const oA = a.order ?? 9999, oB = b.order ?? 9999
+    if (oA !== oB) return oA - oB
+    return (a.time||'').localeCompare(b.time||'')
   })
 
   const stats = {
@@ -1947,8 +1952,9 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   const assignAll = dId => { const map={}; rows.forEach(r=>{ map[r._id]=dId }); setAssigns(map) }
 
   const submit = () => {
-    const list = rows.map(r => ({
+    const list = rows.map((r, i) => ({
       ...r,
+      order:       i,
       driver_id:   assigns[r._id] || null,
       driver_note: r.driver_note || '',
       status:'대기', start_time:null, end_time:null,
