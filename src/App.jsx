@@ -1,4 +1,4 @@
-import { useState, useRef, Fragment } from "react"
+import { useState, useRef, Fragment, useEffect } from "react"
 import { useAppData } from './hooks/useAppData'
 
 // ── 초기 계정 (런타임에 state로 관리됨) ──────────────────────────
@@ -270,6 +270,16 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   }
 
   const selected = schedules.find(s=>s.id===selectedId)
+
+  // 안드로이드 뒤로가기 처리
+  useEffect(() => {
+    if (view === 'detail') {
+      window.history.pushState({ detail: true }, '')
+      const handler = () => setView('list')
+      window.addEventListener('popstate', handler)
+      return () => window.removeEventListener('popstate', handler)
+    }
+  }, [view])
   if (view==='detail' && selected)
     return <AdminDetail schedule={selected} onUpdate={p=>onUpdate(selected.id,p)} onBack={()=>setView('list')} drivers={drivers}/>
 
@@ -312,30 +322,29 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
         {/* 필터 */}
         <Card style={{ marginBottom:14 }}>
-          <div style={{ display:'flex', gap:8, alignItems:'flex-end', flexWrap:'wrap' }}>
-            <Field label="날짜">
-              <input type="date" value={filterDate} onChange={e=>setFDate(e.target.value)} style={{ ...iStyle, width:'auto' }}/>
-            </Field>
-            <Field label="기사">
-              <select value={filterDriver} onChange={e=>setFD(e.target.value)} style={{ ...iStyle, width:'auto' }}>
+          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+              <span style={{ fontSize:11, fontWeight:600, color:muted }}>날짜</span>
+              <input type="date" value={filterDate} onChange={e=>setFDate(e.target.value)}
+                style={{ ...iStyle, width:'auto', height:38 }}/>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+              <span style={{ fontSize:11, fontWeight:600, color:muted }}>기사</span>
+              <select value={filterDriver} onChange={e=>setFD(e.target.value)}
+                style={{ ...iStyle, width:'auto', height:38 }}>
                 <option value="all">전체 기사</option>
                 <option value="unassigned">미배치만</option>
                 {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
-            </Field>
+            </div>
 
-            {/* 일정 등록 */}
-            {!assignMode && !deleteMode && (
-              <button onClick={()=>setModal(true)}
-                style={{ height:38, padding:'0 14px', background:navy, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                + 일정 등록
-              </button>
-            )}
+            {/* 구분선 */}
+            <div style={{ width:1, height:36, background:border, margin:'0 4px', alignSelf:'flex-end', marginBottom:2 }}/>
 
             {/* 일괄 배정 */}
             {!deleteMode && (
               assignMode ? (
-                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                <div style={{ display:'flex', gap:6, alignItems:'flex-end' }}>
                   <select value={assignTarget} onChange={e=>setAssignTarget(e.target.value)}
                     style={{ height:38, padding:'0 10px', border:`1.5px solid ${green}`, borderRadius:8, fontSize:13, fontWeight:600, color:green, outline:'none', background:'#fff', cursor:'pointer' }}>
                     <option value="">— 기사 선택 —</option>
@@ -354,7 +363,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 </div>
               ) : (
                 <button onClick={()=>setAssignMode(true)}
-                  style={{ height:38, padding:'0 14px', background:'#f0fdf4', color:green, border:`1.5px solid #86efac`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  style={{ height:38, padding:'0 14px', background:'#f0fdf4', color:green, border:`1.5px solid #86efac`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', alignSelf:'flex-end' }}>
                   👥 일괄 배정
                 </button>
               )
@@ -363,7 +372,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
             {/* 삭제 */}
             {!assignMode && (
               deleteMode ? (
-                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                <div style={{ display:'flex', gap:6, alignItems:'flex-end' }}>
                   {checkedIds.size > 0 && (
                     <button onClick={()=>setDelConfirm(true)}
                       style={{ height:38, padding:'0 14px', background:red, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
@@ -377,7 +386,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 </div>
               ) : (
                 <button onClick={()=>setDeleteMode(true)}
-                  style={{ height:38, padding:'0 14px', background:'#fef2f2', color:red, border:`1.5px solid #fecaca`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  style={{ height:38, padding:'0 14px', background:'#fef2f2', color:red, border:`1.5px solid #fecaca`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', alignSelf:'flex-end' }}>
                   🗑 삭제
                 </button>
               )
@@ -1841,6 +1850,16 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
     .sort((a,b) => a.time.localeCompare(b.time))
 
   const selected = schedules.find(s => s.id === selectedId)
+
+  // 안드로이드 뒤로가기 처리
+  useEffect(() => {
+    if (view === 'detail') {
+      window.history.pushState({ detail: true }, '')
+      const handler = () => setView('list')
+      window.addEventListener('popstate', handler)
+      return () => window.removeEventListener('popstate', handler)
+    }
+  }, [view])
 
   const changePw = async () => {
     setPwErr('')
