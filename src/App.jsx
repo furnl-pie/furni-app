@@ -1,25 +1,12 @@
 import { useState, useRef, Fragment, useEffect } from "react"
 import { useAppData } from './hooks/useAppData'
 
-// ── 초기 계정 (런타임에 state로 관리됨) ──────────────────────────
 const INIT_USERS = [
-  { id:'퍼니', name:'관리자', role:'admin',  pw:'admin', phone:'010-0000-0000' },
-  { id:'d1', name:'김민준', role:'driver', pw:'1111',  phone:'010-1111-2222' },
-  { id:'d2', name:'이서준', role:'driver', pw:'2222',  phone:'010-3333-4444' },
-  { id:'d3', name:'박도현', role:'driver', pw:'3333',  phone:'010-5555-6666' },
+  { id:'퍼니', name:'관리자', role:'admin', pw:'admin', phone:'010-0000-0000' },
 ]
-// App의 users state를 전역 헬퍼 함수들에서 쓸 수 있도록 동기화 (렌더링은 항상 동기이므로 안전)
 let USERS = INIT_USERS
 
 const today = new Date().toISOString().slice(0,10)
-
-const INIT_SCHEDULES = [
-  { id:'s1', driver_id:'d1', date:today, time:'09:00', address:'서울 강남구 역삼동 123-4',      waste:'2톤',   cname:'김현장', cphone:'010-9999-1111', memo:'건물 뒤편 출입',    status:'완료',   depart_time:'08:55', start_time:'09:05', end_time:'10:30', eta:'09:20', sms_sent:true,  est_waste:'',     est_duration:'', photos:[], schedule_photos:[], driver_note:'정문 잠겨 있어서 뒤쪽으로 진입' },
-  { id:'s2', driver_id:'d1', date:today, time:'13:00', address:'서울 마포구 상암동 456-7',      waste:'1.5톤', cname:'이담당', cphone:'010-8888-2222', memo:'',                  status:'진행중', depart_time:'12:50', start_time:'13:10', end_time:null,    eta:'13:35', sms_sent:true,  est_waste:'1.5톤', est_duration:'1시간', photos:[], schedule_photos:[], driver_note:'' },
-  { id:'s3', driver_id:'d1', date:today, time:'17:00', address:'서울 송파구 방이동 789',         waste:'3톤',   cname:'박관리', cphone:'010-7777-3333', memo:'정문 보안 체크 필요', status:'이동중', depart_time:'16:40', start_time:null,    end_time:null,    eta:'17:05', sms_sent:true,  est_waste:'',     est_duration:'', photos:[], schedule_photos:[], driver_note:'' },
-  { id:'s4', driver_id:'d2', date:today, time:'10:00', address:'경기 성남시 분당구 판교동 100', waste:'5톤',   cname:'최현장', cphone:'010-6666-4444', memo:'',                  status:'완료',   depart_time:'09:50', start_time:'10:05', end_time:'12:00', eta:'10:25', sms_sent:true,  est_waste:'5톤',  est_duration:'2시간', photos:[], schedule_photos:[], driver_note:'' },
-  { id:'s5', driver_id:'d3', date:today, time:'14:00', address:'서울 중구 을지로 200',          waste:'2.5톤', cname:'정담당', cphone:'010-5555-5555', memo:'',                  status:'대기',   depart_time:null,    start_time:null,    end_time:null,    eta:null,    sms_sent:false, est_waste:'',     est_duration:'', photos:[], schedule_photos:[], driver_note:'' },
-]
 
 // ── 색상 / 공용 스타일 ──────────────────────────────────────────
 const navy   = '#1b3a5c'
@@ -47,44 +34,44 @@ const iStyle = {
 
 // ── 공용 컴포넌트 ────────────────────────────────────────────────
 function TruckIcon({ width=110, height=70 }) {
-  // 캐빈 앞부분이 각진 정통 카고트럭 스타일
+
   return (
     <svg width={width} height={height} viewBox="0 0 120 76" xmlns="http://www.w3.org/2000/svg">
-      {/* 적재함 박스 */}
+
       <rect x="28" y="12" width="74" height="42" rx="2" fill="#f0f4f8" stroke="#c0ccd8" strokeWidth="1.2"/>
-      {/* 적재함 내부 패널선 */}
+
       <line x1="54" y1="12" x2="54" y2="54" stroke="#c0ccd8" strokeWidth="0.7"/>
       <line x1="76" y1="12" x2="76" y2="54" stroke="#c0ccd8" strokeWidth="0.7"/>
-      {/* 적재함 상단 라인 */}
+
       <rect x="28" y="12" width="74" height="5" rx="2" fill="#dde5ee"/>
-      {/* 캐빈 — 각진 박스형 */}
+
       <rect x="6" y="22" width="26" height="32" rx="3" fill="#1b3a5c"/>
-      {/* 캐빈 지붕 경사 */}
+
       <polygon points="6,22 28,12 28,22" fill="#1b3a5c"/>
-      {/* 앞유리 */}
+
       <polygon points="10,22 24,14 24,22" fill="#7eb8e8" opacity="0.85"/>
-      {/* 사이드 창문 */}
+
       <rect x="8" y="25" width="10" height="8" rx="1.5" fill="#7eb8e8" opacity="0.7"/>
-      {/* 도어 구분선 */}
+
       <line x1="20" y1="22" x2="20" y2="54" stroke="#0f2740" strokeWidth="0.8"/>
-      {/* 범퍼 */}
+
       <rect x="4" y="50" width="28" height="5" rx="1" fill="#0f2740"/>
-      {/* 사이드 미러 */}
+
       <rect x="2" y="26" width="5" height="4" rx="1" fill="#2a5a8c"/>
-      {/* 차대 */}
+
       <rect x="6" y="54" width="96" height="4" rx="1" fill="#8899aa"/>
-      {/* 앞바퀴 */}
+
       <circle cx="20" cy="62" r="10" fill="#222"/>
       <circle cx="20" cy="62" r="6" fill="#444"/>
       <circle cx="20" cy="62" r="2.5" fill="#aaa"/>
-      {/* 뒷바퀴 (더블) */}
+
       <circle cx="75" cy="62" r="10" fill="#222"/>
       <circle cx="75" cy="62" r="6" fill="#444"/>
       <circle cx="75" cy="62" r="2.5" fill="#aaa"/>
       <circle cx="93" cy="62" r="10" fill="#222"/>
       <circle cx="93" cy="62" r="6" fill="#444"/>
       <circle cx="93" cy="62" r="2.5" fill="#aaa"/>
-      {/* FN퍼니 텍스트 */}
+
       <rect x="32" y="26" width="66" height="20" rx="2" fill="#1b3a5c" opacity="0.08"/>
       <text x="65" y="40" textAnchor="middle" fontSize="12" fontWeight="800" fill="#1b3a5c" fontFamily="'Noto Sans KR', sans-serif" letterSpacing="1">FN퍼니</text>
     </svg>
@@ -188,7 +175,7 @@ function Lightbox({ photos, index, onClose }) {
         <button onClick={next} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'rgba(255,255,255,.18)', border:'none', color:'#fff', fontSize:26, width:46, height:46, borderRadius:'50%', cursor:'pointer' }}>›</button>
       )}
       <button onClick={onClose} style={{ position:'absolute', top:14, right:14, background:'rgba(255,255,255,.18)', border:'none', color:'#fff', fontSize:16, width:36, height:36, borderRadius:'50%', cursor:'pointer' }}>✕</button>
-      {/* 하단 바: 번호 + 다운로드 */}
+
       <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:16, left:'50%', transform:'translateX(-50%)', display:'flex', alignItems:'center', gap:10, background:'rgba(0,0,0,.55)', padding:'6px 14px', borderRadius:20 }}>
         <span style={{ color:'rgba(255,255,255,.7)', fontSize:13 }}>{cur+1} / {total}</span>
         <button onClick={download}
@@ -217,25 +204,25 @@ function SlidePhotoViewer({ photos, onOpen }) {
 
   return (
     <div style={{ position:'relative', width:'100%', borderRadius:10, overflow:'hidden', background:'#000', aspectRatio:'4/3' }}>
-      {/* 사진 */}
+
       <img
         src={photos[cur]} alt={`사진${cur+1}`}
         onClick={() => onOpen && onOpen(cur)}
         style={{ width:'100%', height:'100%', objectFit:'contain', cursor: onOpen ? 'pointer' : 'default', display:'block' }}
       />
-      {/* 이전 버튼 */}
+
       {total > 1 && (
         <button onClick={prev} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.55)', border:'none', color:'#fff', fontSize:32, width:48, height:48, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
       )}
-      {/* 다음 버튼 */}
+
       {total > 1 && (
         <button onClick={next} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'rgba(0,0,0,.55)', border:'none', color:'#fff', fontSize:32, width:48, height:48, borderRadius:'50%', cursor:'pointer', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
       )}
-      {/* 카운터 */}
+
       <div style={{ position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)', background:'rgba(0,0,0,.55)', color:'#fff', fontSize:12, fontWeight:600, padding:'3px 10px', borderRadius:12, whiteSpace:'nowrap' }}>
         {cur + 1} / {total}
       </div>
-      {/* 썸네일 도트 */}
+
       {total > 1 && total <= 8 && (
         <div style={{ position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)', display:'flex', gap:5, marginTop:0 }}>
           {photos.map((_,i) => (
@@ -259,7 +246,6 @@ function LoginPage({ onLogin, users }) {
   const [autoLogin, setAutoLogin] = useState(() => localStorage.getItem('auto_login') === '1')
   const [err,       setErr]       = useState('')
 
-  // 자동로그인 처리
   useEffect(() => {
     if (autoLogin && users.length > 0) {
       const savedId = localStorage.getItem('saved_id') || ''
@@ -274,7 +260,7 @@ function LoginPage({ onLogin, users }) {
   const go = () => {
     const u = users.find(u => u.id === id && u.pw === pw)
     if (!u) return setErr('아이디 또는 비밀번호가 올바르지 않습니다')
-    // 저장 처리
+
     if (saveId)    { localStorage.setItem('saved_id', id); localStorage.setItem('save_id','1') }
     else           { localStorage.removeItem('saved_id');   localStorage.setItem('save_id','0') }
     if (savePw)    { localStorage.setItem('saved_pw', pw); localStorage.setItem('save_pw','1') }
@@ -328,7 +314,6 @@ function LoginPage({ onLogin, users }) {
         </Field>
         <div style={{ fontSize:12, color:muted, marginBottom:14, marginTop:-6 }}>기본 비밀번호 : 1111</div>
 
-        {/* 저장 옵션 */}
         <div style={{ display:'flex', gap:16, marginBottom:16, flexWrap:'wrap' }}>
           {[
             [saveId,    toggleSaveId,    '아이디 저장'],
@@ -347,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.2.3</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.0</div>
       </div>
     </div>
   )
@@ -366,12 +351,10 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
   const [filterDate, setFDate]    = useState(today)
   const [editingId, setEditingId] = useState(null)
 
-  // 삭제 모드
   const [deleteMode,     setDeleteMode]   = useState(false)
   const [checkedIds,     setCheckedIds]   = useState(new Set())
   const [showDelConfirm, setDelConfirm]   = useState(false)
 
-  // 일괄 배정 모드
   const [assignMode,     setAssignMode]   = useState(false)
   const [assignChecked,  setAssignChecked] = useState(new Set())
   const [assignTarget,   setAssignTarget]  = useState('')
@@ -398,7 +381,6 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
   const drivers = users.filter(u => u.role === 'driver')
 
-  // 필터링
   const filtered = schedules.filter(s => {
     if (filterDriver === 'unassigned') return !s.driver_id
     if (filterDriver !== 'all' && s.driver_id !== filterDriver) return false
@@ -406,7 +388,6 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
     return true
   })
 
-  // 정렬: 기사 순서(미배치 맨 뒤) → 날짜+시간순
   const driverOrder = id => { const i=drivers.findIndex(d=>d.id===id); return i>=0?i:999 }
   const sorted = [...filtered].sort((a,b)=>{
     const dd = driverOrder(a.driver_id) - driverOrder(b.driver_id)
@@ -423,7 +404,6 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
   const selected = schedules.find(s=>s.id===selectedId)
 
-  // 안드로이드 뒤로가기 처리
   useEffect(() => {
     if (view === 'detail') {
       window.history.pushState({ detail: true }, '')
@@ -845,7 +825,7 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:480, maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
-        {/* 헤더 */}
+
         <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
           <div style={{ fontSize:16, fontWeight:700, color:navy }}>👤 기사 계정 관리</div>
           <button onClick={onClose} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
@@ -858,7 +838,7 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
               <div key={d.id} style={{ background:'#f8fafc', borderRadius:10, border:`1px solid ${border}`, overflow:'hidden' }}>
                 {editId===d.id ? (
                   <div style={{ padding:'12px 14px', display:'flex', flexDirection:'column', gap:8 }}>
-                    {/* 아이디는 수정 불가 표시만 */}
+
                     <div style={{ background:'#f1f5f9', borderRadius:7, padding:'8px 12px', display:'flex', alignItems:'center', gap:8 }}>
                       <span style={{ fontSize:11, color:muted }}>아이디 (변경 불가)</span>
                       <span style={{ fontSize:13, fontWeight:700, color:navy, fontFamily:'monospace' }}>{d.id}</span>
@@ -986,7 +966,6 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const spFileRef = useRef()
   const dropRef   = useRef()
 
-  // ── 청구 모달 ──
   const [showBilling, setShowBilling] = useState(false)
   const [billingForm, setBillingForm] = useState({ workers:'1', amount:'', unit:'', total:'' })
   const [billCopied, setBillCopied]   = useState(false)
@@ -998,7 +977,6 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
     return next
   })
 
-  // ── 일정 정보 편집 상태 ──
   const [editInfo, setEditInfo] = useState(false)
   const [infoForm, setInfoForm] = useState({
     date:   schedule.date   || '',
@@ -1032,7 +1010,6 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
   const saveDriver = () => { onUpdate({ driver_id: driverId||null }); setEditDriver(false) }
 
-  // ── 핵심 수정: 모든 파일을 Promise.all로 읽고 한 번에 업데이트 ──
   const readFilesAsBase64 = files =>
     Promise.all(Array.from(files).map(f => new Promise(res => {
       const r = new FileReader()
@@ -1054,7 +1031,6 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const removeSchedulePhoto = idx =>
     onUpdate({ schedule_photos: (schedule.schedule_photos||[]).filter((_,i)=>i!==idx) })
 
-  // ── 카카오톡 / 클립보드 이미지 붙여넣기 ──
   const handlePagePaste = async e => {
     const items = Array.from(e.clipboardData?.items || [])
     const imageItems = items.filter(it => it.type.startsWith('image/'))
@@ -1067,7 +1043,6 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
     setTimeout(() => setPasteMsg(''), 2500)
   }
 
-  // ── 드래그앤드롭 ──
   const handleDrop = async e => {
     e.preventDefault()
     dropRef.current?.classList.remove('drag-over')
@@ -1361,7 +1336,6 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         )}
       </div>
 
-      {/* ── 청구서 모달 ── */}
       {showBilling && (() => {
         const toMin = t => { if(!t) return 0; const [h,m] = t.split(':').map(Number); return h*60+m }
         const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
@@ -1371,7 +1345,6 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           ? `${schedule.start_time} ~ ${schedule.end_time} (${duration})`
           : duration
 
-        // 업체명에서 (담당자) 제거
         const companyName = (schedule.cname || '').replace(/\(.*?\)/g, '').trim()
         const wasteAmt = schedule.final_waste || schedule.waste || ''
 
@@ -1403,14 +1376,14 @@ ${billingForm.total}만원 (부가세 포함)
         return (
           <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:3000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
             <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:440, maxHeight:'90vh', overflowY:'auto' }}>
-              {/* 헤더 */}
+      
               <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, background:'#fff', zIndex:1 }}>
                 <div style={{ fontSize:16, fontWeight:700, color:navy }}>💰 청구서 작성</div>
                 <button onClick={()=>setShowBilling(false)} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
               </div>
 
               <div style={{ padding:'16px 20px' }}>
-                {/* 자동완성 미리보기 */}
+
                 <div style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, lineHeight:2, fontFamily:'monospace' }}>
                   <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:2 }}>[FN퍼니 작업보고]</div>
                   <div>작업날짜: <span style={{ color:textC }}>{schedule.date}</span></div>
@@ -1423,9 +1396,8 @@ ${billingForm.total}만원 (부가세 포함)
                   <div>특이사항: <span style={{ color:textC }}>{schedule.driver_note || '없음'}</span></div>
                 </div>
 
-                {/* 입력 필드 */}
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
-                  {/* 작업인원 */}
+
                   <div>
                     <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>작업인원</div>
                     <div style={{ display:'flex', gap:8 }}>
@@ -1438,7 +1410,6 @@ ${billingForm.total}만원 (부가세 포함)
                     </div>
                   </div>
 
-                  {/* 폐기물양 금액 */}
                   <div>
                     <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
                       폐기물 청구금액 <span style={{ fontWeight:400, color:'#94a3b8' }}>({wasteAmt} &gt; ? 만원)</span>
@@ -1450,7 +1421,6 @@ ${billingForm.total}만원 (부가세 포함)
                     </div>
                   </div>
 
-                  {/* 1인 금액 */}
                   <div>
                     <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
                       {billingForm.workers}인 금액
@@ -1462,7 +1432,6 @@ ${billingForm.total}만원 (부가세 포함)
                     </div>
                   </div>
 
-                  {/* 합계 */}
                   <div>
                     <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>합계 (부가세 포함)
                       <span style={{ fontWeight:400, color:'#94a3b8', marginLeft:6 }}>자동 계산됨</span>
@@ -1476,7 +1445,6 @@ ${billingForm.total}만원 (부가세 포함)
                   </div>
                 </div>
 
-                {/* 청구금액 미리보기 */}
                 <div style={{ background:'#eff6ff', border:`1px solid #bfdbfe`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, fontFamily:'monospace', lineHeight:2 }}>
                   <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:2 }}>&lt;청구금액&gt;</div>
                   <div style={{ color:textC }}>{wasteAmt || '__'} &gt; {billingForm.amount||'__'}만원</div>
@@ -1503,7 +1471,6 @@ ${billingForm.total}만원 (부가세 포함)
   )
 }
 
-// ── 일정 등록 모달 ────────────────────────────────────────────
 // ── ETA 인라인 편집 컴포넌트 ──────────────────────────────────────
 function EtaInlineEdit({ eta, onSave }) {
   const [editing, setEditing] = useState(false)
@@ -1538,8 +1505,7 @@ function EtaInlineEdit({ eta, onSave }) {
     </div>
   )
 }
-// ── 시간 인라인 편집 행 (관리자용) ────────────────────────────────
-// ── 기사용 시간 인라인 편집 (모바일 친화) ───────────────────────────
+// ── 기사용 시간 편집 ───────────────────────────────────────────────
 function DriverTimeEdit({ label, value, color, onSave }) {
   const [editing, setEditing] = useState(false)
   const [val, setVal]         = useState(value || '')
@@ -1702,7 +1668,6 @@ async function downloadAllPhotos(photos, prefix = '완료사진') {
       // revokeObjectURL은 약간 뒤에 해야 다운로드가 시작됨
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (e) {
-      console.error('다운로드 실패:', filename, e)
       window.open(src, '_blank')
     }
     // 브라우저 다운로드 제한 방지: 충분한 딜레이
@@ -1837,20 +1802,17 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   const [rows, setRows]       = useState([newRow()])
   const [assigns, setAssigns] = useState({})
 
-  // ── 붙여넣기 파서 state ──
   const [pasteRaw, setPasteRaw]   = useState('')
   const [parsed, setParsed]       = useState(null)
   const [colMap, setColMap]       = useState({})
   const [parseMsg, setParseMsg]   = useState('')
 
-  // ── 카카오톡 state ──
   const [kakaoRaw,  setKakaoRaw]  = useState('')
   const [kakaoRows, setKakaoRows] = useState([])
   const [kakaoMsg,  setKakaoMsg]  = useState('')
 
-  // textarea 변경 또는 붙여넣기 시 자동 파싱
   const handlePasteInput = e => {
-    // onPaste: clipboardData가 더 정확 (탭 문자 보존)
+
     const text = e.clipboardData ? e.clipboardData.getData('text') : e.target.value
     setPasteRaw(text)
     processPasteText(text)
@@ -1866,7 +1828,7 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
     const looksLikeHeader = Object.keys(detected).length >= 2
     const headers = looksLikeHeader ? firstRow : firstRow.map((_,i)=>`열${i+1}`)
     const data    = looksLikeHeader ? grid.slice(1) : grid
-    // 헤더 없을 때: 열 인덱스 순서대로 기본 매핑 시도
+
     const cm = looksLikeHeader ? detected : (() => {
       const auto = {}
       const fields = ['date','time','address','waste','cname','cphone','memo']
@@ -1880,7 +1842,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
       : `⚠️ ${data.length}행 감지 · 헤더 미인식 → 열 순서(날짜/시간/주소/폐기물양/업체명/연락처/메모)로 자동 배정`)
   }
 
-  // ── 카카오톡 파싱 ──
   const handleKakaoParse = (text) => {
     if (!text.trim()) return
     const result = parseKakaoChat(text)
@@ -1939,7 +1900,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
     setParseMsg('')
   }
 
-  // ── Manual 입력 helpers ──
   const setRow = (_id, k, v) => setRows(prev => prev.map(r => r._id===_id ? {...r,[k]:v} : r))
   const addRow = () => setRows(prev => [...prev, newRow()])
   const delRow = _id => setRows(prev => prev.filter(r => r._id!==_id))
@@ -1992,14 +1952,12 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
 
   const assignedCount = rows.filter(r=>assigns[r._id]).length
 
-  // 컬럼 옵션
   const colOptions = parsed?.headers.map((h,i)=>({ label:`[${i+1}열] ${h}`, value:i })) || []
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:16, fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth: step===1 ? 960 : 700, maxHeight:'92vh', display:'flex', flexDirection:'column' }}>
 
-        {/* 헤더 */}
         <div style={{ padding:'14px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:16 }}>
             <div style={{ fontSize:16, fontWeight:700, color:navy }}>
@@ -2023,7 +1981,7 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
         {/* ══ STEP 1 ══ */}
         {step===1 && (
           <>
-            {/* 모드 탭 */}
+
             <div style={{ display:'flex', borderBottom:`1px solid ${border}`, flexShrink:0 }}>
               {[['kakao','💬 카카오톡'],['paste','📊 엑셀 붙여넣기'],['manual','✏️ 직접 입력']].map(([m,l])=>(
                 <button key={m} onClick={()=>setInputMode(m)}
@@ -2033,7 +1991,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
               ))}
             </div>
 
-            {/* ── 카카오톡 모드 ── */}
             {inputMode==='kakao' && (
               <div style={{ flex:1, overflowY:'auto', padding:20 }}>
                 <div style={{ fontSize:13, fontWeight:600, color:textC, marginBottom:8, display:'flex', alignItems:'center', gap:8 }}>
@@ -2041,7 +1998,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
                   <span style={{ fontSize:11, color:muted, fontWeight:400 }}>스케줄방 메시지를 복사해서 붙여넣으세요</span>
                 </div>
 
-                {/* 형식 안내 */}
                 <div style={{ background:'#f0fdf4', border:`1px solid #86efac`, borderRadius:10, padding:'10px 14px', marginBottom:14, fontSize:12, color:'#166534', lineHeight:1.8 }}>
                   <div style={{ fontWeight:700, marginBottom:4 }}>인식 형식 예시</div>
                   <div style={{ fontFamily:'monospace', fontSize:11, whiteSpace:'pre', background:'#fff', borderRadius:6, padding:'8px 10px', border:`1px solid #bbf7d0` }}>{`디자인도트(김혜진)
@@ -2069,14 +2025,12 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
                   style={{ width:'100%', height:180, padding:14, border:`2px solid ${border}`, borderRadius:10, fontSize:13, lineHeight:1.7, resize:'vertical', outline:'none', boxSizing:'border-box', background:'#f8fafc', color:textC, fontFamily:'monospace' }}
                 />
 
-                {/* 파싱 결과 */}
                 {kakaoMsg && (
                   <div style={{ marginTop:10, padding:'8px 12px', borderRadius:8, background: kakaoRows.length>0?'#f0fdf4':'#fef2f2', border:`1px solid ${kakaoRows.length>0?'#86efac':'#fca5a5'}`, fontSize:13, color: kakaoRows.length>0?'#166534':red, fontWeight:500 }}>
                     {kakaoMsg}
                   </div>
                 )}
 
-                {/* 파싱된 미리보기 */}
                 {kakaoRows.length > 0 && (
                   <div style={{ marginTop:14 }}>
                     <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8 }}>파싱 결과 미리보기</div>
@@ -2101,11 +2055,9 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
               </div>
             )}
 
-            {/* ── 엑셀 붙여넣기 모드 ── */}
             {inputMode==='paste' && (
               <div style={{ flex:1, overflowY:'auto', padding:20 }}>
 
-                {/* 붙여넣기 영역: 보이는 textarea 사용 (가장 신뢰할 수 있는 방식) */}
                 {!parsed && (
                   <div style={{ marginBottom:16 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:textC, marginBottom:8, display:'flex', alignItems:'center', gap:8 }}>
@@ -2124,7 +2076,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
                   </div>
                 )}
 
-                {/* 파싱 결과 */}
                 {parsed && (
                   <>
                     <div style={{ background:'#f0fdf4', border:`1px solid #86efac`, borderRadius:10, padding:'10px 16px', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
@@ -2136,7 +2087,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
                       </button>
                     </div>
 
-                    {/* 컬럼 매핑 UI */}
                     <div style={{ background:'#fff', border:`1px solid ${border}`, borderRadius:10, padding:16, marginBottom:16 }}>
                       <div style={{ fontSize:13, fontWeight:700, color:navy, marginBottom:12 }}>컬럼 매핑 확인</div>
                       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
@@ -2157,7 +2107,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
                       </div>
                     </div>
 
-                    {/* 미리보기 */}
                     <div style={{ border:`1px solid ${border}`, borderRadius:10, overflow:'hidden', marginBottom:16 }}>
                       <div style={{ background:'#f8fafc', padding:'8px 14px', fontSize:12, fontWeight:600, color:muted, borderBottom:`1px solid ${border}` }}>
                         미리보기 (최대 5행)
@@ -2197,7 +2146,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
               </div>
             )}
 
-            {/* ── 직접 입력 모드 ── */}
             {inputMode==='manual' && (
               <div style={{ overflowY:'auto', flex:1 }}>
                 <div style={{ overflowX:'auto' }}>
@@ -2237,7 +2185,6 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
               </div>
             )}
 
-            {/* Step 1 하단 */}
             <div style={{ padding:'12px 20px', borderTop:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
               {inputMode==='manual'
                 ? <button onClick={addRow} style={{ background:'none', border:`1.5px dashed ${blue}`, color:blue, borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer' }}>+ 행 추가</button>
@@ -2341,7 +2288,6 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
 
   const selected = schedules.find(s => s.id === selectedId)
 
-  // 안드로이드 뒤로가기 처리
   useEffect(() => {
     if (view === 'detail') {
       window.history.pushState({ detail: true }, '')
@@ -2512,20 +2458,16 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const [lightbox,  setLightbox]  = useState(null)
   const [lbSource,  setLbSource]  = useState('schedule_ref')
 
-  // 출발 모달 (SMS + ETA)
   const [showDepartModal, setDepartModal] = useState(false)
   const [eta,        setEta]       = useState('')
   const [smsPreview, setSmsPreview] = useState('')
 
-  // 작업 시작 모달 (예상 물량 + 작업시간)
   const [showWorkModal, setWorkModal] = useState(false)
   const [estWaste,    setEstWaste]    = useState('')
   const [estDuration, setEstDuration] = useState('')
 
-  // 문자 재발송 모달
   const [showResendModal, setResendModal] = useState(false)
 
-  // 취소 확인
   const [showCancelDepart,  setShowCancelDepart]  = useState(false)
   const [showCancelStart,   setShowCancelStart]   = useState(false)
   const [showCancelEnd,     setShowCancelEnd]      = useState(false)
@@ -2535,10 +2477,9 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const buildSms = (etaVal) =>
     `[배차알림] 안녕하세요, ${schedule.cname}님.\n폐기물 수거 차량이 출발했습니다.\n\n📍 현장: ${schedule.address}\n🕐 도착 예정: ${etaVal}\n\n문의: ${USERS.find(u=>u.id===schedule.driver_id)?.phone||''}`
 
-  // ── 1. 출발 버튼 → 모달 열기
   const openDepartModal = () => {
     const d = new Date(); d.setMinutes(d.getMinutes() + 30)
-    // 30분 단위로 반올림
+
     const m = d.getMinutes()
     d.setMinutes(m < 30 ? 30 : 0); if (m >= 30) d.setHours(d.getHours() + 1)
     const etaDef = d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false})
@@ -2547,26 +2488,22 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
     setDepartModal(true)
   }
 
-  // ── 1. 출발 확인 → 이동중 상태 + SMS 발송
   const confirmDepart = () => {
     onUpdate({ status:'이동중', depart_time: nowTime(), eta, sms_sent: true })
     setDepartModal(false)
   }
 
-  // ── 2. 시작 버튼 → 팝업 열기
   const openWorkModal = () => {
     setEstWaste('')
     setEstDuration('')
     setWorkModal(true)
   }
 
-  // ── 2. 작업 시작 확인 → 진행중
   const confirmWork = () => {
     onUpdate({ status:'진행중', start_time: nowTime(), est_waste: estWaste, est_duration: estDuration })
     setWorkModal(false)
   }
 
-  // ── 문자 재발송
   const openResendModal = () => {
     const d = new Date(); d.setMinutes(d.getMinutes() + 30)
     const m = d.getMinutes()
@@ -2581,7 +2518,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
     setResendModal(false)
   }
 
-  // ── 취소들
   const cancelDepart = () => {
     onUpdate({ status:'대기', depart_time:null, eta:null, sms_sent:false })
     setShowCancelDepart(false)
@@ -2627,7 +2563,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const handleDone = () => { onUpdate({ status:'완료', end_time:nowTime(), photos, driver_note:driverNote, final_waste:finalWaste }); onBack() }
   const saveEdit   = () => { onUpdate({ photos, driver_note:driverNote, final_waste:finalWaste }); setEditingDone(false) }
 
-  // 상태 플래그
   const isReady    = schedule.status === '대기'
   const isMoving   = schedule.status === '이동중'
   const isWorking  = schedule.status === '진행중'
@@ -2635,43 +2570,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
   const displayPhotos = (isDone && !editingDone) ? (schedule.photos||[]) : photos
   const lbPhotos = lbSource==='schedule_ref' ? (schedule.schedule_photos||[]) : displayPhotos
-
-  // 공통 사진 그리드 (진행중 + 완료수정 공유)
-  const PhotoGrid = ({ editable }) => (
-    <div style={{ marginBottom:14 }}>
-      <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8, display:'flex', justifyContent:'space-between' }}>
-        <span>완료 사진 <span style={{ color:photos.length>0?green:muted }}>({photos.length}장)</span></span>
-        {editable && <span style={{ fontSize:11, color:editingDone?blue:muted }}>{editingDone?'수정 중':'여러 장 추가 가능'}</span>}
-      </div>
-      {photos.length > 0 ? (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
-          {photos.map((src,i)=>(
-            <div key={i} style={{ position:'relative', aspectRatio:'1' }} onClick={()=>openLb('complete',i)}>
-              <img src={src} alt={`사진${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:8, border:`1px solid ${border}`, cursor:'pointer' }}/>
-              {editable && <button onClick={e=>{ e.stopPropagation(); removePhoto(i) }}
-                style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.65)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>}
-              <div style={{ position:'absolute', bottom:3, left:4, fontSize:9, color:'#fff', background:'rgba(0,0,0,.5)', borderRadius:3, padding:'1px 4px' }}>{i+1}</div>
-            </div>
-          ))}
-          {editable && (
-            <div onClick={()=>fileRef.current?.click()}
-              style={{ aspectRatio:'1', border:`2px dashed ${border}`, borderRadius:8, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', cursor:'pointer', background:'#f8fafc' }}>
-              <div style={{ fontSize:20 }}>+</div>
-              <div style={{ fontSize:10, color:muted }}>추가</div>
-            </div>
-          )}
-        </div>
-      ) : editable ? (
-        <div onClick={()=>fileRef.current?.click()}
-          style={{ border:`2px dashed ${border}`, borderRadius:10, padding:20, textAlign:'center', cursor:'pointer', background:'#f8fafc' }}>
-          <div style={{ fontSize:28, marginBottom:6 }}>📷</div>
-          <div style={{ fontSize:13, color:muted, fontWeight:500 }}>사진 첨부하기</div>
-          <div style={{ fontSize:11, color:'#ccc', marginTop:3 }}>탭하여 촬영 또는 갤러리에서 선택 · 여러 장 가능</div>
-        </div>
-      ) : null}
-      {editable && <input ref={fileRef} type="file" accept="image/*" multiple onChange={addPhotos} style={{ display:'none' }}/>}
-    </div>
-  )
 
   return (
     <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
@@ -2719,7 +2617,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         <Card>
           <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:16 }}>업무 기록</div>
 
-          {/* ─ 스텝 바 ─ */}
           <div style={{ display:'flex', alignItems:'center', marginBottom:22, gap:4 }}>
             {[['대기','대기'],['이동중','이동중'],['진행중','진행중'],['완료','완료']].map(([s,l],i)=>{
               const order = ['대기','이동중','진행중','완료']
@@ -2742,7 +2639,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
           {/* ── STEP 1: 출발 ── */}
           <div style={{ borderBottom:`1px solid ${border}` }}>
-            {/* 헤더 행: 번호 + 제목 + 버튼 */}
+
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0 6px 0' }}>
               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                 <span style={{ fontSize:14, fontWeight:700, color:textC, minWidth:22 }}>①</span>
@@ -2758,7 +2655,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                 )}
               </div>
             </div>
-            {/* 서브 컨텐츠 */}
+
             <div style={{ paddingLeft:28, paddingBottom:10 }}>
               {schedule.depart_time
                 ? <div style={{ fontSize:14, color:green, fontFamily:'monospace', marginBottom: (isMoving||isWorking||isDone) ? 8 : 0 }}>🚚 {schedule.depart_time} 출발</div>
@@ -2843,7 +2740,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
             {/* 진행중 — 완료 입력 */}
             {isWorking && (
               <>
-                {/* 최종 물량 선택 버튼 */}
+
                 <div style={{ marginBottom:14 }}>
                   <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>최종 물량 (선택)</div>
                   <button onClick={()=>setFinalWasteModal(true)}
@@ -2898,9 +2795,9 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
               <div>
                 <div style={{ background:'#f0fdf4', border:`1px solid #86efac`, borderRadius:10, padding:'12px 14px', marginBottom:10 }}>
                   <div style={{ fontSize:16, fontWeight:700, color:green, marginBottom:8 }}>✅ 업무 완료</div>
-                  {/* 종료 시간 수정 가능 */}
+
                   <DriverTimeEdit label="종료" value={schedule.end_time} color={green} onSave={v=>onUpdate({ end_time:v||null })}/>
-                  {/* 총 작업 시간 */}
+
                   {schedule.start_time && schedule.end_time && (() => {
                     const toMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m }
                     const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
@@ -3003,7 +2900,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         </Card>
       </div>
 
-      {/* ── 출발 모달 (SMS 포함) ── */}
       {showDepartModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36 }}>
@@ -3032,7 +2928,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         </div>
       )}
 
-      {/* ── 작업 시작 팝업 (예상물량 + 작업시간) ── */}
       {showWorkModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36, maxHeight:'85vh', overflowY:'auto' }}>
@@ -3098,7 +2993,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         </div>
       )}
 
-      {/* ── 최종 물량 선택 팝업 ── */}
       {showFinalWasteModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2100, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36, maxHeight:'85vh', overflowY:'auto' }}>
@@ -3147,7 +3041,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         </div>
       )}
 
-      {/* ── 문자 재발송 모달 ── */}
       {showResendModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:24, paddingBottom:36 }}>
@@ -3169,7 +3062,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         </div>
       )}
 
-      {/* ── 취소 확인 다이얼로그 ── */}
       {[
         [showCancelDepart, setShowCancelDepart, cancelDepart, '출발을 취소할까요?',   '출발 시간이 삭제되고 대기 상태로 돌아갑니다.',     '출발 취소', red],
         [showCancelStart,  setShowCancelStart,  cancelStart,  '작업 시작을 취소할까요?', '시작 시간이 삭제되고 이동중 상태로 돌아갑니다.', '시작 취소', red],
@@ -3256,7 +3148,7 @@ export default function App() {
 
   return (
     <>
-      {/* 안드로이드 입력 글씨 색상 강제 고정 */}
+
       <style>{`
         input, select, textarea {
           color: #1e293b !important;
