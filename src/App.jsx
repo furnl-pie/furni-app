@@ -332,7 +332,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.0</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.3.1</div>
       </div>
     </div>
   )
@@ -560,14 +560,14 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                       </button>
                     </th>
                   )}
-                  {['기사','날짜·시간','주소','폐기물량','현장담당자','사진','상태','시작','완료'].map(h=>(
+                  {['기사','상태','현장담당자','날짜·시간','주소','폐기물량','시작','완료'].map(h=>(
                     <th key={h} style={{ padding:'10px 12px', textAlign:'left', fontWeight:600, color:muted, fontSize:12, whiteSpace:'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {sorted.length===0 && (
-                  <tr><td colSpan={9} style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</td></tr>
                 )}
                 {sorted.map(s => {
                   const showDiv = s.driver_id !== lastDriverId
@@ -584,7 +584,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                       {/* 기사 그룹 헤더 */}
                       {showDiv && (
                         <tr>
-                          <td colSpan={(deleteMode||assignMode) ? 10 : 9} style={{
+                          <td colSpan={(deleteMode||assignMode) ? 9 : 8} style={{
                             padding:'5px 14px', fontSize:11, fontWeight:700, letterSpacing:.4,
                             background: chip ? chip.bg : '#fef2f2',
                             color: chip ? chip.color : red,
@@ -651,21 +651,14 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                             </div>
                           )}
                         </td>
+                        <td style={{ padding:'8px 12px' }}><Badge status={s.status}/></td>
+                        <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>{s.cname}</td>
                         <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>
                           <div style={{ fontSize:11, color:muted }}>{s.date}</div>
                           <div style={{ fontFamily:'monospace', fontWeight:600 }}>{s.time}</div>
                         </td>
                         <td style={{ padding:'8px 12px', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.address}</td>
                         <td style={{ padding:'8px 12px', color:muted, whiteSpace:'nowrap' }}>{s.waste}</td>
-                        <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>{s.cname}</td>
-                        <td style={{ padding:'8px 12px', whiteSpace:'nowrap' }}>
-                          <div style={{ display:'flex', gap:5 }}>
-                            {spCnt>0 && <span style={{ fontSize:11, background:'#eff6ff', color:blue, borderRadius:4, padding:'2px 6px' }}>📎{spCnt}</span>}
-                            {cpCnt>0 && <span style={{ fontSize:11, background:'#f0fdf4', color:green, borderRadius:4, padding:'2px 6px' }}>✅{cpCnt}</span>}
-                            {spCnt===0&&cpCnt===0 && <span style={{ color:'#ccc', fontSize:12 }}>—</span>}
-                          </div>
-                        </td>
-                        <td style={{ padding:'8px 12px' }}><Badge status={s.status}/></td>
                         <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.start_time?green:'#ccc' }}>{s.start_time||'-'}</td>
                         <td style={{ padding:'8px 12px', fontFamily:'monospace', fontSize:12, color:s.end_time?blue:'#ccc' }}>{s.end_time||'-'}</td>
                       </tr>
@@ -969,6 +962,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const [showBilling, setShowBilling] = useState(false)
   const [billingForm, setBillingForm] = useState({ workers:'1', amount:'', unit:'', total:'' })
   const [billCopied, setBillCopied]   = useState(false)
+  const billUnitRef = useRef()
   const setBF = (k,v) => setBillingForm(p => {
     const next = {...p, [k]:v}
     const a = parseFloat(next.amount) || 0
@@ -1416,6 +1410,7 @@ ${billingForm.total}만원 (부가세 포함)
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <input type="number" value={billingForm.amount} onChange={e=>setBF('amount',e.target.value)}
+                        onKeyDown={e=>{ if(e.key==='Enter') billUnitRef.current?.focus() }}
                         placeholder="금액 입력" style={{ ...iStyle, fontSize:16, fontWeight:700, textAlign:'right', flex:1 }}/>
                       <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
@@ -1426,7 +1421,7 @@ ${billingForm.total}만원 (부가세 포함)
                       {billingForm.workers}인 금액
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <input type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
+                      <input ref={billUnitRef} type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
                         placeholder="금액 입력" style={{ ...iStyle, fontSize:16, fontWeight:700, textAlign:'right', flex:1 }}/>
                       <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
