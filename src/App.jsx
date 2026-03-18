@@ -769,6 +769,35 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const spFileRef = useRef()
   const dropRef   = useRef()
 
+  // ── 일정 정보 편집 상태 ──
+  const [editInfo, setEditInfo] = useState(false)
+  const [infoForm, setInfoForm] = useState({
+    date:   schedule.date   || '',
+    time:   schedule.time   || '',
+    address:schedule.address|| '',
+    waste:  schedule.waste  || '',
+    cname:  schedule.cname  || '',
+    cphone: schedule.cphone || '',
+    memo:   schedule.memo   || '',
+  })
+  const setIF = (k,v) => setInfoForm(p=>({...p,[k]:v}))
+  const saveInfo = () => {
+    onUpdate(infoForm)
+    setEditInfo(false)
+  }
+  const cancelInfo = () => {
+    setInfoForm({
+      date:   schedule.date   || '',
+      time:   schedule.time   || '',
+      address:schedule.address|| '',
+      waste:  schedule.waste  || '',
+      cname:  schedule.cname  || '',
+      cphone: schedule.cphone || '',
+      memo:   schedule.memo   || '',
+    })
+    setEditInfo(false)
+  }
+
   const schedulePhotos = schedule.schedule_photos || []
   const completePhotos = schedule.photos || []
 
@@ -866,12 +895,69 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
         {/* 기본 정보 */}
         <Card style={{ marginBottom:12 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:10 }}>현장 정보</div>
-          <div style={{ marginBottom:12 }}><CopyAddress address={schedule.address}/></div>
-          <Row label="날짜 · 시간" value={`${schedule.date}  ${schedule.time}`}/>
-          <Row label="폐기물량"     value={schedule.waste}/>
-          <Row label="현장 담당자"  value={`${schedule.cname}  ${schedule.cphone}`}/>
-          {schedule.memo && <Row label="관리자 메모" value={schedule.memo}/>}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase' }}>현장 정보</div>
+            {!editInfo
+              ? <button onClick={()=>setEditInfo(true)}
+                  style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'5px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
+                  ✏️ 수정
+                </button>
+              : <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={cancelInfo}
+                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'5px 12px', fontSize:12, color:muted, cursor:'pointer' }}>
+                    취소
+                  </button>
+                  <button onClick={saveInfo}
+                    style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                    저장
+                  </button>
+                </div>
+            }
+          </div>
+          {editInfo ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>날짜</div>
+                  <input type="date" value={infoForm.date} onChange={e=>setIF('date',e.target.value)} style={{ ...iStyle, fontSize:13 }}/>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>시간</div>
+                  <input type="time" value={infoForm.time} onChange={e=>setIF('time',e.target.value)} style={{ ...iStyle, fontSize:13 }}/>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize:11, color:muted, marginBottom:4 }}>주소</div>
+                <input value={infoForm.address} onChange={e=>setIF('address',e.target.value)} placeholder="현장 주소" style={{ ...iStyle, fontSize:13 }}/>
+              </div>
+              <div>
+                <div style={{ fontSize:11, color:muted, marginBottom:4 }}>폐기물량</div>
+                <input value={infoForm.waste} onChange={e=>setIF('waste',e.target.value)} placeholder="예: 2톤" style={{ ...iStyle, fontSize:13 }}/>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>현장 담당자</div>
+                  <input value={infoForm.cname} onChange={e=>setIF('cname',e.target.value)} placeholder="담당자 이름" style={{ ...iStyle, fontSize:13 }}/>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>연락처</div>
+                  <input value={infoForm.cphone} onChange={e=>setIF('cphone',e.target.value)} placeholder="010-0000-0000" style={{ ...iStyle, fontSize:13 }}/>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize:11, color:muted, marginBottom:4 }}>메모</div>
+                <input value={infoForm.memo} onChange={e=>setIF('memo',e.target.value)} placeholder="관리자 메모 (선택)" style={{ ...iStyle, fontSize:13 }}/>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ marginBottom:12 }}><CopyAddress address={schedule.address}/></div>
+              <Row label="날짜 · 시간" value={`${schedule.date}  ${schedule.time}`}/>
+              <Row label="폐기물량"     value={schedule.waste}/>
+              <Row label="현장 담당자"  value={`${schedule.cname}  ${schedule.cphone}`}/>
+              {schedule.memo && <Row label="관리자 메모" value={schedule.memo}/>}
+            </>
+          )}
         </Card>
 
         {/* 일정 사진 (관리자 첨부) */}
