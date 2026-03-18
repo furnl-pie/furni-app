@@ -3,7 +3,7 @@ import { useAppData } from './hooks/useAppData'
 
 // ── 초기 계정 (런타임에 state로 관리됨) ──────────────────────────
 const INIT_USERS = [
-  { id:'a1', name:'관리자', role:'admin',  pw:'admin', phone:'010-0000-0000' },
+  { id:'퍼니', name:'관리자', role:'admin',  pw:'admin', phone:'010-0000-0000' },
   { id:'d1', name:'김민준', role:'driver', pw:'1111',  phone:'010-1111-2222' },
   { id:'d2', name:'이서준', role:'driver', pw:'2222',  phone:'010-3333-4444' },
   { id:'d3', name:'박도현', role:'driver', pw:'3333',  phone:'010-5555-6666' },
@@ -331,7 +331,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.2.0</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.2.1</div>
       </div>
     </div>
   )
