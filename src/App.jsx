@@ -312,7 +312,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
         {/* 필터 */}
         <Card style={{ marginBottom:14 }}>
-          <div style={{ display:'flex', gap:14, alignItems:'flex-end', flexWrap:'wrap' }}>
+          <div style={{ display:'flex', gap:8, alignItems:'flex-end', flexWrap:'wrap' }}>
             <Field label="날짜">
               <input type="date" value={filterDate} onChange={e=>setFDate(e.target.value)} style={{ ...iStyle, width:'auto' }}/>
             </Field>
@@ -324,62 +324,66 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
               </select>
             </Field>
 
-            {/* 일괄배정 버튼 */}
+            {/* 일정 등록 */}
+            {!assignMode && !deleteMode && (
+              <button onClick={()=>setModal(true)}
+                style={{ height:38, padding:'0 14px', background:navy, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                + 일정 등록
+              </button>
+            )}
+
+            {/* 일괄 배정 */}
             {!deleteMode && (
               assignMode ? (
-                <div style={{ display:'flex', gap:8, alignItems:'flex-end', paddingBottom:1 }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                   <select value={assignTarget} onChange={e=>setAssignTarget(e.target.value)}
-                    style={{ ...iStyle, width:'auto', borderColor:green, fontWeight:600, color:green }}>
+                    style={{ height:38, padding:'0 10px', border:`1.5px solid ${green}`, borderRadius:8, fontSize:13, fontWeight:600, color:green, outline:'none', background:'#fff', cursor:'pointer' }}>
                     <option value="">— 기사 선택 —</option>
                     {drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                   {assignChecked.size > 0 && (
                     <button onClick={confirmAssign}
-                      style={{ padding:'8px 14px', background:green, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      style={{ height:38, padding:'0 14px', background:green, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                       ✓ {assignChecked.size}건 배정
                     </button>
                   )}
                   <button onClick={exitAssignMode}
-                    style={{ padding:'8px 12px', background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, fontSize:13, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    style={{ height:38, padding:'0 12px', background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, fontSize:13, cursor:'pointer' }}>
                     취소
                   </button>
                 </div>
               ) : (
-                <div style={{ paddingBottom:1 }}>
-                  <button onClick={()=>setAssignMode(true)}
-                    style={{ padding:'8px 14px', background:'#f0fdf4', color:green, border:`1.5px solid #86efac`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                    👥 일괄 배정
-                  </button>
-                </div>
+                <button onClick={()=>setAssignMode(true)}
+                  style={{ height:38, padding:'0 14px', background:'#f0fdf4', color:green, border:`1.5px solid #86efac`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  👥 일괄 배정
+                </button>
               )
             )}
 
-            {/* 삭제 버튼 */}
+            {/* 삭제 */}
             {!assignMode && (
               deleteMode ? (
-                <div style={{ display:'flex', gap:8, alignItems:'flex-end', paddingBottom:1 }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                   {checkedIds.size > 0 && (
                     <button onClick={()=>setDelConfirm(true)}
-                      style={{ padding:'8px 14px', background:red, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      style={{ height:38, padding:'0 14px', background:red, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                       🗑 {checkedIds.size}건 삭제
                     </button>
                   )}
                   <button onClick={exitDeleteMode}
-                    style={{ padding:'8px 12px', background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, fontSize:13, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    style={{ height:38, padding:'0 12px', background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, fontSize:13, cursor:'pointer' }}>
                     취소
                   </button>
                 </div>
               ) : (
-                <div style={{ paddingBottom:1 }}>
-                  <button onClick={()=>setDeleteMode(true)}
-                    style={{ padding:'8px 14px', background:'#fef2f2', color:red, border:`1.5px solid #fecaca`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                    🗑 삭제
-                  </button>
-                </div>
+                <button onClick={()=>setDeleteMode(true)}
+                  style={{ height:38, padding:'0 14px', background:'#fef2f2', color:red, border:`1.5px solid #fecaca`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  🗑 삭제
+                </button>
               )
             )}
 
-            <div style={{ fontSize:12, color:muted, paddingBottom:3, marginLeft:'auto' }}>
+            <div style={{ height:38, display:'flex', alignItems:'center', fontSize:12, color:muted, marginLeft:'auto' }}>
               {assignMode && assignChecked.size > 0
                 ? <span style={{ color:green, fontWeight:600 }}>{assignChecked.size}건 선택됨</span>
                 : deleteMode && checkedIds.size > 0
