@@ -6,6 +6,12 @@ const INIT_USERS = [
 ]
 let USERS = INIT_USERS
 
+// 기사 등록 순서 프리셋 (Firebase 기존 기사 정렬용)
+const DRIVER_ORDER_PRESET = [
+  '김일석','양승민','박종태','이동수','문정완','강희순','승호진','정효진',
+  '이상구','김남선','석유현','최권호','한태섭','최기언','민병근','이선우','박성민'
+]
+
 const today = new Date().toISOString().slice(0,10)
 
 // ── 색상 / 공용 스타일 ──────────────────────────────────────────
@@ -332,7 +338,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.4</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.4.5</div>
       </div>
     </div>
   )
@@ -458,7 +464,11 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
   const drivers = users
     .filter(u => u.role === 'driver')
-    .sort((a,b) => (a.driverOrder||0) - (b.driverOrder||0))
+    .sort((a,b) => {
+      const ao = a.driverOrder ?? (DRIVER_ORDER_PRESET.indexOf(a.name) >= 0 ? DRIVER_ORDER_PRESET.indexOf(a.name) * 1000 : 99999)
+      const bo = b.driverOrder ?? (DRIVER_ORDER_PRESET.indexOf(b.name) >= 0 ? DRIVER_ORDER_PRESET.indexOf(b.name) * 1000 : 99999)
+      return ao - bo
+    })
 
   const filtered = schedules.filter(s => {
     if (filterDriver.size > 0) {
@@ -554,46 +564,17 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
 
         {/* 필터 */}
         <Card style={{ marginBottom:14 }}>
-          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-            <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-              <span style={{ fontSize:11, fontWeight:600, color:muted }}>날짜</span>
-              <input type="date" value={filterDate} onChange={e=>setFDate(e.target.value)}
-                style={{ ...iStyle, width:'auto', height:38 }}/>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-              <span style={{ fontSize:11, fontWeight:600, color:muted }}>기사 {filterDriver.size > 0 && <span style={{ color:blue }}>({filterDriver.size}명 선택)</span>}</span>
-              <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
-                <button
-                  onClick={()=>setFD(new Set())}
-                  style={{ height:34, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.size===0?navy:border}`, background:filterDriver.size===0?navy:'#fff', color:filterDriver.size===0?'#fff':muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                  전체
-                </button>
-                <button
-                  onClick={()=>toggleDriverFilter('unassigned')}
-                  style={{ height:34, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.has('unassigned')?red:'#fecaca'}`, background:filterDriver.has('unassigned')?'#fef2f2':'#fff', color:filterDriver.has('unassigned')?red:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                  미배치
-                </button>
-                {drivers.map((d,i) => {
-                  const chip = driverChip(d.id, drivers)
-                  const on = filterDriver.has(d.id)
-                  return (
-                    <button key={d.id}
-                      onClick={()=>toggleDriverFilter(d.id)}
-                      style={{ height:34, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on ? chip?.border : border}`, background:on ? chip?.bg : '#fff', color:on ? chip?.color : muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                      {d.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+          {/* 1행: 날짜 + 버튼들 */}
+          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginBottom:10 }}>
+            <input type="date" value={filterDate} onChange={e=>setFDate(e.target.value)}
+              style={{ ...iStyle, width:'auto', height:38 }}/>
 
-            {/* 구분선 */}
-            <div style={{ width:1, height:36, background:border, margin:'0 4px', alignSelf:'flex-end', marginBottom:2 }}/>
+            <div style={{ width:1, height:32, background:border }}/>
 
             {/* 일정 등록 */}
             {!assignMode && !deleteMode && (
               <button onClick={()=>setModal(true)}
-                style={{ height:38, padding:'0 14px', background:navy, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', alignSelf:'flex-end' }}>
+                style={{ height:38, padding:'0 14px', background:navy, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                 + 일정 등록
               </button>
             )}
@@ -601,7 +582,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
             {/* 일괄 배정 */}
             {!deleteMode && (
               assignMode ? (
-                <div style={{ display:'flex', gap:6, alignItems:'flex-end' }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                   <select value={assignTarget} onChange={e=>setAssignTarget(e.target.value)}
                     style={{ height:38, padding:'0 10px', border:`1.5px solid ${green}`, borderRadius:8, fontSize:13, fontWeight:600, color:green, outline:'none', background:'#fff', cursor:'pointer' }}>
                     <option value="">— 기사 선택 —</option>
@@ -620,7 +601,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 </div>
               ) : (
                 <button onClick={()=>setAssignMode(true)}
-                  style={{ height:38, padding:'0 14px', background:'#f0fdf4', color:green, border:`1.5px solid #86efac`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', alignSelf:'flex-end' }}>
+                  style={{ height:38, padding:'0 14px', background:'#f0fdf4', color:green, border:`1.5px solid #86efac`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                   👥 일괄 배정
                 </button>
               )
@@ -629,7 +610,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
             {/* 삭제 */}
             {!assignMode && (
               deleteMode ? (
-                <div style={{ display:'flex', gap:6, alignItems:'flex-end' }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                   {checkedIds.size > 0 && (
                     <button onClick={()=>setDelConfirm(true)}
                       style={{ height:38, padding:'0 14px', background:red, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
@@ -643,7 +624,7 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 </div>
               ) : (
                 <button onClick={()=>setDeleteMode(true)}
-                  style={{ height:38, padding:'0 14px', background:'#fef2f2', color:red, border:`1.5px solid #fecaca`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', alignSelf:'flex-end' }}>
+                  style={{ height:38, padding:'0 14px', background:'#fef2f2', color:red, border:`1.5px solid #fecaca`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                   🗑 삭제
                 </button>
               )
@@ -654,9 +635,40 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
                 ? <span style={{ color:green, fontWeight:600 }}>{assignChecked.size}건 선택됨</span>
                 : deleteMode && checkedIds.size > 0
                 ? <span style={{ color:red, fontWeight:600 }}>{checkedIds.size}건 선택됨</span>
-                : `총 ${sorted.length}건 · 기사별 시간순`
+                : `총 ${sorted.length}건`
               }
             </div>
+          </div>
+
+          {/* 2행: 기사 칩 필터 */}
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center', borderTop:`1px solid ${border}`, paddingTop:10 }}>
+            <button
+              onClick={()=>setFD(new Set())}
+              style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.size===0?navy:border}`, background:filterDriver.size===0?navy:'#fff', color:filterDriver.size===0?'#fff':muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              전체
+            </button>
+            <button
+              onClick={()=>toggleDriverFilter('unassigned')}
+              style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.has('unassigned')?red:'#fecaca'}`, background:filterDriver.has('unassigned')?'#fef2f2':'#fff', color:filterDriver.has('unassigned')?red:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              미배치
+            </button>
+            {drivers.map(d => {
+              const chip = driverChip(d.id, drivers)
+              const on = filterDriver.has(d.id)
+              return (
+                <button key={d.id}
+                  onClick={()=>toggleDriverFilter(d.id)}
+                  style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on?chip?.border:border}`, background:on?chip?.bg:'#fff', color:on?chip?.color:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  {d.name}
+                </button>
+              )
+            })}
+            {filterDriver.size > 0 && (
+              <button onClick={()=>setFD(new Set())}
+                style={{ height:32, padding:'0 10px', borderRadius:7, border:`1px solid ${border}`, background:'#f1f5f9', color:muted, fontSize:11, cursor:'pointer' }}>
+                ✕ 초기화
+              </button>
+            )}
           </div>
         </Card>
 
@@ -1059,10 +1071,10 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
                         disabled={i===0}
                         onClick={()=>{
                           const prev = drivers[i-1]
-                          const tA = d.driverOrder ?? i
-                          const tB = prev.driverOrder ?? (i-1)
-                          onUpdate(d.id, { driverOrder: tB })
-                          onUpdate(prev.id, { driverOrder: tA })
+                          // 현재 순서값 기준으로 교환 (없으면 인덱스 기반 부여)
+                          const orders = drivers.map((d,idx) => d.driverOrder ?? idx * 1000)
+                          onUpdate(d.id, { driverOrder: orders[i-1] })
+                          onUpdate(prev.id, { driverOrder: orders[i] })
                         }}
                         style={{ background:'none', border:`1px solid ${border}`, borderRadius:4, width:22, height:22, fontSize:11, cursor:i===0?'default':'pointer', color:i===0?'#ccc':muted, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
                         ▲
@@ -1071,10 +1083,9 @@ function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, onDelete, onClose
                         disabled={i===drivers.length-1}
                         onClick={()=>{
                           const next = drivers[i+1]
-                          const tA = d.driverOrder ?? i
-                          const tB = next.driverOrder ?? (i+1)
-                          onUpdate(d.id, { driverOrder: tB })
-                          onUpdate(next.id, { driverOrder: tA })
+                          const orders = drivers.map((d,idx) => d.driverOrder ?? idx * 1000)
+                          onUpdate(d.id, { driverOrder: orders[i+1] })
+                          onUpdate(next.id, { driverOrder: orders[i] })
                         }}
                         style={{ background:'none', border:`1px solid ${border}`, borderRadius:4, width:22, height:22, fontSize:11, cursor:i===drivers.length-1?'default':'pointer', color:i===drivers.length-1?'#ccc':muted, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
                         ▼
