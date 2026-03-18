@@ -1024,11 +1024,11 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         <Card style={{ marginBottom:12 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
             <div>
-              <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase' }}>일정 사진</div>
-              <div style={{ fontSize:11, color:muted, marginTop:2 }}>현장 참고용 · 기사 앱에도 표시</div>
+              <div style={{ fontSize:14, fontWeight:700, color:textC }}>일정 사진</div>
+              <div style={{ fontSize:12, color:muted, marginTop:2 }}>현장 참고용 · 기사 앱에도 표시</div>
             </div>
             <button onClick={()=>spFileRef.current?.click()}
-              style={{ background:blue, color:'#fff', border:'none', borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              style={{ background:blue, color:'#fff', border:'none', borderRadius:8, padding:'7px 14px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
               + 사진 추가
             </button>
             <input ref={spFileRef} type="file" accept="image/*" multiple onChange={addSchedulePhotos} style={{ display:'none' }}/>
@@ -1036,7 +1036,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
           {/* 붙여넣기 토스트 */}
           {pasteMsg && (
-            <div style={{ background:'#dcfce7', border:`1px solid #86efac`, borderRadius:8, padding:'7px 12px', marginBottom:10, fontSize:12, color:'#166534', fontWeight:500 }}>
+            <div style={{ background:'#dcfce7', border:`1px solid #86efac`, borderRadius:8, padding:'7px 12px', marginBottom:8, fontSize:13, color:'#166534', fontWeight:500 }}>
               {pasteMsg}
             </div>
           )}
@@ -1047,14 +1047,14 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
             onClick={schedulePhotos.length===0 ? ()=>spFileRef.current?.click() : undefined}
             style={{
               border: `2px dashed ${schedulePhotos.length>0 ? border : '#93c5fd'}`,
-              borderRadius:10, padding: schedulePhotos.length>0 ? 0 : 20,
+              borderRadius:10,
               background: schedulePhotos.length>0 ? 'transparent' : '#f0f9ff',
               cursor: schedulePhotos.length===0 ? 'pointer' : 'default',
               transition:'all .15s'
             }}>
             {schedulePhotos.length > 0 ? (
-              <div style={{ padding:'10px 0 0' }}>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
+              <div style={{ padding:'8px 0 0' }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:6 }}>
                   {schedulePhotos.map((src,i)=>(
                     <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
                       <img src={src} alt={`일정사진${i+1}`} onClick={()=>openLightbox('schedule',i)}
@@ -1066,22 +1066,21 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                       <div style={{ position:'absolute', bottom:3, left:4, fontSize:9, color:'#fff', background:'rgba(0,0,0,.5)', borderRadius:3, padding:'1px 4px' }}>{i+1}</div>
                     </div>
                   ))}
-                  {/* 추가 버튼 */}
                   <div onClick={()=>spFileRef.current?.click()}
                     style={{ aspectRatio:'1', border:`2px dashed ${border}`, borderRadius:8, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', cursor:'pointer', background:'#f8fafc' }}>
                     <div style={{ fontSize:20, color:muted }}>+</div>
-                    <div style={{ fontSize:10, color:muted }}>추가</div>
+                    <div style={{ fontSize:11, color:muted }}>추가</div>
                   </div>
                 </div>
-                <div style={{ fontSize:11, color:muted, textAlign:'center', paddingBottom:8 }}>
+                <div style={{ fontSize:12, color:muted, textAlign:'center', paddingBottom:6 }}>
                   Ctrl+V 붙여넣기 · 드래그 추가 · 카카오톡 이미지 복사 후 Ctrl+V 가능
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign:'center' }}>
+              <div style={{ textAlign:'center', padding:18 }}>
                 <div style={{ fontSize:26, marginBottom:6 }}>📎</div>
-                <div style={{ fontSize:13, color:'#1d4ed8', fontWeight:500, marginBottom:4 }}>사진 추가하기</div>
-                <div style={{ fontSize:11, color:muted, lineHeight:1.8 }}>
+                <div style={{ fontSize:14, color:'#1d4ed8', fontWeight:600, marginBottom:4 }}>사진 추가하기</div>
+                <div style={{ fontSize:12, color:muted, lineHeight:1.8 }}>
                   클릭 · 드래그앤드롭 · Ctrl+V 붙여넣기<br/>
                   <span style={{ color:'#059669' }}>카카오톡에서 이미지 복사 → 이 화면에서 Ctrl+V</span>
                 </div>
