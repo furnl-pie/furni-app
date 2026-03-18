@@ -2439,86 +2439,107 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
 
           {/* ── STEP 1: 출발 ── */}
           <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom: (isMoving||isWorking||isDone) ? 12 : 0 }}>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:16, fontWeight:700, color:textC, marginBottom:4 }}>① 출발</div>
-                {schedule.depart_time
-                  ? <div style={{ fontSize:15, color:green, fontFamily:'monospace' }}>🚛 {schedule.depart_time} 출발</div>
-                  : <div style={{ fontSize:14, color:muted }}>현장으로 출발 시 클릭</div>}
+            <div style={{ display:'flex', alignItems:'flex-start', gap:0 }}>
+              {/* 번호 고정 컬럼 */}
+              <div style={{ width:32, flexShrink:0, paddingTop:1 }}>
+                <span style={{ fontSize:15, fontWeight:700, color:textC }}>①</span>
               </div>
-              <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
-                {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'10px 18px', fontSize:15 }}>🚛 출발</Btn>}
-                {(isMoving||isWorking||isDone) && schedule.depart_time && (
-                  <button onClick={()=>setShowCancelDepart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'8px 12px', fontSize:13, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
-                    출발 취소
-                  </button>
+              {/* 내용 */}
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:700, color:textC, marginBottom:4 }}>출발</div>
+                    {schedule.depart_time
+                      ? <div style={{ fontSize:14, color:green, fontFamily:'monospace' }}>🚛 {schedule.depart_time} 출발</div>
+                      : <div style={{ fontSize:13, color:muted }}>현장으로 출발 시 클릭</div>}
+                  </div>
+                  <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+                    {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'9px 16px', fontSize:14 }}>🚛 출발</Btn>}
+                    {(isMoving||isWorking||isDone) && schedule.depart_time && (
+                      <button onClick={()=>setShowCancelDepart(true)}
+                        style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'7px 11px', fontSize:12, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
+                        출발 취소
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {(isMoving||isWorking||isDone) && (
+                  <div style={{ marginTop:10 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, padding:'9px 12px', background:'#f0f9ff', borderRadius:8, border:`1px solid #bae6fd` }}>
+                      <span style={{ fontSize:13, color:muted, whiteSpace:'nowrap' }}>🕐 도착 예상</span>
+                      <EtaInlineEdit eta={schedule.eta} onSave={v=>onUpdate({ eta:v })}/>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:schedule.sms_sent?'#f0fdf4':'#f8fafc', borderRadius:8, border:`1px solid ${schedule.sms_sent?'#bbf7d0':border}` }}>
+                      <span style={{ fontSize:16 }}>💬</span>
+                      {schedule.sms_sent
+                        ? <div style={{ flex:1, fontSize:14 }}><span style={{ fontWeight:700, color:green }}>문자 발송됨</span><span style={{ color:muted, marginLeft:8 }}>{schedule.cname}</span></div>
+                        : <div style={{ flex:1, fontSize:14, color:muted }}>문자 미발송</div>
+                      }
+                      <button onClick={openResendModal}
+                        style={{ background:schedule.sms_sent?'none':green, color:schedule.sms_sent?muted:'#fff', border:`1px solid ${schedule.sms_sent?border:green}`, borderRadius:7, padding:'8px 14px', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                        {schedule.sms_sent?'재발송':'💬 발송'}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
-            {(isMoving||isWorking||isDone) && (
-              <div style={{ marginTop:12 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, padding:'10px 14px', background:'#f0f9ff', borderRadius:8, border:`1px solid #bae6fd` }}>
-                  <span style={{ fontSize:15, color:muted, whiteSpace:'nowrap' }}>🕐 도착 예상</span>
-                  <EtaInlineEdit eta={schedule.eta} onSave={v=>onUpdate({ eta:v })}/>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background:schedule.sms_sent?'#f0fdf4':'#f8fafc', borderRadius:8, border:`1px solid ${schedule.sms_sent?'#bbf7d0':border}` }}>
-                  <span style={{ fontSize:18 }}>💬</span>
-                  {schedule.sms_sent
-                    ? <div style={{ flex:1, fontSize:15 }}><span style={{ fontWeight:700, color:green }}>문자 발송됨</span><span style={{ color:muted, marginLeft:8 }}>{schedule.cname}</span></div>
-                    : <div style={{ flex:1, fontSize:15, color:muted }}>문자 미발송</div>
-                  }
-                  <button onClick={openResendModal}
-                    style={{ background:schedule.sms_sent?'none':green, color:schedule.sms_sent?muted:'#fff', border:`1px solid ${schedule.sms_sent?border:green}`, borderRadius:7, padding:'9px 16px', fontSize:14, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                    {schedule.sms_sent?'재발송':'💬 발송'}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* ── STEP 2: 작업 시작 ── */}
           <div style={{ borderBottom:`1px solid ${border}`, paddingBottom:16, marginBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:16, fontWeight:700, color:textC, marginBottom:4 }}>② 작업 시작</div>
-                {(isWorking||isDone) && schedule.start_time ? (
-                  <DriverTimeEdit label="시작" value={schedule.start_time} color={green} onSave={v=>onUpdate({ start_time:v||null })}/>
-                ) : (
-                  <div style={{ fontSize:14, color:isMoving?blue:muted }}>
-                    {isMoving ? '현장 도착 후 클릭' : '출발 후 활성화'}
-                  </div>
-                )}
-                {schedule.est_waste && (
-                  <div style={{ fontSize:13, color:muted, marginTop:4 }}>
-                    예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration?` · ${schedule.est_duration}`:''}
-                  </div>
-                )}
+            <div style={{ display:'flex', alignItems:'flex-start', gap:0 }}>
+              <div style={{ width:32, flexShrink:0, paddingTop:1 }}>
+                <span style={{ fontSize:15, fontWeight:700, color:textC }}>②</span>
               </div>
-              <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
-                {isMoving && <Btn onClick={openWorkModal} color={amber} style={{ padding:'10px 18px', fontSize:15 }}>▶ 작업 시작</Btn>}
-                {(isWorking||isDone) && schedule.start_time && (
-                  <button onClick={()=>setShowCancelStart(true)}
-                    style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'8px 12px', fontSize:13, color:muted, cursor:'pointer' }}>
-                    취소
-                  </button>
-                )}
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:700, color:textC, marginBottom:4 }}>작업 시작</div>
+                    {(isWorking||isDone) && schedule.start_time ? (
+                      <DriverTimeEdit label="시작" value={schedule.start_time} color={green} onSave={v=>onUpdate({ start_time:v||null })}/>
+                    ) : (
+                      <div style={{ fontSize:13, color:isMoving?blue:muted }}>
+                        {isMoving ? '현장 도착 후 클릭' : '출발 후 활성화'}
+                      </div>
+                    )}
+                    {schedule.est_waste && (
+                      <div style={{ fontSize:12, color:muted, marginTop:4 }}>
+                        예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration?` · ${schedule.est_duration}`:''}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+                    {isMoving && <Btn onClick={openWorkModal} color={amber} style={{ padding:'9px 16px', fontSize:14 }}>▶ 작업 시작</Btn>}
+                    {(isWorking||isDone) && schedule.start_time && (
+                      <button onClick={()=>setShowCancelStart(true)}
+                        style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'7px 11px', fontSize:12, color:muted, cursor:'pointer' }}>
+                        취소
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* ── STEP 3: 업무 완료 ── */}
           <div>
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:14 }}>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:16, fontWeight:700, color:textC }}>③ 업무 완료</div>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:0, marginBottom:14 }}>
+              <div style={{ width:32, flexShrink:0, paddingTop:1 }}>
+                <span style={{ fontSize:15, fontWeight:700, color:textC }}>③</span>
               </div>
-              {isDone && (
-                <button onClick={()=>setShowCancelEnd(true)}
-                  style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'8px 12px', fontSize:13, color:muted, cursor:'pointer', flexShrink:0 }}>
-                  종료 취소
-                </button>
-              )}
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
+                  <div style={{ fontSize:15, fontWeight:700, color:textC }}>업무 완료</div>
+                  {isDone && (
+                    <button onClick={()=>setShowCancelEnd(true)}
+                      style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'7px 11px', fontSize:12, color:muted, cursor:'pointer', flexShrink:0 }}>
+                      종료 취소
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* 대기/이동중 */}
@@ -2899,11 +2920,13 @@ export default function App() {
   // 헬퍼 함수들이 최신 users를 참조하도록 동기화
   USERS = users
 
-  // 안드로이드 뒤로가기 → 로그인 상태면 로그아웃 팝업
+  // 안드로이드 뒤로가기 → 메인(목록) 화면에서만 로그아웃 팝업
   useEffect(() => {
     if (!user) return
     window.history.pushState({ root: true }, '')
     const handler = (e) => {
+      // e.state가 {root:true}면 상세→목록 복귀이므로 DriverApp/AdminApp이 처리
+      if (e.state && e.state.root) return
       e.preventDefault()
       setLogoutConfirm(true)
     }
