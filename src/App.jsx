@@ -1855,10 +1855,10 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                   <span style={{ fontSize:12, color:muted, marginLeft:6, fontWeight:400 }}>{completePhotos.length}장</span>
                 </div>
                 <div style={{ display:'flex', gap:8 }}>
-                  {completePhotos.length > 0 && (
-                    <button onClick={()=>downloadAllPhotos(completePhotos, `완료사진_${schedule.address.slice(0,10)}`)}
+                  {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (
+                    <button onClick={()=>downloadAllPhotos([...(schedule.work_photos||[]), ...completePhotos], `전체사진_${schedule.address.slice(0,10)}`)}
                       style={{ background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                      ⬇ 다운로드
+                      ⬇ 전체 다운로드
                     </button>
                   )}
                   <button onClick={()=>cpFileRef.current?.click()}
@@ -2890,6 +2890,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [notification, setNotification] = useState(null)
   const notifTimer   = useRef(null)
   const prevMineRef  = useRef(null)
+  const loginChecked = useRef(false)
 
   const mine = schedules
     .filter(s => (s.driver_id === user.id || s.co_driver_id === user.id) && (!filterDate || s.date === filterDate))
@@ -2901,12 +2902,44 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
 
   const selected = schedules.find(s => s.id === selectedId)
 
+  const showNotif = (msg) => {
+    setNotification(msg)
+    if (notifTimer.current) clearTimeout(notifTimer.current)
+    notifTimer.current = setTimeout(() => setNotification(null), 5000)
+  }
+
   // 일정 변경 감지 → 알림
   useEffect(() => {
+    const SNAP_KEY = `sched_snap_${user.id}`
     const current = schedules.filter(s => s.driver_id === user.id || s.co_driver_id === user.id)
-    if (prevMineRef.current === null) { prevMineRef.current = current; return }
-    const prev = prevMineRef.current
 
+    // 첫 로드: 로그인 직후 localStorage 스냅샷과 비교
+    if (prevMineRef.current === null) {
+      prevMineRef.current = current
+      if (!loginChecked.current) {
+        loginChecked.current = true
+        try {
+          const savedRaw = localStorage.getItem(SNAP_KEY)
+          if (savedRaw) {
+            const saved = JSON.parse(savedRaw)
+            const newOnes  = current.filter(s => !saved.find(p => p.id === s.id))
+            const removed  = saved.filter(p => !current.find(s => s.id === p.id))
+            const modified = current.filter(s => {
+              const p = saved.find(p => p.id === s.id)
+              return p && (p.date !== s.date || p.time !== s.time || p.order !== s.order)
+            })
+            const parts = []
+            if (newOnes.length > 0)  parts.push(`새 일정 ${newOnes.length}건 배정`)
+            if (removed.length > 0)  parts.push(`${removed.length}건 취소`)
+            if (modified.length > 0) parts.push(`${modified.length}건 수정`)
+            if (parts.length > 0) showNotif('📋 ' + parts.join(' · '))
+          }
+        } catch (e) {}
+      }
+      return
+    }
+
+    const prev = prevMineRef.current
     const newOnes  = current.filter(s => !prev.find(p => p.id === s.id))
     const removed  = prev.filter(p => !current.find(s => s.id === p.id))
     const modified = current.filter(s => {
@@ -2920,12 +2953,16 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
     else if (removed.length > 0)  msg = `🔄 일정 ${removed.length}건이 변경되었습니다`
     else if (modified.length > 0) msg = `✏️ 일정이 수정되었습니다`
 
-    if (msg) {
-      setNotification(msg)
-      if (notifTimer.current) clearTimeout(notifTimer.current)
-      notifTimer.current = setTimeout(() => setNotification(null), 5000)
-    }
+    if (msg) showNotif(msg)
     prevMineRef.current = current
+  }, [schedules])
+
+  // 스냅샷 저장 (다음 로그인 때 비교용)
+  useEffect(() => {
+    const snap = schedules
+      .filter(s => s.driver_id === user.id || s.co_driver_id === user.id)
+      .map(s => ({ id: s.id, date: s.date, time: s.time, order: s.order }))
+    localStorage.setItem(`sched_snap_${user.id}`, JSON.stringify(snap))
   }, [schedules])
 
   useEffect(() => {
