@@ -2887,12 +2887,46 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [pwForm, setPwForm]    = useState({ current:'', next:'', confirm:'' })
   const [pwErr, setPwErr]      = useState('')
   const [pwOk, setPwOk]        = useState(false)
+  const [notification, setNotification] = useState(null)
+  const notifTimer   = useRef(null)
+  const prevMineRef  = useRef(null)
 
   const mine = schedules
     .filter(s => (s.driver_id === user.id || s.co_driver_id === user.id) && (!filterDate || s.date === filterDate))
-    .sort((a,b) => a.time.localeCompare(b.time))
+    .sort((a,b) => {
+      const oA = a.order ?? 9999, oB = b.order ?? 9999
+      if (oA !== oB) return oA - oB
+      return (a.time||'').localeCompare(b.time||'')
+    })
 
   const selected = schedules.find(s => s.id === selectedId)
+
+  // 일정 변경 감지 → 알림
+  useEffect(() => {
+    const current = schedules.filter(s => s.driver_id === user.id || s.co_driver_id === user.id)
+    if (prevMineRef.current === null) { prevMineRef.current = current; return }
+    const prev = prevMineRef.current
+
+    const newOnes  = current.filter(s => !prev.find(p => p.id === s.id))
+    const removed  = prev.filter(p => !current.find(s => s.id === p.id))
+    const modified = current.filter(s => {
+      const p = prev.find(p => p.id === s.id)
+      if (!p) return false
+      return p.date !== s.date || p.time !== s.time || p.driver_id !== s.driver_id || p.order !== s.order
+    })
+
+    let msg = null
+    if (newOnes.length > 0)       msg = `📋 새 일정 ${newOnes.length}건이 배정되었습니다`
+    else if (removed.length > 0)  msg = `🔄 일정 ${removed.length}건이 변경되었습니다`
+    else if (modified.length > 0) msg = `✏️ 일정이 수정되었습니다`
+
+    if (msg) {
+      setNotification(msg)
+      if (notifTimer.current) clearTimeout(notifTimer.current)
+      notifTimer.current = setTimeout(() => setNotification(null), 5000)
+    }
+    prevMineRef.current = current
+  }, [schedules])
 
   useEffect(() => {
     if (view === 'detail') {
@@ -2928,6 +2962,15 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
 
   return (
     <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
+
+      {/* 일정 변경 알림 토스트 */}
+      {notification && (
+        <div style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:12, padding:'12px 20px', fontSize:14, fontWeight:600, boxShadow:'0 4px 20px rgba(0,0,0,.3)', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:10 }}>
+          {notification}
+          <button onClick={()=>setNotification(null)} style={{ background:'none', border:'none', color:'rgba(255,255,255,.6)', fontSize:16, cursor:'pointer', padding:0, lineHeight:1 }}>✕</button>
+        </div>
+      )}
+
       <div style={{ background:navy, color:'#fff', padding:'16px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
