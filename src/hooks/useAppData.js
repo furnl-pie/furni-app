@@ -32,9 +32,15 @@ async function uploadToCloudinary(base64DataUrl) {
   return data.secure_url
 }
 
-// 여러 장 병렬 업로드
+// 여러 장 배치 업로드 (5장씩 순차 처리)
 async function uploadPhotos(base64Array) {
-  return Promise.all(base64Array.map(uploadToCloudinary))
+  const results = []
+  const BATCH = 5
+  for (let i = 0; i < base64Array.length; i += BATCH) {
+    const batch = await Promise.all(base64Array.slice(i, i + BATCH).map(uploadToCloudinary))
+    results.push(...batch)
+  }
+  return results
 }
 
 // ── 훅 ──────────────────────────────────────────────────────────

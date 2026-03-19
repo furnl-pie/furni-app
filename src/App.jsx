@@ -1405,12 +1405,24 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
   const saveDriver = () => { onUpdate({ driver_id: driverId||null }); setEditDriver(false) }
 
+  const resizeForUpload = (file, maxW = 1200, quality = 0.8) => new Promise(res => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      URL.revokeObjectURL(url)
+      res(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = url
+  })
+
   const readFilesAsBase64 = files =>
-    Promise.all(Array.from(files).map(f => new Promise(res => {
-      const r = new FileReader()
-      r.onload = ev => res(ev.target.result)
-      r.readAsDataURL(f)
-    })))
+    Promise.all(Array.from(files).map(f => resizeForUpload(f)))
 
   const appendSchedulePhotos = async newDataUrls => {
     if (!newDataUrls.length) return
@@ -3042,7 +3054,8 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
 
 // ── 기사 일정 상세 ──────────────────────────────────────────────
 function DriverDetail({ schedule, onUpdate, onBack }) {
-  const fileRef = useRef()
+  const fileRef     = useRef()
+  const workFileRef = useRef()
 
   const [photos,      setPhotos]      = useState(schedule.photos      || [])
   const [driverNote,  setDriverNote]  = useState(schedule.driver_note || '')
@@ -3180,6 +3193,16 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   }
   const removePhoto = idx => setPhotos(prev => prev.filter((_,i)=>i!==idx))
 
+  const addWorkPhotos = async e => {
+    const files = Array.from(e.target.files)
+    const newUrls = []
+    for (const f of files) newUrls.push(await resizeImage(f))
+    onUpdate({ work_photos: [...(schedule.work_photos||[]), ...newUrls] })
+    e.target.value = ''
+  }
+  const removeWorkPhoto = idx =>
+    onUpdate({ work_photos: (schedule.work_photos||[]).filter((_,i)=>i!==idx) })
+
   const handlePaste = async e => {
     const items = Array.from(e.clipboardData?.items || [])
     const imageItems = items.filter(it => it.type.startsWith('image/'))
@@ -3202,7 +3225,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const isDone     = schedule.status === '완료'
 
   const displayPhotos = (isDone && !editingDone) ? (schedule.photos||[]) : photos
-  const lbPhotos = lbSource==='schedule_ref' ? (schedule.schedule_photos||[]) : displayPhotos
+  const lbPhotos = lbSource==='schedule_ref' ? (schedule.schedule_photos||[]) : lbSource==='work' ? (schedule.work_photos||[]) : displayPhotos
 
   return (
     <div onPaste={handlePaste} style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
@@ -3344,19 +3367,36 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                   예상물량 <b>{schedule.est_waste}</b>{schedule.est_duration?` · ${schedule.est_duration}`:''}
                 </div>
               )}
-              {(isWorking||isDone) && (schedule.work_photos||[]).length > 0 && (
+              {(isWorking||isDone) && (
                 <div style={{ marginTop:10 }}>
-                  <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
-                    현장 사진 ({schedule.work_photos.length}장)
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:muted }}>
+                      📍 현장 사진 ({(schedule.work_photos||[]).length}장)
+                    </span>
+                    <button onClick={()=>workFileRef.current?.click()}
+                      style={{ background:amber, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                      + 추가
+                    </button>
+                    <input ref={workFileRef} type="file" accept="image/*" multiple onChange={addWorkPhotos} style={{ display:'none' }}/>
                   </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
-                    {schedule.work_photos.map((src,i)=>(
-                      <div key={i} onClick={()=>openLb('complete',i)}
-                        style={{ aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}`, cursor:'pointer' }}>
-                        <img src={src} alt={`현장${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                      </div>
-                    ))}
-                  </div>
+                  {(schedule.work_photos||[]).length > 0 ? (
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
+                      {schedule.work_photos.map((src,i)=>(
+                        <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
+                          <img src={src} alt={`현장${i+1}`} onClick={()=>openLb('work',i)}
+                            style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'pointer' }}/>
+                          <button onClick={()=>removeWorkPhoto(i)}
+                            style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.65)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
+                          <div style={{ position:'absolute', bottom:3, left:4, fontSize:9, color:'#fff', background:'rgba(0,0,0,.5)', borderRadius:3, padding:'1px 4px' }}>{i+1}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div onClick={()=>workFileRef.current?.click()}
+                      style={{ border:`2px dashed ${border}`, borderRadius:8, padding:12, textAlign:'center', cursor:'pointer', background:'#f8fafc' }}>
+                      <div style={{ fontSize:13, color:muted }}>탭하여 현장 사진 추가</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -3536,52 +3576,87 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
                         <div style={{ fontSize:13, color:textC, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{schedule.driver_note}</div>
                       </div>
                     )}
+                    {/* 완료됨 — 현장/완료 사진 그리드 (추가/삭제) */}
                     {(() => {
                       const workPics = schedule.work_photos || []
                       const donePics = displayPhotos
-                      const allPics = [...workPics, ...donePics]
-                      if (allPics.length === 0) return null
+                      const allPics  = [...workPics, ...donePics]
                       return (
                         <div>
-                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                            <span style={{ fontSize:12, color:muted }}>
-                              {workPics.length > 0 && `현장 ${workPics.length}장`}
-                              {workPics.length > 0 && donePics.length > 0 && ' · '}
-                              {donePics.length > 0 && `완료 ${donePics.length}장`}
-                            </span>
-                            {allPics.length > 0 && (
+                          {allPics.length > 0 && (
+                            <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:8 }}>
                               <button onClick={()=>downloadAllPhotos(allPics, '전체사진')}
-                                style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                                style={{ background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
                                 ⬇ 전체 다운로드
                               </button>
-                            )}
-                          </div>
-                          {workPics.length > 0 && (
-                            <div style={{ marginBottom:8 }}>
-                              <div style={{ fontSize:11, color:muted, marginBottom:4 }}>📍 현장 사진</div>
+                            </div>
+                          )}
+                          {/* 현장 사진 */}
+                          <div style={{ marginBottom:10 }}>
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                              <span style={{ fontSize:11, fontWeight:600, color:muted }}>📍 현장 사진 ({workPics.length}장)</span>
+                              <button onClick={()=>workFileRef.current?.click()}
+                                style={{ background:amber, color:'#fff', border:'none', borderRadius:6, padding:'3px 9px', fontSize:11, fontWeight:600, cursor:'pointer' }}>+ 추가</button>
+                            </div>
+                            {workPics.length > 0 ? (
                               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
                                 {workPics.map((src,i)=>(
-                                  <div key={i} onClick={()=>{ setLbSource('complete'); setLightbox(i) }}
-                                    style={{ aspectRatio:'1', cursor:'pointer', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
-                                    <img src={src} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                                  <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
+                                    <img src={src} alt="" onClick={()=>openLb('work',i)}
+                                      style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'pointer' }}/>
+                                    <button onClick={()=>removeWorkPhoto(i)}
+                                      style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.65)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
+                                    <div style={{ position:'absolute', bottom:3, left:4, fontSize:9, color:'#fff', background:'rgba(0,0,0,.5)', borderRadius:3, padding:'1px 4px' }}>{i+1}</div>
                                   </div>
                                 ))}
                               </div>
+                            ) : (
+                              <div onClick={()=>workFileRef.current?.click()}
+                                style={{ border:`2px dashed ${border}`, borderRadius:8, padding:10, textAlign:'center', cursor:'pointer', background:'#f8fafc' }}>
+                                <span style={{ fontSize:12, color:muted }}>탭하여 추가</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* 완료 사진 */}
+                          <div>
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                              <span style={{ fontSize:11, fontWeight:600, color:muted }}>✅ 완료 사진 ({donePics.length}장)</span>
+                              <label style={{ background:green, color:'#fff', borderRadius:6, padding:'3px 9px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                                + 추가
+                                <input type="file" accept="image/*" multiple style={{ display:'none' }} onChange={async e=>{
+                                  const files = Array.from(e.target.files)
+                                  const newUrls = []
+                                  for (const f of files) newUrls.push(await resizeImage(f))
+                                  onUpdate({ photos: [...(schedule.photos||[]), ...newUrls] })
+                                  e.target.value = ''
+                                }}/>
+                              </label>
                             </div>
-                          )}
-                          {donePics.length > 0 && (
-                            <div>
-                              <div style={{ fontSize:11, color:muted, marginBottom:4 }}>✅ 완료 사진</div>
+                            {donePics.length > 0 ? (
                               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
                                 {donePics.map((src,i)=>(
-                                  <div key={i} onClick={()=>openLb('complete',i)}
-                                    style={{ aspectRatio:'1', cursor:'pointer', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
-                                    <img src={src} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                                  <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
+                                    <img src={src} alt="" onClick={()=>openLb('complete',i)}
+                                      style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'pointer' }}/>
+                                    <button onClick={()=>onUpdate({ photos: (schedule.photos||[]).filter((_,j)=>j!==i) })}
+                                      style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.65)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
+                                    <div style={{ position:'absolute', bottom:3, left:4, fontSize:9, color:'#fff', background:'rgba(0,0,0,.5)', borderRadius:3, padding:'1px 4px' }}>{i+1}</div>
                                   </div>
                                 ))}
                               </div>
-                            </div>
-                          )}
+                            ) : (
+                              <label style={{ display:'block', border:`2px dashed ${border}`, borderRadius:8, padding:10, textAlign:'center', cursor:'pointer', background:'#f8fafc' }}>
+                                <span style={{ fontSize:12, color:muted }}>탭하여 추가</span>
+                                <input type="file" accept="image/*" multiple style={{ display:'none' }} onChange={async e=>{
+                                  const files = Array.from(e.target.files)
+                                  const newUrls = []
+                                  for (const f of files) newUrls.push(await resizeImage(f))
+                                  onUpdate({ photos: [...(schedule.photos||[]), ...newUrls] })
+                                  e.target.value = ''
+                                }}/>
+                              </label>
+                            )}
+                          </div>
                         </div>
                       )
                     })()}
