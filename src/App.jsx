@@ -1995,6 +1995,22 @@ ${billingForm.total}만원 (부가세 포함)
                   <div style={{ color:navy, fontSize:13, fontWeight:600 }}>기업 351-112230-01-015 주식회사 퍼니환경개발</div>
                 </div>
 
+                {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (
+                  <div style={{ marginBottom:16 }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:muted, marginBottom:8 }}>전체 작업사진</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:4 }}>
+                      {(schedule.work_photos||[]).map((p,i) => (
+                        <img key={'w'+i} src={p} onClick={()=>openLightbox('work',i)}
+                          style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
+                      ))}
+                      {completePhotos.map((p,i) => (
+                        <img key={'c'+i} src={p} onClick={()=>openLightbox('complete',i)}
+                          style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ display:'flex', gap:10 }}>
                   <Btn onClick={()=>setShowBilling(false)} outline color={muted} style={{ flex:1, fontSize:14 }}>닫기</Btn>
                   <Btn onClick={copy} color={billCopied?green:navy} style={{ flex:2, fontSize:15 }}>
