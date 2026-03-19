@@ -174,6 +174,20 @@ function Lightbox({ photos, index, onClose }) {
   const prev = e => { e.stopPropagation(); setCur(i => (i - 1 + total) % total) }
   const next = e => { e.stopPropagation(); setCur(i => (i + 1) % total) }
 
+  useEffect(() => {
+    // ESC 키
+    const onKey = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    // 뒤로가기
+    window.history.pushState({ lightbox: true }, '')
+    const onPop = () => onClose()
+    window.addEventListener('popstate', onPop)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('popstate', onPop)
+    }
+  }, [])
+
   const download = e => {
     e.stopPropagation()
     const a = document.createElement('a')
@@ -1931,7 +1945,7 @@ ${billingForm.total}만원 (부가세 포함)
             <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:440, maxHeight:'90vh', overflowY:'auto' }}>
       
               <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, background:'#fff', zIndex:1 }}>
-                <div style={{ fontSize:16, fontWeight:700, color:navy }}>💰 청구서 작성</div>
+                <div style={{ fontSize:17, fontWeight:700, color:navy }}>💰 청구서 작성</div>
                 <button onClick={()=>setShowBilling(false)} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
               </div>
 
@@ -1939,7 +1953,7 @@ ${billingForm.total}만원 (부가세 포함)
 
                 {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (
                   <div style={{ marginBottom:14 }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:muted, marginBottom:8 }}>전체 작업사진</div>
+                    <div style={{ fontSize:15, fontWeight:600, color:muted, marginBottom:8 }}>전체 작업사진</div>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:4 }}>
                       {(schedule.work_photos||[]).map((p,i) => (
                         <img key={'w'+i} src={p} onClick={()=>openLightbox('work',i)}
@@ -1960,7 +1974,7 @@ ${billingForm.total}만원 (부가세 포함)
                     <div style={{ display:'flex', gap:8 }}>
                       {['1','2','3','4'].map(n=>(
                         <button key={n} onClick={()=>setBF('workers',n)}
-                          style={{ flex:1, padding:'10px 0', borderRadius:8, border:`1.5px solid ${billingForm.workers===n?navy:border}`, background:billingForm.workers===n?navy:'#f8fafc', color:billingForm.workers===n?'#fff':muted, fontSize:16, fontWeight:700, cursor:'pointer' }}>
+                          style={{ flex:1, padding:'10px 0', borderRadius:8, border:`1.5px solid ${billingForm.workers===n?navy:border}`, background:billingForm.workers===n?navy:'#f8fafc', color:billingForm.workers===n?'#fff':muted, fontSize:14, fontWeight:700, cursor:'pointer' }}>
                           {n}인
                         </button>
                       ))}
@@ -2002,7 +2016,7 @@ ${billingForm.total}만원 (부가세 포함)
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <input type="number" value={billingForm.total}
                         onChange={e=>setBillingForm(p=>({...p, total:e.target.value}))}
-                        placeholder="자동 합산" style={{ ...iStyle, fontSize:19, fontWeight:700, textAlign:'right', flex:1, borderColor: billingForm.total ? navy : undefined }}/>
+                        placeholder="자동 합산" style={{ ...iStyle, fontSize:17, fontWeight:700, textAlign:'right', flex:1, borderColor: billingForm.total ? navy : undefined }}/>
                       <span style={{ fontSize:16, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
                   </div>
