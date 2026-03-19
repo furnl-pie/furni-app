@@ -1360,7 +1360,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const [showBilling, setShowBilling] = useState(false)
   const [billingForm, setBillingForm] = useState({
     workers: schedule.co_driver_id ? '2' : '1',
-    amount:'', unit:'', total:''
+    hours:'', amount:'', unit:'', total:''
   })
   const [billCopied, setBillCopied]   = useState(false)
   const billUnitRef = useRef()
@@ -1913,7 +1913,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
 <청구금액>
 ${wasteAmt} > ${billingForm.amount}만원
-${billingForm.workers}인 > ${billingForm.unit}만원
+${billingForm.workers}인 *${billingForm.hours}시간 > ${billingForm.unit}만원
 ${billingForm.total}만원 (부가세 포함)
 *청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^
 기업 351-112230-01-015 주식회사 퍼니환경개발`
@@ -1976,6 +1976,18 @@ ${billingForm.total}만원 (부가세 포함)
 
                   <div>
                     <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
+                      작업시간
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <input type="number" value={billingForm.hours} onChange={e=>setBF('hours',e.target.value)}
+                        onKeyDown={e=>{ if(e.key==='Enter') billUnitRef.current?.focus() }}
+                        placeholder="시간 입력" style={{ ...iStyle, fontSize:16, fontWeight:700, textAlign:'right', flex:1 }}/>
+                      <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>시간</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>
                       {billingForm.workers}인 금액
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -2001,7 +2013,7 @@ ${billingForm.total}만원 (부가세 포함)
                 <div style={{ background:'#eff6ff', border:`1px solid #bfdbfe`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:12, fontFamily:'monospace', lineHeight:2 }}>
                   <div style={{ fontSize:12, fontWeight:700, color:navy, marginBottom:2 }}>&lt;청구금액&gt;</div>
                   <div style={{ color:textC }}>{wasteAmt || '__'} &gt; {billingForm.amount||'__'}만원</div>
-                  <div style={{ color:textC }}>{billingForm.workers}인 &gt; {billingForm.unit||'__'}만원</div>
+                  <div style={{ color:textC }}>{billingForm.workers}인 *{billingForm.hours||'__'}시간 &gt; {billingForm.unit||'__'}만원</div>
                   <div style={{ color:textC, fontWeight:700 }}>{billingForm.total||'__'}만원 (부가세 포함)</div>
                   <div style={{ color:muted, fontSize:11, marginTop:4, lineHeight:1.7 }}>*청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^</div>
                   <div style={{ color:navy, fontSize:11, fontWeight:600 }}>기업 351-112230-01-015 주식회사 퍼니환경개발</div>
