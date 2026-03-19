@@ -2832,7 +2832,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
             <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:10 }}>로그아웃</Btn>
           </div>
         </div>
-        <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)}
+        <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)} className="driver-date"
           style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:17, width:'100%', boxSizing:'border-box', colorScheme:'dark' }}/>
       </div>
 
@@ -3763,6 +3763,8 @@ export default function App() {
         }
         input::placeholder { color: #94a3b8 !important; -webkit-text-fill-color: #94a3b8 !important; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
+        input.driver-date { color: #fff !important; -webkit-text-fill-color: #fff !important; color-scheme: dark !important; }
+        input.driver-date::-webkit-calendar-picker-indicator { filter: invert(1); }
       `}</style>
       {user.role==='admin'
         ? <AdminApp
