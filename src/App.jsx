@@ -395,11 +395,15 @@ function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAdd
       const toOrder = toS.order ?? sorted.indexOf(toS)
       onUpdate(from, { driver_id: toS.driver_id, order: toOrder - 0.5 })
     } else {
-      // 같은 기사 → 순서 교환
-      const fromOrder = fromS.order ?? sorted.indexOf(fromS)
-      const toOrder   = toS.order   ?? sorted.indexOf(toS)
-      onUpdate(from, { order: toOrder })
-      onUpdate(to,   { order: fromOrder })
+      // 같은 기사 → 목표 위치에 삽입 후 전체 재번호
+      const group = sorted.filter(s => s.driver_id === fromS.driver_id)
+      const fromIdx = group.findIndex(s => s.id === from)
+      const toIdx   = group.findIndex(s => s.id === to)
+      if (fromIdx < 0 || toIdx < 0) return
+      const newGroup = [...group]
+      newGroup.splice(fromIdx, 1)
+      newGroup.splice(toIdx, 0, fromS)
+      newGroup.forEach((s, i) => { if ((s.order ?? -1) !== i) onUpdate(s.id, { order: i }) })
     }
     dragId.current = null
     dragOverId.current = null
@@ -3118,6 +3122,20 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
     e.target.value = ''
   }
   const removePhoto = idx => setPhotos(prev => prev.filter((_,i)=>i!==idx))
+
+  const handlePaste = async e => {
+    const items = Array.from(e.clipboardData?.items || [])
+    const imageItems = items.filter(it => it.type.startsWith('image/'))
+    if (!imageItems.length) return
+    e.preventDefault()
+    for (const item of imageItems) {
+      const file = item.getAsFile()
+      if (file) {
+        const resized = await resizeImage(file)
+        setPhotos(prev => [...prev, resized])
+      }
+    }
+  }
   const handleDone = () => { onUpdate({ status:'완료', end_time:nowTime(), photos, driver_note:driverNote, final_waste:finalWaste }) }
   const saveEdit   = () => { onUpdate({ photos, driver_note:driverNote, final_waste:finalWaste }); setEditingDone(false) }
 
@@ -3130,7 +3148,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const lbPhotos = lbSource==='schedule_ref' ? (schedule.schedule_photos||[]) : displayPhotos
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
+    <div onPaste={handlePaste} style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:navy, color:'#fff', padding:'16px 20px', display:'flex', alignItems:'center', gap:12 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'#fff', fontSize:26, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
         <div style={{ flex:1 }}>
