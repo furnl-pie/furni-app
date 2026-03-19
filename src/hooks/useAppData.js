@@ -117,6 +117,14 @@ export function useAppData() {
         ))
       }
 
+      // 작업 시작 현장 사진도 동일하게 처리
+      if (patch.work_photos?.some(p => p.startsWith('data:'))) {
+        finalPatch.work_photos = await uploadPhotos(patch.work_photos)
+        setSchedules(prev => prev.map(s =>
+          s.id === id ? { ...s, work_photos: finalPatch.work_photos } : s
+        ))
+      }
+
       await updateDoc(doc(db, 'schedules', id), {
         ...finalPatch,
         updatedAt: serverTimestamp(),

@@ -1353,6 +1353,8 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const [coDriverId, setCoDriverId]     = useState(schedule.co_driver_id || '')
   const [pasteMsg, setPasteMsg]     = useState('')
   const spFileRef = useRef()
+  const wpFileRef = useRef()
+  const cpFileRef = useRef()
   const dropRef   = useRef()
 
   const [showBilling, setShowBilling] = useState(false)
@@ -1424,6 +1426,22 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const removeSchedulePhoto = idx =>
     onUpdate({ schedule_photos: (schedule.schedule_photos||[]).filter((_,i)=>i!==idx) })
 
+  const addWorkPhotos = async e => {
+    const urls = await readFilesAsBase64(e.target.files)
+    onUpdate({ work_photos: [...(schedule.work_photos||[]), ...urls] })
+    e.target.value = ''
+  }
+  const removeWorkPhoto = idx =>
+    onUpdate({ work_photos: (schedule.work_photos||[]).filter((_,i)=>i!==idx) })
+
+  const addCompletePhotos = async e => {
+    const urls = await readFilesAsBase64(e.target.files)
+    onUpdate({ photos: [...(schedule.photos||[]), ...urls] })
+    e.target.value = ''
+  }
+  const removeCompletePhoto = idx =>
+    onUpdate({ photos: (schedule.photos||[]).filter((_,i)=>i!==idx) })
+
   const handlePagePaste = async e => {
     const items = Array.from(e.clipboardData?.items || [])
     const imageItems = items.filter(it => it.type.startsWith('image/'))
@@ -1448,7 +1466,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const handleDragLeave = () => dropRef.current?.classList.remove('drag-over')
 
   const openLightbox = (src, idx) => { setLbSource(src); setLightbox(idx) }
-  const lbPhotos = lbSource==='schedule' ? schedulePhotos : completePhotos
+  const lbPhotos = lbSource==='schedule' ? schedulePhotos : lbSource==='work' ? (schedule.work_photos||[]) : completePhotos
 
   return (
     <div onPaste={handlePagePaste} style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
@@ -1778,41 +1796,80 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           </div>
         )}
 
-        {/* 완료 사진 */}
+        {/* 작업 시작 사진 */}
         {(() => {
           const workPics = schedule.work_photos || []
-          const allDone = [...workPics, ...completePhotos]
-          if (allDone.length === 0 && schedule.status !== '완료') return null
-          if (allDone.length === 0) return (
-            <Card style={{ textAlign:'center', padding:24, color:muted }}>
-              <div style={{ fontSize:24, marginBottom:6 }}>📷</div>
-              <div style={{ fontSize:13 }}>첨부된 완료 사진이 없습니다</div>
+          if (workPics.length === 0 && !schedule.start_time) return null
+          return (
+            <Card style={{ marginBottom:12 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                <div style={{ fontSize:14, fontWeight:700, color:textC }}>
+                  📍 작업 시작 사진
+                  <span style={{ fontSize:12, color:muted, marginLeft:6, fontWeight:400 }}>{workPics.length}장</span>
+                </div>
+                <button onClick={()=>wpFileRef.current?.click()}
+                  style={{ background:amber, color:'#fff', border:'none', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                  + 추가
+                </button>
+                <input ref={wpFileRef} type="file" accept="image/*" multiple onChange={addWorkPhotos} style={{ display:'none' }}/>
+              </div>
+              {workPics.length > 0 ? (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+                  {workPics.map((src,i)=>(
+                    <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
+                      <img src={src} alt={`현장${i+1}`} onClick={()=>openLightbox('work',i)}
+                        style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'pointer' }}/>
+                      <button onClick={()=>removeWorkPhoto(i)}
+                        style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.6)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
+                      <div style={{ position:'absolute', bottom:3, left:4, fontSize:9, color:'#fff', background:'rgba(0,0,0,.5)', borderRadius:3, padding:'1px 4px' }}>{i+1}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign:'center', padding:'14px 0', color:muted, fontSize:13 }}>사진 없음</div>
+              )}
             </Card>
           )
+        })()}
+
+        {/* 작업 완료 사진 */}
+        {(() => {
+          if (completePhotos.length === 0 && schedule.status !== '완료') return null
           return (
-            <Card>
+            <Card style={{ marginBottom:12 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:textC }}>
-                  사진
-                  {workPics.length > 0 && <span style={{ fontSize:11, color:muted, marginLeft:6 }}>현장 {workPics.length}장</span>}
-                  {completePhotos.length > 0 && <span style={{ fontSize:11, color:muted, marginLeft:6 }}>완료 {completePhotos.length}장</span>}
+                <div style={{ fontSize:14, fontWeight:700, color:textC }}>
+                  ✅ 작업 완료 사진
+                  <span style={{ fontSize:12, color:muted, marginLeft:6, fontWeight:400 }}>{completePhotos.length}장</span>
                 </div>
-                <button onClick={()=>downloadAllPhotos(allDone, `전체사진_${schedule.address.slice(0,10)}`)}
-                  style={{ background:blue, color:'#fff', border:'none', borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                  ⬇ 전체 다운로드
-                </button>
+                <div style={{ display:'flex', gap:8 }}>
+                  {completePhotos.length > 0 && (
+                    <button onClick={()=>downloadAllPhotos(completePhotos, `완료사진_${schedule.address.slice(0,10)}`)}
+                      style={{ background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      ⬇ 다운로드
+                    </button>
+                  )}
+                  <button onClick={()=>cpFileRef.current?.click()}
+                    style={{ background:green, color:'#fff', border:'none', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                    + 추가
+                  </button>
+                </div>
+                <input ref={cpFileRef} type="file" accept="image/*" multiple onChange={addCompletePhotos} style={{ display:'none' }}/>
               </div>
-              {workPics.length > 0 && (
-                <div style={{ marginBottom:10 }}>
-                  <div style={{ fontSize:11, fontWeight:600, color:muted, marginBottom:6 }}>📍 현장 사진</div>
-                  <SlidePhotoViewer photos={workPics} onOpen={i => openLightbox('complete', i)}/>
+              {completePhotos.length > 0 ? (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+                  {completePhotos.map((src,i)=>(
+                    <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
+                      <img src={src} alt={`완료${i+1}`} onClick={()=>openLightbox('complete',i)}
+                        style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'pointer' }}/>
+                      <button onClick={()=>removeCompletePhoto(i)}
+                        style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.6)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
+                      <div style={{ position:'absolute', bottom:3, left:4, fontSize:9, color:'#fff', background:'rgba(0,0,0,.5)', borderRadius:3, padding:'1px 4px' }}>{i+1}</div>
+                    </div>
+                  ))}
                 </div>
-              )}
-              {completePhotos.length > 0 && (
-                <div>
-                  {workPics.length > 0 && <div style={{ fontSize:11, fontWeight:600, color:muted, marginBottom:6, marginTop:8 }}>✅ 완료 사진</div>}
-                  <SlidePhotoViewer photos={completePhotos} onOpen={i => openLightbox('complete', i)}/>
-                </div>
+              ) : (
+                <div style={{ textAlign:'center', padding:'14px 0', color:muted, fontSize:13 }}>사진 없음</div>
               )}
             </Card>
           )
