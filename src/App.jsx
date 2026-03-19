@@ -176,7 +176,11 @@ function Lightbox({ photos, index, onClose }) {
 
   useEffect(() => {
     // ESC 키
-    const onKey = e => { if (e.key === 'Escape') onClose() }
+    const onKey = e => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft')  setCur(i => (i - 1 + total) % total)
+      if (e.key === 'ArrowRight') setCur(i => (i + 1) % total)
+    }
     window.addEventListener('keydown', onKey)
     // 뒤로가기
     window.history.pushState({ lightbox: true }, '')
@@ -2004,7 +2008,7 @@ ${billingForm.total}만원 (부가세 포함)
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <input ref={billUnitRef} type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
-                        placeholder="금액 입력" style={{ ...iStyle, fontSize:18, fontWeight:700, textAlign:'right', flex:1 }}/>
+                        placeholder="금액 입력" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right', flex:1 }}/>
                       <span style={{ fontSize:16, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
                   </div>
@@ -2016,7 +2020,7 @@ ${billingForm.total}만원 (부가세 포함)
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <input type="number" value={billingForm.total}
                         onChange={e=>setBillingForm(p=>({...p, total:e.target.value}))}
-                        placeholder="자동 합산" style={{ ...iStyle, fontSize:17, fontWeight:700, textAlign:'right', flex:1, borderColor: billingForm.total ? navy : undefined }}/>
+                        placeholder="자동 합산" style={{ ...iStyle, fontSize:14, fontWeight:700, textAlign:'right', flex:1, borderColor: billingForm.total ? navy : undefined }}/>
                       <span style={{ fontSize:16, color:muted, whiteSpace:'nowrap' }}>만원</span>
                     </div>
                   </div>
