@@ -1936,18 +1936,6 @@ ${billingForm.total}만원 (부가세 포함)
 
               <div style={{ padding:'16px 20px' }}>
 
-                <div style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:14, lineHeight:2, fontFamily:'monospace' }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:navy, marginBottom:2 }}>[FN퍼니 작업보고]</div>
-                  <div>작업날짜: <span style={{ color:textC }}>{schedule.date}</span></div>
-                  <div>업체명: <span style={{ color:textC }}>{companyName}</span></div>
-                  <div>작업인원: <span style={{ color:textC }}>{billingForm.workers}인</span></div>
-                  <div>현장주소: <span style={{ color:textC, wordBreak:'break-all' }}>{schedule.address}</span></div>
-                  <div>작업시간: <span style={{ color:textC }}>{workTime}</span></div>
-                  <div>성상: <span style={{ color:textC }}>혼합</span></div>
-                  <div>폐기물양: <span style={{ color:textC }}>{wasteAmt}</span></div>
-                  <div>특이사항: <span style={{ color:textC }}>{schedule.driver_note || '없음'}</span></div>
-                </div>
-
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
 
                   <div>
