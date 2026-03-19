@@ -20,7 +20,12 @@ function getDriverSortKey(d) {
   return 99999
 }
 
-const today = new Date().toISOString().slice(0,10)
+// KST 기준 오늘 날짜 (UTC+9, 00시 기준으로 갱신)
+function getKSTToday() {
+  const d = new Date(Date.now() + 9 * 60 * 60 * 1000)
+  return d.toISOString().slice(0, 10)
+}
+const today = getKSTToday()
 
 // ── 색상 / 공용 스타일 ──────────────────────────────────────────
 const navy   = '#1b3a5c'
@@ -346,7 +351,7 @@ function LoginPage({ onLogin, users }) {
 
         {err && <div style={{ fontSize:12, color:red, marginBottom:12, textAlign:'center' }}>{err}</div>}
         <Btn onClick={go} style={{ width:'100%', padding:13, fontSize:15, borderRadius:10 }}>로그인</Btn>
-        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.5.9</div>
+        <div style={{ textAlign:'right', marginTop:14, fontSize:11, color:'#cbd5e1' }}>v1.6.0</div>
       </div>
     </div>
   )
@@ -2828,7 +2833,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
           </div>
         </div>
         <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)}
-          style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:14, width:'100%', boxSizing:'border-box' }}/>
+          style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:17, width:'100%', boxSizing:'border-box', colorScheme:'dark' }}/>
       </div>
 
       <div style={{ padding:16, maxWidth:480, margin:'0 auto' }}>
