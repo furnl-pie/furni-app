@@ -1566,7 +1566,18 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                 </div>
                 <div>
                   <div style={{ fontSize:11, color:muted, marginBottom:4 }}>시간</div>
-                  <input type="time" value={infoForm.time} onChange={e=>setIF('time',e.target.value)} style={{ ...iStyle, fontSize:13 }}/>
+                  <div style={{ display:'flex', gap:4, marginBottom:5 }}>
+                    {['오전중','오후중','당일중'].map(v=>(
+                      <button key={v} type="button" onClick={()=>setIF('time',v)}
+                        style={{ flex:1, padding:'5px 2px', fontSize:11, borderRadius:6, border:`1px solid ${infoForm.time===v?blue:border}`, background:infoForm.time===v?blue:'#fff', color:infoForm.time===v?'#fff':textC, cursor:'pointer', fontWeight:infoForm.time===v?700:400 }}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="time"
+                    value={['오전중','오후중','당일중'].includes(infoForm.time) ? '' : infoForm.time}
+                    onChange={e=>setIF('time',e.target.value)}
+                    style={{ ...iStyle, fontSize:13 }}/>
                 </div>
               </div>
               <div>
@@ -2147,12 +2158,16 @@ async function downloadAllPhotos(photos, prefix = '완료사진') {
 function parseKoreanTime(raw) {
   if (!raw) return ''
   const s = raw.trim()
+  // 오전중/오후중/당일중 → 시간보다 우선
+  if (s.includes('오전중')) return '오전중'
+  if (s.includes('오후중')) return '오후중'
+  if (s.includes('당일중')) return '당일중'
   // 이미 HH:MM 형식
   if (/^\d{1,2}:\d{2}$/.test(s)) {
     const [h,m] = s.split(':').map(Number)
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
   }
-  // "오전중", "오후중", "시간엄수", "미정" 등 → 원본 그대로
+  // "시간엄수", "미정" 등 → 원본 그대로
   const isAm = s.includes('오전')
   const isPm = s.includes('오후')
   const hm = s.replace(/오전|오후|중/g,'')
@@ -2235,15 +2250,23 @@ function parseKakaoChat(text) {
       const y = new Date().getFullYear()
       date = `${y}-${String(dateM[1]).padStart(2,'0')}-${String(dateM[2]).padStart(2,'0')}`
     }
-    // 시간: 오전9~10시, 오전9시30분, 오후3시, 시간(미정)
+    // 시간: 오전중/오후중/당일중 우선, 그 다음 오전9~10시, 오전9시30분, 오후3시
     let time = '09:00'
-    const timeM = dateLine.match(/(오전|오후)?\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/)
-    if (timeM) {
-      let h = parseInt(timeM[2])
-      const m = timeM[3] ? parseInt(timeM[3]) : 0
-      if (timeM[1] === '오후' && h < 12) h += 12
-      if (timeM[1] === '오전' && h === 12) h = 0
-      time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+    if (/오전중/.test(dateLine)) {
+      time = '오전중'
+    } else if (/오후중/.test(dateLine)) {
+      time = '오후중'
+    } else if (/당일중/.test(dateLine)) {
+      time = '당일중'
+    } else {
+      const timeM = dateLine.match(/(오전|오후)?\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/)
+      if (timeM) {
+        let h = parseInt(timeM[2])
+        const m = timeM[3] ? parseInt(timeM[3]) : 0
+        if (timeM[1] === '오후' && h < 12) h += 12
+        if (timeM[1] === '오전' && h === 12) h = 0
+        time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+      }
     }
 
     // 3행: 주소
@@ -2272,9 +2295,10 @@ const newRow = () => {
 
 function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   const [step, setStep]       = useState(1)
-  const [inputMode, setInputMode] = useState('kakao') // 'kakao' | 'paste' | 'manual'
+  const [inputMode, setInputMode] = useState('paste') // 'paste' | 'kakao' | 'manual'
   const [rows, setRows]       = useState([newRow()])
   const [assigns, setAssigns] = useState({})
+  const [coAssigns, setCoAssigns] = useState({})
 
   const [pasteRaw, setPasteRaw]   = useState('')
   const [parsed, setParsed]       = useState(null)
@@ -2327,14 +2351,21 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   const applyKakao = () => {
     if (!kakaoRows.length) return
     const autoAssign = {}
+    const autoCoAssign = {}
     kakaoRows.forEach(r => {
       if (r.driver_hint) {
-        const matched = drivers.find(d => d.name.includes(r.driver_hint) || r.driver_hint.includes(d.name))
-        if (matched) autoAssign[r._id] = matched.id
+        const parts = r.driver_hint.split(/[,，]/)
+        const main = findDriver(parts[0])
+        if (main) autoAssign[r._id] = main.id
+        if (parts[1]) {
+          const co = findDriver(parts[1])
+          if (co) autoCoAssign[r._id] = co.id
+        }
       }
     })
     setRows(kakaoRows)
     setAssigns(autoAssign)
+    setCoAssigns(autoCoAssign)
     setKakaoMsg('')
     setStep(2)
   }
@@ -2386,17 +2417,26 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
     })
   }
 
+  const findDriver = hint => drivers.find(d => d.name.includes(hint.trim()) || hint.trim().includes(d.name))
+
   const goStep2 = () => {
     const bad = rows.filter(r => !r.address)
     if (bad.length) return alert(`${bad.length}개 일정에 주소가 비어 있습니다.`)
     const autoAssign = {}
+    const autoCoAssign = {}
     rows.forEach(r => {
       if (r.driver_hint) {
-        const matched = drivers.find(d => d.name.includes(r.driver_hint) || r.driver_hint.includes(d.name))
-        if (matched) autoAssign[r._id] = matched.id
+        const parts = r.driver_hint.split(/[,，]/)
+        const main = findDriver(parts[0])
+        if (main) autoAssign[r._id] = main.id
+        if (parts[1]) {
+          const co = findDriver(parts[1])
+          if (co) autoCoAssign[r._id] = co.id
+        }
       }
     })
     setAssigns(autoAssign)
+    setCoAssigns(autoCoAssign)
     setStep(2)
   }
 
@@ -2406,9 +2446,10 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
   const submit = () => {
     const list = rows.map((r, i) => ({
       ...r,
-      order:       i,
-      driver_id:   assigns[r._id] || null,
-      driver_note: r.driver_note || '',
+      order:          i,
+      driver_id:      assigns[r._id] || null,
+      co_driver_id:   coAssigns[r._id] || null,
+      driver_note:    r.driver_note || '',
       status:'대기', start_time:null, end_time:null,
       eta:null, sms_sent:false, photos:[],
     }))
@@ -2458,7 +2499,7 @@ function BulkScheduleModal({ drivers, onAddMany, onClose }) {
           <>
 
             <div style={{ display:'flex', borderBottom:`1px solid ${border}`, flexShrink:0 }}>
-              {[['kakao','💬 카카오톡'],['paste','📊 엑셀 붙여넣기'],['manual','✏️ 직접 입력']].map(([m,l])=>(
+              {[['paste','📊 엑셀 붙여넣기'],['kakao','💬 카카오톡'],['manual','✏️ 직접 입력']].map(([m,l])=>(
                 <button key={m} onClick={()=>setInputMode(m)}
                   style={{ padding:'10px 18px', fontSize:13, fontWeight:600, border:'none', borderBottom:`2.5px solid ${inputMode===m?blue:'transparent'}`, color:inputMode===m?blue:muted, background:'none', cursor:'pointer' }}>
                   {l}
@@ -2833,7 +2874,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
           </div>
         </div>
         <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)} className="driver-date"
-          style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:17, width:'100%', boxSizing:'border-box', colorScheme:'dark' }}/>
+          style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:20, width:'100%', boxSizing:'border-box', colorScheme:'dark' }}/>
       </div>
 
       <div style={{ padding:16, maxWidth:480, margin:'0 auto' }}>
