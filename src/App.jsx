@@ -1360,6 +1360,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const [showBilling, setShowBilling] = useState(false)
   const [billingForm, setBillingForm] = useState({
     workers: schedule.co_driver_id ? '2' : '1',
+    waste: schedule.final_waste || schedule.waste || '',
     amount:'', unit:'', total:''
   })
   const [billCopied, setBillCopied]   = useState(false)
@@ -1898,7 +1899,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           : duration
 
         const companyName = (schedule.cname || '').replace(/\(.*?\)/g, '').trim()
-        const wasteAmt = schedule.final_waste || schedule.waste || ''
+        const wasteAmt = billingForm.waste
 
         const buildText = () =>
 `[FN퍼니 작업보고]
@@ -1948,6 +1949,12 @@ ${billingForm.total}만원 (부가세 포함)
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>폐기물 양</div>
+                    <input value={billingForm.waste} onChange={e=>setBillingForm(p=>({...p, waste:e.target.value}))}
+                      placeholder="예) 1톤, 500kg" style={{ ...iStyle, fontSize:16, fontWeight:700, width:'100%' }}/>
                   </div>
 
                   <div>
