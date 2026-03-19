@@ -2890,7 +2890,6 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [notification, setNotification] = useState(null)
   const notifTimer   = useRef(null)
   const prevMineRef  = useRef(null)
-  const loginChecked = useRef(false)
 
   const mine = schedules
     .filter(s => (s.driver_id === user.id || s.co_driver_id === user.id) && (!filterDate || s.date === filterDate))
@@ -2908,38 +2907,35 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
     notifTimer.current = setTimeout(() => setNotification(null), 5000)
   }
 
-  // 일정 변경 감지 → 알림
+  // ① 로그인 직후 1회: localStorage 스냅샷 vs 현재 일정 비교
   useEffect(() => {
     const SNAP_KEY = `sched_snap_${user.id}`
-    const current = schedules.filter(s => s.driver_id === user.id || s.co_driver_id === user.id)
-
-    // 첫 로드: 로그인 직후 localStorage 스냅샷과 비교
-    if (prevMineRef.current === null) {
-      prevMineRef.current = current
-      if (!loginChecked.current) {
-        loginChecked.current = true
-        try {
-          const savedRaw = localStorage.getItem(SNAP_KEY)
-          if (savedRaw) {
-            const saved = JSON.parse(savedRaw)
-            const newOnes  = current.filter(s => !saved.find(p => p.id === s.id))
-            const removed  = saved.filter(p => !current.find(s => s.id === p.id))
-            const modified = current.filter(s => {
-              const p = saved.find(p => p.id === s.id)
-              return p && (p.date !== s.date || p.time !== s.time || p.order !== s.order)
-            })
-            const parts = []
-            if (newOnes.length > 0)  parts.push(`새 일정 ${newOnes.length}건 배정`)
-            if (removed.length > 0)  parts.push(`${removed.length}건 취소`)
-            if (modified.length > 0) parts.push(`${modified.length}건 수정`)
-            if (parts.length > 0) showNotif('📋 ' + parts.join(' · '))
-          }
-        } catch (e) {}
+    try {
+      const savedRaw = localStorage.getItem(SNAP_KEY)
+      if (savedRaw) {
+        const saved   = JSON.parse(savedRaw)
+        const current = schedules.filter(s => s.driver_id === user.id || s.co_driver_id === user.id)
+        const newOnes  = current.filter(s => !saved.find(p => p.id === s.id))
+        const removed  = saved.filter(p => !current.find(s => s.id === p.id))
+        const modified = current.filter(s => {
+          const p = saved.find(p => p.id === s.id)
+          return p && (p.date !== s.date || p.time !== s.time || p.order !== s.order)
+        })
+        const parts = []
+        if (newOnes.length > 0)  parts.push(`새 일정 ${newOnes.length}건 배정`)
+        if (removed.length > 0)  parts.push(`${removed.length}건 취소`)
+        if (modified.length > 0) parts.push(`${modified.length}건 수정`)
+        if (parts.length > 0) showNotif('📋 ' + parts.join(' · '))
       }
-      return
-    }
+    } catch (e) {}
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ② 세션 중 실시간 변경 감지
+  useEffect(() => {
+    const current = schedules.filter(s => s.driver_id === user.id || s.co_driver_id === user.id)
+    if (prevMineRef.current === null) { prevMineRef.current = current; return }
     const prev = prevMineRef.current
+
     const newOnes  = current.filter(s => !prev.find(p => p.id === s.id))
     const removed  = prev.filter(p => !current.find(s => s.id === p.id))
     const modified = current.filter(s => {
@@ -2957,7 +2953,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
     prevMineRef.current = current
   }, [schedules])
 
-  // 스냅샷 저장 (다음 로그인 때 비교용)
+  // ③ 스냅샷 저장 (다음 로그인 때 비교용)
   useEffect(() => {
     const snap = schedules
       .filter(s => s.driver_id === user.id || s.co_driver_id === user.id)
