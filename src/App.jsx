@@ -2910,7 +2910,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
                 폐기물 {s.waste} · 담당: {s.cname}
                 {s.co_driver_id && (
                   <span style={{ marginLeft:8, fontSize:12, background:'#dbeafe', color:blue, padding:'1px 7px', borderRadius:10, fontWeight:600 }}>
-                    2인 · {userName(s.co_driver_id)}
+                    2인 · {userName(user.id === s.driver_id ? s.co_driver_id : s.driver_id)}
                   </span>
                 )}
               </div>
@@ -3135,7 +3135,6 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         <button onClick={onBack} style={{ background:'none', border:'none', color:'#fff', fontSize:26, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:18, fontWeight:700 }}>일정 상세</div>
-          <div style={{ fontSize:14, opacity:.7 }}>{schedule.time} 출발 예정</div>
         </div>
         <Badge status={schedule.status}/>
       </div>
@@ -3145,13 +3144,13 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
         {/* 현장 정보 */}
         <Card style={{ marginBottom:12 }}>
           <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>현장 정보</div>
-          <div style={{ marginBottom:14 }}><CopyAddress address={schedule.address}/></div>
           <Row label="예정 시간"   value={`${schedule.date}  ${schedule.time}`}/>
           <Row label="폐기물량"    value={schedule.waste}/>
           <Row label="현장 담당자" value={schedule.cname}/>
           <Row label="연락처"      value={schedule.cphone}/>
           {schedule.memo && <Row label="메모" value={schedule.memo}/>}
-          <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none', display:'block', marginTop:16 }}>
+          <div style={{ margin:'14px 0' }}><CopyAddress address={schedule.address}/></div>
+          <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none', display:'block' }}>
             <div style={{ background:green, color:'#fff', borderRadius:10, padding:16, textAlign:'center', fontWeight:700, fontSize:18 }}>
               📞 {schedule.cname}에게 전화
             </div>
