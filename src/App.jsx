@@ -1937,6 +1937,22 @@ ${billingForm.total}만원 (부가세 포함)
 
               <div style={{ padding:'16px 20px' }}>
 
+                {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (
+                  <div style={{ marginBottom:14 }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:muted, marginBottom:8 }}>전체 작업사진</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:4 }}>
+                      {(schedule.work_photos||[]).map((p,i) => (
+                        <img key={'w'+i} src={p} onClick={()=>openLightbox('work',i)}
+                          style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
+                      ))}
+                      {completePhotos.map((p,i) => (
+                        <img key={'c'+i} src={p} onClick={()=>openLightbox('complete',i)}
+                          style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
 
                   <div>
@@ -1951,21 +1967,20 @@ ${billingForm.total}만원 (부가세 포함)
                     </div>
                   </div>
 
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>폐기물 양</div>
-                    <input value={billingForm.waste} onChange={e=>setBillingForm(p=>({...p, waste:e.target.value}))}
-                      placeholder="예) 1톤, 500kg" style={{ ...iStyle, fontSize:16, fontWeight:700, width:'100%' }}/>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>
-                      폐기물 청구금액 <span style={{ fontWeight:400, color:'#94a3b8' }}>({wasteAmt} &gt; ? 만원)</span>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>폐기물 양</div>
+                      <input value={billingForm.waste} onChange={e=>setBillingForm(p=>({...p, waste:e.target.value}))}
+                        placeholder="예) 1톤" style={{ ...iStyle, fontSize:15, fontWeight:700, width:'100%' }}/>
                     </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <input type="number" value={billingForm.amount} onChange={e=>setBF('amount',e.target.value)}
-                        onKeyDown={e=>{ if(e.key==='Enter') billUnitRef.current?.focus() }}
-                        placeholder="금액 입력" style={{ ...iStyle, fontSize:18, fontWeight:700, textAlign:'right', flex:1 }}/>
-                      <span style={{ fontSize:16, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>폐기물 청구금액</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <input type="number" value={billingForm.amount} onChange={e=>setBF('amount',e.target.value)}
+                          onKeyDown={e=>{ if(e.key==='Enter') billUnitRef.current?.focus() }}
+                          placeholder="금액" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right', flex:1 }}/>
+                        <span style={{ fontSize:14, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                      </div>
                     </div>
                   </div>
 
@@ -2001,22 +2016,6 @@ ${billingForm.total}만원 (부가세 포함)
                   <div style={{ color:muted, fontSize:13, marginTop:4, lineHeight:1.7 }}>*청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^</div>
                   <div style={{ color:navy, fontSize:13, fontWeight:600 }}>기업 351-112230-01-015 주식회사 퍼니환경개발</div>
                 </div>
-
-                {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (
-                  <div style={{ marginBottom:16 }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:muted, marginBottom:8 }}>전체 작업사진</div>
-                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:4 }}>
-                      {(schedule.work_photos||[]).map((p,i) => (
-                        <img key={'w'+i} src={p} onClick={()=>openLightbox('work',i)}
-                          style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
-                      ))}
-                      {completePhotos.map((p,i) => (
-                        <img key={'c'+i} src={p} onClick={()=>openLightbox('complete',i)}
-                          style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <div style={{ display:'flex', gap:10 }}>
                   <Btn onClick={()=>setShowBilling(false)} outline color={muted} style={{ flex:1, fontSize:14 }}>닫기</Btn>
