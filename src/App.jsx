@@ -1395,7 +1395,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
     const next = {...p, [k]:v}
     const a = parseFloat(next.amount) || 0
     const u = parseFloat(next.unit)   || 0
-    next.total = (a + u) > 0 ? String(Math.round((a + u) * 1.1)) : ''
+    next.total = (a + u) > 0 ? String(Math.round((a + u) * 1.1 * 10) / 10) : ''
     return next
   })
 
