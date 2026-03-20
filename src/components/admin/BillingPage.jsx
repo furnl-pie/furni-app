@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Card } from '../common/ui'
-import { navy, green, amber, border, muted, textC, getKSTToday } from '../../constants/styles'
+import { navy, green, amber, border, muted, textC, getKSTToday, getDriverSortKey } from '../../constants/styles'
 import { userName, getUsers } from '../../utils/users'
 
 export default function BillingPage({ schedules, onBack }) {
@@ -9,11 +9,25 @@ export default function BillingPage({ schedules, onBack }) {
 
   const billed = schedules
     .filter(s => s.billing_total && s.billing_date && s.billing_date.startsWith(month))
-    .sort((a, b) => (a.billing_date || '').localeCompare(b.billing_date || ''))
 
   const totalAmount = billed.reduce((sum, s) => sum + (s.billing_total || 0), 0)
 
-  // 총 작업시간만 표시 (예: 2시간30분)
+  // 기사별 그룹핑 → 각 그룹 내 날짜순 정렬 → 그룹은 기사 순서대로
+  const drivers = getUsers().filter(u => u.role === 'driver')
+  const grouped = billed.reduce((acc, s) => {
+    const key = s.driver_id || '__none__'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(s)
+    return acc
+  }, {})
+  Object.values(grouped).forEach(rows => rows.sort((a, b) => (a.date || '').localeCompare(b.date || '')))
+
+  const groupKeys = Object.keys(grouped).sort((a, b) => {
+    const dA = drivers.find(d => d.id === a)
+    const dB = drivers.find(d => d.id === b)
+    return getDriverSortKey(dA || { name: a }) - getDriverSortKey(dB || { name: b })
+  })
+
   const workDuration = s => {
     if (!s.start_time || !s.end_time) return '-'
     const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
@@ -23,7 +37,6 @@ export default function BillingPage({ schedules, onBack }) {
     return h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`
   }
 
-  // 만원 단위 → 원 단위로 변환하여 표시 (29.7 → 297,000원)
   const fmtAmount = val => {
     if (!val) return '-'
     return (Math.round(val * 10000)).toLocaleString() + '원'
@@ -33,15 +46,17 @@ export default function BillingPage({ schedules, onBack }) {
 
   const exportCSV = () => {
     const headers = ['날짜', '담당기사', '차량번호', '업체(담당자)', '폐기물량', '청구금액(원)', '주소']
-    const rows = billed.map(s => [
-      s.date || s.billing_date || '',
-      userName(s.driver_id),
-      carNum(s.driver_id),
-      s.cname || '',
-      s.billing_waste || '',
-      s.billing_total ? Math.round(s.billing_total * 10000) : 0,
-      `"${(s.address || '').replace(/"/g, '""')}"`,
-    ])
+    const rows = groupKeys.flatMap(key =>
+      grouped[key].map(s => [
+        s.date || s.billing_date || '',
+        userName(s.driver_id),
+        carNum(s.driver_id),
+        s.cname || '',
+        s.billing_waste || '',
+        s.billing_total ? Math.round(s.billing_total * 10000) : 0,
+        `"${(s.address || '').replace(/"/g, '""')}"`,
+      ])
+    )
     const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
@@ -56,7 +71,7 @@ export default function BillingPage({ schedules, onBack }) {
     textAlign: 'center', ...extra,
   })
   const td = extra => ({
-    padding: '10px 12px', fontSize: 13, color: textC,
+    padding: '9px 12px', fontSize: 13, color: textC,
     borderBottom: `1px solid ${border}`, verticalAlign: 'middle', ...extra,
   })
 
@@ -101,11 +116,10 @@ export default function BillingPage({ schedules, onBack }) {
           </div>
         ) : (
           <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${border}`, overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
               <thead>
                 <tr>
                   <th style={th()}>날짜</th>
-                  <th style={th()}>담당기사</th>
                   <th style={th({ textAlign: 'left' })}>업체(담당자)</th>
                   <th style={th({ textAlign: 'left' })}>주소</th>
                   <th style={th()}>폐기물량</th>
@@ -114,25 +128,38 @@ export default function BillingPage({ schedules, onBack }) {
                 </tr>
               </thead>
               <tbody>
-                {billed.map((s, i) => (
-                  <tr key={s.id} style={{ background: i % 2 === 1 ? '#fafafa' : '#fff' }}>
-                    <td style={td({ textAlign: 'center', fontFamily: 'monospace', fontSize: 12 })}>{s.date || s.billing_date}</td>
-                    <td style={td({ textAlign: 'center' })}>
-                      <div style={{ fontWeight: 600 }}>{userName(s.driver_id)}</div>
-                      {carNum(s.driver_id) && <div style={{ fontSize: 11, color: muted, fontFamily: 'monospace' }}>{carNum(s.driver_id)}</div>}
-                    </td>
-                    <td style={td()}>{s.cname || '-'}</td>
-                    <td style={td({ fontSize: 12, color: muted, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{s.address}</td>
-                    <td style={td({ textAlign: 'center', fontWeight: 600, color: amber })}>{s.billing_waste || s.waste || '-'}</td>
-                    <td style={td({ textAlign: 'center', fontSize: 12, color: muted })}>{workDuration(s)}</td>
-                    <td style={td({ textAlign: 'right', fontWeight: 700, color: green, whiteSpace: 'nowrap' })}>
-                      {fmtAmount(s.billing_total)}
-                    </td>
-                  </tr>
-                ))}
+                {groupKeys.map(key => {
+                  const rows = grouped[key]
+                  const subtotal = rows.reduce((sum, s) => sum + (s.billing_total || 0), 0)
+                  const cn = carNum(key)
+                  return rows.map((s, i) => [
+                    // 기사 그룹 헤더
+                    i === 0 && (
+                      <tr key={`head-${key}`} style={{ background: '#eff6ff' }}>
+                        <td colSpan={5} style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: navy, borderBottom: `1px solid ${border}`, borderTop: `2px solid #bfdbfe` }}>
+                          {userName(key)}
+                          {cn && <span style={{ marginLeft: 8, fontSize: 11, fontFamily: 'monospace', color: muted, fontWeight: 400 }}>{cn}</span>}
+                          <span style={{ marginLeft: 10, fontSize: 12, color: muted, fontWeight: 400 }}>{rows.length}건</span>
+                        </td>
+                        <td style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: green, textAlign: 'right', borderBottom: `1px solid ${border}`, borderTop: `2px solid #bfdbfe`, whiteSpace: 'nowrap' }}>
+                          {fmtAmount(subtotal)}
+                        </td>
+                      </tr>
+                    ),
+                    // 일정 행
+                    <tr key={s.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                      <td style={td({ textAlign: 'center', fontFamily: 'monospace', fontSize: 12 })}>{s.date || s.billing_date}</td>
+                      <td style={td()}>{s.cname || '-'}</td>
+                      <td style={td({ fontSize: 12, color: muted, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{s.address}</td>
+                      <td style={td({ textAlign: 'center', fontWeight: 600, color: amber })}>{s.billing_waste || s.waste || '-'}</td>
+                      <td style={td({ textAlign: 'center', fontSize: 12, color: muted })}>{workDuration(s)}</td>
+                      <td style={td({ textAlign: 'right', fontWeight: 600, color: textC, whiteSpace: 'nowrap' })}>{fmtAmount(s.billing_total)}</td>
+                    </tr>
+                  ])
+                })}
                 <tr style={{ background: '#f0fdf4' }}>
-                  <td colSpan={6} style={td({ textAlign: 'right', fontWeight: 700, color: muted, borderBottom: 'none' })}>합계</td>
-                  <td style={td({ textAlign: 'right', fontWeight: 700, color: green, fontSize: 15, borderBottom: 'none', whiteSpace: 'nowrap' })}>
+                  <td colSpan={5} style={td({ textAlign: 'right', fontWeight: 700, color: muted, borderBottom: 'none', borderTop: `2px solid ${border}` })}>전체 합계</td>
+                  <td style={td({ textAlign: 'right', fontWeight: 700, color: green, fontSize: 15, borderBottom: 'none', borderTop: `2px solid ${border}`, whiteSpace: 'nowrap' })}>
                     {fmtAmount(totalAmount)}
                   </td>
                 </tr>
