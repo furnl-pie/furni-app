@@ -7,7 +7,7 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
   const [adding, setAdding]       = useState(false)
   const [editId, setEditId]       = useState(null)
   const [delId,  setDelId]        = useState(null)
-  const [form, setForm]           = useState({ loginId:'', name:'', phone:'', pw:'' })
+  const [form, setForm]           = useState({ loginId:'', name:'', phone:'', pw:'', car_num:'' })
   const [editForm, setEditForm]   = useState({})
   const [idErr, setIdErr]         = useState('')
   const setF  = (k,v) => { setForm(p=>({...p,[k]:v})); if(k==='loginId') setIdErr('') }
@@ -17,11 +17,11 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
     if (!form.loginId||!form.name||!form.phone||!form.pw) return alert('아이디·이름·연락처·비밀번호를 모두 입력하세요')
     if (!/^[a-z0-9_\uAC00-\uD7A3\u3130-\u318F]+$/.test(form.loginId)) { setIdErr('한글·영문·숫자·_만 사용 가능합니다 (공백 불가)'); return }
     if (getUsers().some(u=>u.id===form.loginId)) { setIdErr('이미 사용 중인 아이디입니다'); return }
-    onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw, role:'driver', driverOrder: Date.now() })
-    setForm({ loginId:'', name:'', phone:'', pw:'' }); setAdding(false)
+    onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw, car_num:form.car_num, role:'driver', driverOrder: Date.now() })
+    setForm({ loginId:'', name:'', phone:'', pw:'', car_num:'' }); setAdding(false)
   }
-  const startEdit = d => { setEditId(d.id); setEditForm({ loginId:d.id, name:d.name, phone:d.phone, pw:d.pw }) }
-  const submitEdit = () => { onUpdate(editId, { name:editForm.name, phone:editForm.phone, pw:editForm.pw }); setEditId(null) }
+  const startEdit = d => { setEditId(d.id); setEditForm({ loginId:d.id, name:d.name, phone:d.phone, pw:d.pw, car_num:d.car_num||'' }) }
+  const submitEdit = () => { onUpdate(editId, { name:editForm.name, phone:editForm.phone, pw:editForm.pw, car_num:editForm.car_num }); setEditId(null) }
 
   const scheduleCount = id => schedules.filter(s=>s.driver_id===id).length
 
@@ -54,9 +54,15 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                         <input value={editForm.phone} onChange={e=>setEF('phone',e.target.value)} style={{ ...iStyle, fontSize:13 }}/>
                       </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize:11, color:muted, marginBottom:4 }}>비밀번호</div>
-                      <input value={editForm.pw} onChange={e=>setEF('pw',e.target.value)} style={{ ...iStyle, fontSize:13 }}/>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                      <div>
+                        <div style={{ fontSize:11, color:muted, marginBottom:4 }}>비밀번호</div>
+                        <input value={editForm.pw} onChange={e=>setEF('pw',e.target.value)} style={{ ...iStyle, fontSize:13 }}/>
+                      </div>
+                      <div>
+                        <div style={{ fontSize:11, color:muted, marginBottom:4 }}>차량번호</div>
+                        <input value={editForm.car_num||''} onChange={e=>setEF('car_num',e.target.value)} placeholder="예: 12가3456" style={{ ...iStyle, fontSize:13 }}/>
+                      </div>
                     </div>
                     <div style={{ display:'flex', gap:8 }}>
                       <Btn onClick={()=>setEditId(null)} outline color={muted} style={{ flex:1, padding:'8px 0', fontSize:13 }}>취소</Btn>
@@ -95,6 +101,7 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                       <div style={{ fontSize:12, color:muted, marginTop:2, display:'flex', gap:10, flexWrap:'wrap' }}>
                         <span style={{ fontFamily:'monospace', background:'#f1f5f9', padding:'1px 6px', borderRadius:4, color:navy }}>ID: {d.id}</span>
                         <span>{d.phone}</span>
+                        {d.car_num && <span style={{ fontFamily:'monospace', background:'#fefce8', padding:'1px 6px', borderRadius:4, color:amber }}>{d.car_num}</span>}
                         <span style={{ color:green }}>일정 {scheduleCount(d.id)}건</span>
                       </div>
                     </div>
@@ -136,9 +143,15 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                   <input value={form.phone} onChange={e=>setF('phone',e.target.value)} placeholder="010-0000-0000" style={iStyle}/>
                 </div>
               </div>
-              <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:11, color:muted, marginBottom:4 }}>비밀번호 (로그인용) *</div>
-                <input value={form.pw} onChange={e=>setF('pw',e.target.value)} placeholder="숫자 4자리 권장" style={iStyle}/>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>비밀번호 (로그인용) *</div>
+                  <input value={form.pw} onChange={e=>setF('pw',e.target.value)} placeholder="숫자 4자리 권장" style={iStyle}/>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>차량번호</div>
+                  <input value={form.car_num} onChange={e=>setF('car_num',e.target.value)} placeholder="예: 12가3456" style={iStyle}/>
+                </div>
               </div>
               <div style={{ display:'flex', gap:8 }}>
                 <Btn onClick={()=>{ setAdding(false); setForm({loginId:'',name:'',phone:'',pw:''}); setIdErr('') }} outline color={muted} style={{ flex:1, padding:'9px 0' }}>취소</Btn>
