@@ -1432,7 +1432,7 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
   const saveDriver = () => { onUpdate({ driver_id: driverId||null }); setEditDriver(false) }
 
-  const resizeForUpload = (file, maxW = 1200, quality = 0.8) => new Promise(res => {
+  const resizeForUpload = (file, maxW = 1200, quality = 0.8) => new Promise((res, rej) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
@@ -1445,11 +1445,17 @@ function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
       URL.revokeObjectURL(url)
       res(canvas.toDataURL('image/jpeg', quality))
     }
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('이미지 로드 실패')) }
     img.src = url
   })
 
-  const readFilesAsBase64 = files =>
-    Promise.all(Array.from(files).map(f => resizeForUpload(f)))
+  const readFilesAsBase64 = async files => {
+    const results = []
+    for (const f of Array.from(files)) {
+      try { results.push(await resizeForUpload(f)) } catch (e) {}
+    }
+    return results
+  }
 
   const appendSchedulePhotos = async newDataUrls => {
     if (!newDataUrls.length) return
@@ -3279,7 +3285,7 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const [showFinalWasteModal, setFinalWasteModal] = useState(false)
 
   // 이미지 리사이즈 후 base64 반환
-  const resizeImage = (file, maxW=1200, quality=0.8) => new Promise(res => {
+  const resizeImage = (file, maxW=1200, quality=0.8) => new Promise((res, rej) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
@@ -3292,14 +3298,17 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
       URL.revokeObjectURL(url)
       res(canvas.toDataURL('image/jpeg', quality))
     }
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('이미지 로드 실패')) }
     img.src = url
   })
 
   const addPhotos = async e => {
     const files = Array.from(e.target.files)
     for (const f of files) {
-      const resized = await resizeImage(f)
-      setPhotos(prev => [...prev, resized])
+      try {
+        const resized = await resizeImage(f)
+        setPhotos(prev => [...prev, resized])
+      } catch (err) {}
     }
     e.target.value = ''
   }
@@ -3308,7 +3317,9 @@ function DriverDetail({ schedule, onUpdate, onBack }) {
   const addWorkPhotos = async e => {
     const files = Array.from(e.target.files)
     const newUrls = []
-    for (const f of files) newUrls.push(await resizeImage(f))
+    for (const f of files) {
+      try { newUrls.push(await resizeImage(f)) } catch (err) {}
+    }
     onUpdate({ work_photos: [...(schedule.work_photos||[]), ...newUrls] })
     e.target.value = ''
   }
