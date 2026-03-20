@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
 import AdminDetail from './AdminDetail'
+import BillingPage from './BillingPage'
 import BulkScheduleModal from './BulkScheduleModal'
 import DriverMgrModal from './DriverMgrModal'
 import AdminSettingsModal from './AdminSettingsModal'
@@ -175,6 +176,9 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     }
   }, [view])
 
+  if (view==='billing')
+    return <BillingPage schedules={schedules} onBack={()=>setView('list')}/>
+
   if (view==='detail' && selected)
     return <AdminDetail schedule={selected} onUpdate={p=>onUpdate(selected.id,p)} onBack={()=>setView('list')} drivers={drivers}/>
 
@@ -192,6 +196,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             </div>
           </div>
           <div style={{ display:'flex', gap:6 }}>
+            <button onClick={()=>setView('billing')}
+              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              💰 청구
+            </button>
             <button onClick={()=>setDriverMgr(true)}
               style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
               👤 기사

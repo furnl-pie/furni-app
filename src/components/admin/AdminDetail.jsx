@@ -5,7 +5,7 @@ import { TimeEditRow } from '../common/TimeEdit'
 import { getUsers } from '../../utils/users'
 import { readFilesAsBase64, downloadAllPhotos } from '../../utils/image'
 import {
-  navy, blue, green, amber, red, border, muted, textC, iStyle
+  navy, blue, green, amber, red, border, muted, textC, iStyle, getKSTToday
 } from '../../constants/styles'
 
 export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
@@ -23,11 +23,14 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
   const [showBilling, setShowBilling] = useState(false)
   const [billingForm, setBillingForm] = useState({
-    workers: schedule.co_driver_id ? '2' : '1',
-    waste: schedule.final_waste || schedule.waste || '',
-    amount:'', unit:'', total:''
+    workers: schedule.billing_workers || (schedule.co_driver_id ? '2' : '1'),
+    waste:   schedule.billing_waste   || schedule.final_waste || schedule.waste || '',
+    amount:  schedule.billing_amount  ? String(schedule.billing_amount) : '',
+    unit:    schedule.billing_unit    ? String(schedule.billing_unit)   : '',
+    total:   schedule.billing_total   ? String(schedule.billing_total)  : '',
   })
-  const [billCopied, setBillCopied]   = useState(false)
+  const [billCopied, setBillCopied] = useState(false)
+  const [billSaved,  setBillSaved]  = useState(false)
   const billUnitRef = useRef()
   const setBF = (k,v) => setBillingForm(p => {
     const next = {...p, [k]:v}
@@ -426,8 +429,8 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                 </div>
                 <div style={{ display:'flex', justifyContent:'flex-end', marginTop:10 }}>
                   <button onClick={()=>setShowBilling(true)}
-                    style={{ background:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
-                    💰 청구서 작성
+                    style={{ background:schedule.billing_total?green:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+                    {schedule.billing_total ? `✓ 청구 완료 (${schedule.billing_total}만원)` : '💰 청구서 작성'}
                   </button>
                 </div>
               </div>
@@ -560,6 +563,19 @@ ${billingForm.total}만원 (부가세 포함)
           })
         }
 
+        const saveBilling = () => {
+          onUpdate({
+            billing_workers: billingForm.workers,
+            billing_waste:   billingForm.waste,
+            billing_amount:  parseFloat(billingForm.amount) || 0,
+            billing_unit:    parseFloat(billingForm.unit)   || 0,
+            billing_total:   parseFloat(billingForm.total)  || 0,
+            billing_date:    getKSTToday(),
+          })
+          setBillSaved(true)
+          setTimeout(() => setBillSaved(false), 2000)
+        }
+
         return (
           <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:3000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
             <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:440, maxHeight:'90vh', overflowY:'auto' }}>
@@ -651,12 +667,15 @@ ${billingForm.total}만원 (부가세 포함)
                   <div style={{ color:navy, fontSize:13, fontWeight:600 }}>기업 351-112230-01-015 주식회사 퍼니환경개발</div>
                 </div>
 
-                <div style={{ display:'flex', gap:10 }}>
+                <div style={{ display:'flex', gap:8, marginBottom:8 }}>
                   <Btn onClick={()=>setShowBilling(false)} outline color={muted} style={{ flex:1, fontSize:14 }}>닫기</Btn>
-                  <Btn onClick={copy} color={billCopied?green:navy} style={{ flex:2, fontSize:15 }}>
-                    {billCopied ? '✓ 복사됨!' : '📋 클립보드 복사'}
+                  <Btn onClick={copy} color={billCopied?green:navy} outline style={{ flex:2, fontSize:14 }}>
+                    {billCopied ? '✓ 복사됨!' : '📋 복사'}
                   </Btn>
                 </div>
+                <Btn onClick={saveBilling} color={billSaved?green:navy} style={{ width:'100%', fontSize:15, fontWeight:700 }}>
+                  {billSaved ? '✓ 저장됨!' : '💾 청구 내역 저장'}
+                </Btn>
               </div>
             </div>
           </div>
