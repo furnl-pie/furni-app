@@ -3040,7 +3040,7 @@ function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
 
       {/* 일정 변경 알림 토스트 */}
       {notification && (
-        <div style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:12, padding:'12px 20px', fontSize:14, fontWeight:600, boxShadow:'0 4px 20px rgba(0,0,0,.3)', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ position:'fixed', top:48, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:14, padding:'16px 28px', fontSize:16, fontWeight:600, boxShadow:'0 4px 20px rgba(0,0,0,.3)', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:12 }}>
           {notification}
           <button onClick={()=>setNotification(null)} style={{ background:'none', border:'none', color:'rgba(255,255,255,.6)', fontSize:16, cursor:'pointer', padding:0, lineHeight:1 }}>✕</button>
         </div>
