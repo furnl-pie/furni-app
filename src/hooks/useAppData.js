@@ -13,14 +13,14 @@ const CLOUD  = import.meta.env.VITE_CLOUDINARY_CLOUD
 const PRESET = import.meta.env.VITE_CLOUDINARY_PRESET
 
 // ── base64 → Cloudinary 업로드 후 URL 반환 ──────────────────────
-async function uploadToCloudinary(base64DataUrl) {
+async function uploadToCloudinary(base64DataUrl, folder = 'dispatch') {
   // 이미 URL이면 그대로 반환 (기존 업로드 사진)
   if (!base64DataUrl.startsWith('data:')) return base64DataUrl
 
   const formData = new FormData()
   formData.append('file', base64DataUrl)
   formData.append('upload_preset', PRESET)
-  formData.append('folder', 'dispatch')
+  formData.append('folder', folder)
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
@@ -33,11 +33,11 @@ async function uploadToCloudinary(base64DataUrl) {
 }
 
 // 여러 장 배치 업로드 (5장씩 순차 처리)
-async function uploadPhotos(base64Array) {
+async function uploadPhotos(base64Array, folder = 'dispatch') {
   const results = []
   const BATCH = 5
   for (let i = 0; i < base64Array.length; i += BATCH) {
-    const batch = await Promise.all(base64Array.slice(i, i + BATCH).map(uploadToCloudinary))
+    const batch = await Promise.all(base64Array.slice(i, i + BATCH).map(b => uploadToCloudinary(b, folder)))
     results.push(...batch)
   }
   return results
@@ -107,9 +107,16 @@ export function useAppData() {
     try {
       let finalPatch = { ...patch }
 
+      // 폴더 경로: dispatch/날짜/일정ID
+      const getFolder = () => {
+        const schedule = schedules.find(s => s.id === id)
+        const date = schedule?.date || new Date().toISOString().slice(0, 10)
+        return `dispatch/${date}/${id}`
+      }
+
       // 완료 사진에 base64가 있으면 Cloudinary 업로드
       if (patch.photos?.some(p => p.startsWith('data:'))) {
-        finalPatch.photos = await uploadPhotos(patch.photos)
+        finalPatch.photos = await uploadPhotos(patch.photos, getFolder())
         setSchedules(prev => prev.map(s =>
           s.id === id ? { ...s, photos: finalPatch.photos } : s
         ))
@@ -117,7 +124,7 @@ export function useAppData() {
 
       // 일정 사진(관리자 첨부)도 동일하게 처리
       if (patch.schedule_photos?.some(p => p.startsWith('data:'))) {
-        finalPatch.schedule_photos = await uploadPhotos(patch.schedule_photos)
+        finalPatch.schedule_photos = await uploadPhotos(patch.schedule_photos, getFolder())
         setSchedules(prev => prev.map(s =>
           s.id === id ? { ...s, schedule_photos: finalPatch.schedule_photos } : s
         ))
@@ -125,7 +132,7 @@ export function useAppData() {
 
       // 작업 시작 현장 사진도 동일하게 처리
       if (patch.work_photos?.some(p => p.startsWith('data:'))) {
-        finalPatch.work_photos = await uploadPhotos(patch.work_photos)
+        finalPatch.work_photos = await uploadPhotos(patch.work_photos, getFolder())
         setSchedules(prev => prev.map(s =>
           s.id === id ? { ...s, work_photos: finalPatch.work_photos } : s
         ))
@@ -138,7 +145,7 @@ export function useAppData() {
     } catch (e) {
       setError('저장 실패: ' + e.message)
     }
-  }, [])
+  }, [schedules])
 
   // ── 일정 삭제 ─────────────────────────────────────────────────
   const deleteSchedules = useCallback(async (ids) => {
