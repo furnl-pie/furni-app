@@ -48,7 +48,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
     `[배차알림] 안녕하세요, ${schedule.cname}님.\n폐기물 수거 차량이 출발했습니다.\n\n📍 현장: ${schedule.address}\n🕐 도착 예정: ${etaVal}\n\n문의: ${getUsers().find(u=>u.id===schedule.driver_id)?.phone||''}`
 
   const openDepartModal = () => {
-    const d = new Date(); d.setMinutes(d.getMinutes() + 30)
+    const d = new Date()
     const m = d.getMinutes()
     d.setMinutes(m < 30 ? 30 : 0); if (m >= 30) d.setHours(d.getHours() + 1)
     const etaDef = d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false})
