@@ -18,6 +18,15 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
 
   const dragId = useRef(null)
+
+  // 청구 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
+  useEffect(() => {
+    if (view !== 'billing') return
+    window.history.pushState({ billing: true }, '')
+    const handler = () => setView('list')
+    window.addEventListener('popstate', handler)
+    return () => window.removeEventListener('popstate', handler)
+  }, [view])
   const dragOverId = useRef(null)
   const [dragOverRowId, setDragOverRowId] = useState(null)
 
