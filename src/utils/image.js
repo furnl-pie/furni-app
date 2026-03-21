@@ -25,29 +25,58 @@ export const readFilesAsBase64 = async files => {
   return results
 }
 
+// ── src → Blob 변환 ────────────────────────────────────────────────
+async function srcToBlob(src, filename) {
+  if (src.includes('cloudinary.com')) {
+    const safePrefix = filename.replace(/\.jpg$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')
+    const dlUrl = src.replace('/upload/', `/upload/fl_attachment:${safePrefix}/`)
+    const res = await fetch(dlUrl)
+    return res.blob()
+  }
+  if (src.startsWith('http')) {
+    const res = await fetch(src)
+    return res.blob()
+  }
+  // base64
+  const arr = src.split(',')
+  const mime = arr[0].match(/:(.*?);/)[1]
+  const bstr = atob(arr[1])
+  const u8 = new Uint8Array(bstr.length)
+  for (let j = 0; j < bstr.length; j++) u8[j] = bstr.charCodeAt(j)
+  return new Blob([u8], { type: mime })
+}
+
 // ── 사진 일괄 다운로드 ─────────────────────────────────────────────
 export async function downloadAllPhotos(photos, prefix = '완료사진') {
+  // File System Access API 지원 시 폴더 선택 후 저장
+  if (typeof window.showDirectoryPicker === 'function') {
+    let dirHandle
+    try {
+      dirHandle = await window.showDirectoryPicker()
+    } catch {
+      return // 사용자가 취소
+    }
+    for (let i = 0; i < photos.length; i++) {
+      const filename = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
+      try {
+        const blob = await srcToBlob(photos[i], filename)
+        const fileHandle = await dirHandle.getFileHandle(filename, { create: true })
+        const writable = await fileHandle.createWritable()
+        await writable.write(blob)
+        await writable.close()
+      } catch (e) {
+        window.open(photos[i], '_blank')
+      }
+    }
+    return
+  }
+
+  // 폴백: 브라우저 기본 다운로드
   for (let i = 0; i < photos.length; i++) {
     const src = photos[i]
     const filename = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
     try {
-      let blob
-      if (src.includes('cloudinary.com')) {
-        const safePrefix = filename.replace(/\.jpg$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')
-        const dlUrl = src.replace('/upload/', `/upload/fl_attachment:${safePrefix}/`)
-        const res = await fetch(dlUrl)
-        blob = await res.blob()
-      } else if (src.startsWith('http')) {
-        const res = await fetch(src)
-        blob = await res.blob()
-      } else {
-        const arr = src.split(',')
-        const mime = arr[0].match(/:(.*?);/)[1]
-        const bstr = atob(arr[1])
-        const u8 = new Uint8Array(bstr.length)
-        for (let j = 0; j < bstr.length; j++) u8[j] = bstr.charCodeAt(j)
-        blob = new Blob([u8], { type: mime })
-      }
+      const blob = await srcToBlob(src, filename)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
