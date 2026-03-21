@@ -136,7 +136,7 @@ export function EtaModalInput({ eta, onChange }) {
         )}
       </div>
       <div style={{ display:'flex', gap:6 }}>
-        {[['+10분',10],['+20분',20],['+30분',30],['+45분',45],['+1시간',60]].map(([l,m])=>(
+        {[['-10분',-10],['+10분',10],['+30분',30]].map(([l,m])=>(
           <button key={l} onClick={()=>addMin(m)}
             style={{ flex:1, padding:'7px 0', borderRadius:7, border:`1px solid ${border}`, background:'#f8fafc', color:muted, fontSize:11, fontWeight:600, cursor:'pointer' }}>
             {l}
