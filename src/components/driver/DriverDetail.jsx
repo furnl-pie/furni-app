@@ -47,6 +47,61 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
   const buildSms = (etaVal) =>
     `[배차알림] 안녕하세요, ${schedule.cname}님.\n폐기물 수거 차량이 출발했습니다.\n\n📍 현장: ${schedule.address}\n🕐 도착 예정: ${etaVal}\n\n문의: ${getUsers().find(u=>u.id===schedule.driver_id)?.phone||''}`
 
+  // 날짜 "2026-03-20" → "3월20일 (금)"
+  const fmtDateKo = (dateStr) => {
+    if (!dateStr) return ''
+    const d = new Date(dateStr + 'T00:00:00')
+    const days = ['일','월','화','수','목','금','토']
+    return `${d.getMonth()+1}월${d.getDate()}일 (${days[d.getDay()]})`
+  }
+
+  // 출발 보고 복사
+  const copyDepartReport = (etaVal) => {
+    const hasPhoto = (schedule.schedule_photos||[]).length > 0
+    const lines = [
+      schedule.cname,
+      `${fmtDateKo(schedule.date)} ${schedule.time||''}`.trim(),
+      schedule.address,
+      hasPhoto ? '사진첨부' : '',
+      schedule.cphone,
+      '',
+      etaVal,
+      '통화완료',
+    ].filter(l => l !== undefined)
+    navigator.clipboard.writeText(lines.join('\n'))
+  }
+
+  // 작업 종료 보고 복사
+  const copyDoneReport = () => {
+    const shortDate = schedule.date ? schedule.date.slice(2).replace(/-0?/g, '.').replace(/^\./, '') : ''
+    const driver = getUsers().find(u => u.id === schedule.driver_id)
+    const coDriver = getUsers().find(u => u.id === schedule.co_driver_id)
+    const workerCount = coDriver ? '2인' : '1인'
+    const driverName = driver?.name || ''
+    let duration = ''
+    if (schedule.start_time && schedule.end_time) {
+      const toMin = t => { const [h, m] = t.split(':').map(Number); return h*60+m }
+      const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
+      if (diff > 0) {
+        const h = Math.floor(diff/60), m = diff%60
+        duration = h > 0 ? (m > 0 ? `(${h}시간 ${m}분)` : `(${h}시간)`) : `(${m}분)`
+      }
+    }
+    const lines = [
+      '[FN퍼니 작업보고]',
+      `작업날짜: ${shortDate}`,
+      `업체명: ${schedule.cname||''}`,
+      `작업인원: ${workerCount} ${driverName}`,
+      `현장주소: ${schedule.address||''}`,
+      `작업시간: ${schedule.start_time||''} - ${schedule.end_time||''} ${duration}`.trim(),
+      `성상: ${schedule.memo||''}`,
+      `폐기물양: ${schedule.final_waste||schedule.waste||''}`,
+      `특이사항: ${schedule.driver_note||''}`,
+      '담당자 확인 완료',
+    ]
+    navigator.clipboard.writeText(lines.join('\n'))
+  }
+
   const openDepartModal = () => {
     const d = new Date()
     const m = d.getMinutes()
@@ -499,6 +554,10 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                   </>
                 ) : (
                   <>
+                    <button onClick={()=>{ copyDoneReport(); alert('복사되었습니다') }}
+                      style={{ width:'100%', padding:'11px 0', borderRadius:10, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:10 }}>
+                      📋 작업 보고 문자 복사
+                    </button>
                     {schedule.driver_note && (
                       <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:8, padding:'10px 12px', marginBottom:10 }}>
                         <div style={{ fontSize:11, fontWeight:700, color:amber, marginBottom:4 }}>📋 특이사항</div>
@@ -614,10 +673,14 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
               </div>
               <div style={{ fontSize:13, color:muted, marginTop:6 }}>📱 {schedule.cname} ({schedule.cphone})</div>
             </div>
-            <div style={{ display:'flex', gap:10 }}>
+            <div style={{ display:'flex', gap:10, marginBottom:10 }}>
               <Btn onClick={()=>setDepartModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
               <Btn onClick={confirmDepart} color={blue} style={{ flex:2, fontSize:16 }}>출발 · 문자 발송</Btn>
             </div>
+            <button onClick={()=>{ copyDepartReport(eta); alert('복사되었습니다') }}
+              style={{ width:'100%', padding:'11px 0', borderRadius:10, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:14, fontWeight:600, cursor:'pointer' }}>
+              📋 출발 보고 문자 복사
+            </button>
           </div>
         </div>
       )}
