@@ -323,7 +323,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                     </button>
                   </div>
                   <button onClick={()=>{ copyDepartReport(schedule.eta||''); alert('복사되었습니다') }}
-                    style={{ marginTop:8, padding:'6px 12px', borderRadius:7, border:`1px solid ${amber}`, background:'none', color:amber, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                    style={{ marginTop:8, padding:'6px 12px', borderRadius:7, border:`1px solid #7c3aed`, background:'none', color:'#7c3aed', fontSize:15, fontWeight:600, cursor:'pointer' }}>
                     📋 출발 보고 복사
                   </button>
                 </>
@@ -496,16 +496,16 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                     <div style={{ fontSize:15, color:amber, fontWeight:700, marginTop:6 }}>📦 최종 물량: {schedule.final_waste}</div>
                   )}
                 </div>
-                <button onClick={()=>{ copyDoneReport(); alert('복사되었습니다') }}
-                  style={{ marginBottom:10, padding:'6px 12px', borderRadius:7, border:`1px solid ${amber}`, background:'none', color:amber, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                  📋 작업 보고 복사
-                </button>
                 {!editingDone && (
                   <button onClick={()=>{ setPhotos(schedule.photos||[]); setDriverNote(schedule.driver_note||''); setEditingDone(true) }}
                     style={{ background:'none', border:`1px solid ${blue}`, borderRadius:7, padding:'6px 12px', fontSize:12, color:blue, cursor:'pointer', fontWeight:600, marginBottom:10 }}>
                     ✏️ 사진/특이사항 수정
                   </button>
                 )}
+                <button onClick={()=>{ copyDoneReport(); alert('복사되었습니다') }}
+                  style={{ marginTop:6, marginBottom:10, padding:'6px 12px', borderRadius:7, border:`1px solid #7c3aed`, background:'none', color:'#7c3aed', fontSize:15, fontWeight:600, cursor:'pointer' }}>
+                  📋 작업 보고 복사
+                </button>
                 {editingDone ? (
                   <>
                     <div style={{ marginBottom:12 }}>
