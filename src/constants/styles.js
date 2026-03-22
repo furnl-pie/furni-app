@@ -46,14 +46,28 @@ export const iStyle = {
   colorScheme:'light', appearance:'none', WebkitAppearance:'none',
 }
 
-// ── 기사별 색상 칩 ─────────────────────────────────────────────────
+// ── 기사별 색상 칩 (20가지 고유 색상) ─────────────────────────────
 export const DRIVER_COLORS = [
-  { bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe' },
-  { bg:'#f0fdf4', color:'#15803d', border:'#bbf7d0' },
-  { bg:'#fefce8', color:'#a16207', border:'#fde68a' },
-  { bg:'#fdf4ff', color:'#7e22ce', border:'#e9d5ff' },
-  { bg:'#fff1f2', color:'#be123c', border:'#fecdd3' },
-  { bg:'#f0f9ff', color:'#0369a1', border:'#bae6fd' },
+  { bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe' }, // 파랑
+  { bg:'#f0fdf4', color:'#15803d', border:'#86efac' }, // 초록
+  { bg:'#fefce8', color:'#a16207', border:'#fde68a' }, // 황금
+  { bg:'#fdf4ff', color:'#7e22ce', border:'#e9d5ff' }, // 보라
+  { bg:'#fff1f2', color:'#be123c', border:'#fecdd3' }, // 장미
+  { bg:'#ecfeff', color:'#0e7490', border:'#a5f3fc' }, // 청록
+  { bg:'#fff7ed', color:'#c2410c', border:'#fed7aa' }, // 오렌지
+  { bg:'#f0fdfa', color:'#0f766e', border:'#99f6e4' }, // 틸
+  { bg:'#eef2ff', color:'#4338ca', border:'#c7d2fe' }, // 인디고
+  { bg:'#f7fee7', color:'#3f6212', border:'#bef264' }, // 라임
+  { bg:'#fef2f2', color:'#b91c1c', border:'#fca5a5' }, // 빨강
+  { bg:'#fdf2f8', color:'#9d174d', border:'#f9a8d4' }, // 핑크
+  { bg:'#f0f9ff', color:'#0369a1', border:'#7dd3fc' }, // 스카이
+  { bg:'#ecfdf5', color:'#065f46', border:'#6ee7b7' }, // 에메랄드
+  { bg:'#f5f3ff', color:'#5b21b6', border:'#ddd6fe' }, // 바이올렛
+  { bg:'#fffbeb', color:'#92400e', border:'#fcd34d' }, // 앰버
+  { bg:'#fef9c3', color:'#713f12', border:'#fde047' }, // 노랑
+  { bg:'#fce7f3', color:'#831843', border:'#f9a8d4' }, // 퓨시아
+  { bg:'#f1f5f9', color:'#334155', border:'#cbd5e1' }, // 슬레이트
+  { bg:'#fff8f1', color:'#7c2d12', border:'#fdba74' }, // 브라운
 ]
 
 export function driverChip(driverId, drivers) {

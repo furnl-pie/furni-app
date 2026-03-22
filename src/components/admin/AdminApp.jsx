@@ -383,10 +383,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                       borderRadius:10, marginBottom:8,
                       border:`1px solid ${chip ? chip.border : '#fecaca'}`
                     }}>
-                      <span style={{ fontSize:13, fontWeight:700, color: chip ? chip.color : red }}>
+                      <span style={{ fontSize:17, fontWeight:700, color: chip ? chip.color : red }}>
                         {g.driverId ? `▸ ${userName(g.driverId)}` : '▸ 미배치'}
                       </span>
-                      <span style={{ fontSize:12, color: chip ? chip.color : red, opacity:.65 }}>
+                      <span style={{ fontSize:16, color: chip ? chip.color : red, opacity:.65 }}>
                         {g.items.length}건
                       </span>
                     </div>
@@ -505,14 +505,14 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         {showDiv && (
                           <tr>
                             <td colSpan={(deleteMode||assignMode) ? 10 : 9} style={{
-                              padding:'5px 14px', fontSize:11, fontWeight:700, letterSpacing:.4,
+                              padding:'5px 14px', fontSize:15, fontWeight:700, letterSpacing:.4,
                               background: chip ? chip.bg : '#fef2f2',
                               color: chip ? chip.color : red,
                               borderTop:`2px solid ${chip ? chip.border : '#fecaca'}`,
                               borderBottom:`1px solid ${border}`
                             }}>
                               {s.driver_id ? `▸ ${userName(s.driver_id)}` : '▸ 미배치'}
-                              <span style={{ marginLeft:10, fontWeight:400, opacity:.65, fontSize:11 }}>
+                              <span style={{ marginLeft:10, fontWeight:400, opacity:.65, fontSize:15 }}>
                                 {sorted.filter(x=>x.driver_id===s.driver_id).length}건
                               </span>
                             </td>
