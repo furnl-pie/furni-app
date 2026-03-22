@@ -3,7 +3,7 @@ import { Btn } from '../common/ui'
 import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow } from '../../utils/parsing'
 import { navy, blue, green, amber, red, border, muted, textC } from '../../constants/styles'
 
-export default function BulkScheduleModal({ drivers, onAddMany, onClose }) {
+export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, onClose }) {
   const [step, setStep]       = useState(1)
   const [inputMode, setInputMode] = useState('paste') // 'paste' | 'kakao' | 'manual'
   const [rows, setRows]       = useState([newRow()])
@@ -167,7 +167,18 @@ export default function BulkScheduleModal({ drivers, onAddMany, onClose }) {
       status:'대기', start_time:null, end_time:null,
       eta:null, sms_sent:false, photos:[],
     }))
-    onAddMany(list)
+
+    const dupes = list.filter(r =>
+      schedules.some(s => s.date === r.date && s.address === r.address)
+    )
+    if (dupes.length) {
+      const names = dupes.map(r => `${r.date} ${r.address}`).join('\n')
+      const go = window.confirm(`아래 ${dupes.length}건이 이미 등록된 일정과 중복됩니다:\n\n${names}\n\n중복 제외하고 등록할까요?`)
+      if (!go) return
+      onAddMany(list.filter(r => !dupes.includes(r)))
+    } else {
+      onAddMany(list)
+    }
   }
 
   const is = {
