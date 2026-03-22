@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Card } from '../common/ui'
-import { navy, green, amber, border, muted, textC, getKSTToday, getDriverSortKey } from '../../constants/styles'
+import { navy, green, amber, border, muted, textC, getKSTToday, getDriverSortKey, driverChip } from '../../constants/styles'
 import { userName, getUsers } from '../../utils/users'
 
 export default function BillingPage({ schedules, onBack }) {
@@ -132,16 +132,17 @@ export default function BillingPage({ schedules, onBack }) {
                   const rows = grouped[key]
                   const subtotal = rows.reduce((sum, s) => sum + (s.billing_total || 0), 0)
                   const cn = carNum(key)
+                  const chip = driverChip(key, drivers)
                   return rows.map((s, i) => [
                     // 기사 그룹 헤더
                     i === 0 && (
-                      <tr key={`head-${key}`} style={{ background: '#eff6ff' }}>
-                        <td colSpan={5} style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: navy, borderBottom: `1px solid ${border}`, borderTop: `2px solid #bfdbfe` }}>
+                      <tr key={`head-${key}`} style={{ background: chip ? chip.bg : '#f8fafc' }}>
+                        <td colSpan={5} style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: chip ? chip.color : navy, borderBottom: `1px solid ${border}`, borderTop: `2px solid ${chip ? chip.border : border}` }}>
                           {userName(key)}
                           {cn && <span style={{ marginLeft: 8, fontSize: 11, fontFamily: 'monospace', color: muted, fontWeight: 400 }}>{cn}</span>}
                           <span style={{ marginLeft: 10, fontSize: 12, color: muted, fontWeight: 400 }}>{rows.length}건</span>
                         </td>
-                        <td style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: green, textAlign: 'right', borderBottom: `1px solid ${border}`, borderTop: `2px solid #bfdbfe`, whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: chip ? chip.color : green, textAlign: 'right', borderBottom: `1px solid ${border}`, borderTop: `2px solid ${chip ? chip.border : border}`, whiteSpace: 'nowrap' }}>
                           {fmtAmount(subtotal)}
                         </td>
                       </tr>

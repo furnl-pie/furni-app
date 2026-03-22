@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Btn } from '../common/ui'
 import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow } from '../../utils/parsing'
-import { navy, blue, green, amber, red, border, muted, textC } from '../../constants/styles'
+import { navy, blue, green, amber, red, border, muted, textC, DRIVER_COLORS } from '../../constants/styles'
 
 export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, onClose }) {
   const [step, setStep]       = useState(1)
@@ -186,10 +186,8 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
     outline:'none', background:'#fafafa', boxSizing:'border-box', width:'100%',
   }
 
-  const driverColor     = ['#eff6ff','#f0fdf4','#fefce8','#fdf4ff','#fff1f2']
-  const driverTextColor = [blue, green, '#a16207', '#7c3aed', '#be185d']
   const driverMap = {}
-  drivers.forEach((d,i) => { driverMap[d.id] = {bg:driverColor[i%5], color:driverTextColor[i%5], name:d.name} })
+  drivers.forEach((d,i) => { driverMap[d.id] = { ...DRIVER_COLORS[i % DRIVER_COLORS.length], name:d.name } })
 
   const assignedCount = rows.filter(r=>assigns[r._id]).length
   const colOptions = parsed?.headers.map((h,i)=>({ label:`[${i+1}열] ${h}`, value:i })) || []
