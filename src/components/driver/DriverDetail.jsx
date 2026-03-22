@@ -94,7 +94,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
       `작업인원: ${workerCount} ${driverName}`,
       `현장주소: ${schedule.address||''}`,
       `작업시간: ${schedule.start_time||''} - ${schedule.end_time||''} ${duration}`.trim(),
-      `성상: ${schedule.memo||''}`,
+      `성상: ${schedule.memo||'혼합'}`,
       `폐기물양: ${schedule.final_waste||schedule.waste||''}`,
       `특이사항: ${schedule.driver_note||''}`,
       '담당자 확인 완료',
@@ -322,6 +322,10 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                       {schedule.sms_sent?'재발송':'💬 발송'}
                     </button>
                   </div>
+                  <button onClick={()=>{ copyDepartReport(schedule.eta||''); alert('복사되었습니다') }}
+                    style={{ width:'100%', marginTop:8, padding:'10px 0', borderRadius:8, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                    📋 출발 보고 문자 복사
+                  </button>
                 </>
               )}
             </div>
@@ -492,6 +496,10 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                     <div style={{ fontSize:15, color:amber, fontWeight:700, marginTop:6 }}>📦 최종 물량: {schedule.final_waste}</div>
                   )}
                 </div>
+                <button onClick={()=>{ copyDoneReport(); alert('복사되었습니다') }}
+                  style={{ width:'100%', marginBottom:10, padding:'10px 0', borderRadius:8, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                  📋 작업 보고 문자 복사
+                </button>
                 {!editingDone && (
                   <button onClick={()=>{ setPhotos(schedule.photos||[]); setDriverNote(schedule.driver_note||''); setEditingDone(true) }}
                     style={{ background:'none', border:`1px solid ${blue}`, borderRadius:7, padding:'6px 12px', fontSize:12, color:blue, cursor:'pointer', fontWeight:600, marginBottom:10 }}>
@@ -554,10 +562,6 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                   </>
                 ) : (
                   <>
-                    <button onClick={()=>{ copyDoneReport(); alert('복사되었습니다') }}
-                      style={{ width:'100%', padding:'11px 0', borderRadius:10, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:10 }}>
-                      📋 작업 보고 문자 복사
-                    </button>
                     {schedule.driver_note && (
                       <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:8, padding:'10px 12px', marginBottom:10 }}>
                         <div style={{ fontSize:11, fontWeight:700, color:amber, marginBottom:4 }}>📋 특이사항</div>
@@ -673,14 +677,10 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
               </div>
               <div style={{ fontSize:13, color:muted, marginTop:6 }}>📱 {schedule.cname} ({schedule.cphone})</div>
             </div>
-            <div style={{ display:'flex', gap:10, marginBottom:10 }}>
+            <div style={{ display:'flex', gap:10 }}>
               <Btn onClick={()=>setDepartModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
               <Btn onClick={confirmDepart} color={blue} style={{ flex:2, fontSize:16 }}>출발 · 문자 발송</Btn>
             </div>
-            <button onClick={()=>{ copyDepartReport(eta); alert('복사되었습니다') }}
-              style={{ width:'100%', padding:'11px 0', borderRadius:10, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:14, fontWeight:600, cursor:'pointer' }}>
-              📋 출발 보고 문자 복사
-            </button>
           </div>
         </div>
       )}
