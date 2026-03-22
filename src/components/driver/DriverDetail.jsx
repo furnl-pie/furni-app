@@ -497,7 +497,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                   )}
                 </div>
                 {!editingDone && (
-                  <div style={{ display:'flex', gap:10, marginBottom:10 }}>
+                  <div style={{ display:'flex', gap:10, marginBottom:10, justifyContent:'center' }}>
                     <button onClick={()=>{ setPhotos(schedule.photos||[]); setDriverNote(schedule.driver_note||''); setEditingDone(true) }}
                       style={{ background:'none', border:`1px solid ${blue}`, borderRadius:7, padding:'6px 12px', fontSize:13, color:blue, cursor:'pointer', fontWeight:600 }}>
                       ✏️ 사진/특이사항 수정
