@@ -497,13 +497,13 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                   )}
                 </div>
                 {!editingDone && (
-                  <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:10 }}>
+                  <div style={{ display:'flex', gap:10, marginBottom:10 }}>
                     <button onClick={()=>{ setPhotos(schedule.photos||[]); setDriverNote(schedule.driver_note||''); setEditingDone(true) }}
-                      style={{ background:'none', border:`1px solid ${blue}`, borderRadius:7, padding:'6px 12px', fontSize:13, color:blue, cursor:'pointer', fontWeight:600, alignSelf:'flex-start' }}>
+                      style={{ background:'none', border:`1px solid ${blue}`, borderRadius:7, padding:'6px 12px', fontSize:13, color:blue, cursor:'pointer', fontWeight:600 }}>
                       ✏️ 사진/특이사항 수정
                     </button>
                     <button onClick={()=>{ copyDoneReport(); alert('복사되었습니다') }}
-                      style={{ padding:'6px 12px', borderRadius:7, border:`1px solid #7c3aed`, background:'none', color:'#7c3aed', fontSize:13, fontWeight:600, cursor:'pointer', alignSelf:'flex-start' }}>
+                      style={{ padding:'6px 12px', borderRadius:7, border:`1px solid #7c3aed`, background:'none', color:'#7c3aed', fontSize:13, fontWeight:600, cursor:'pointer' }}>
                       📋 작업 보고 복사
                     </button>
                   </div>
