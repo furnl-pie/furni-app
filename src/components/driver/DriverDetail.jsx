@@ -94,7 +94,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
       `작업인원: ${workerCount} ${driverName}`,
       `현장주소: ${schedule.address||''}`,
       `작업시간: ${schedule.start_time||''} - ${schedule.end_time||''} ${duration}`.trim(),
-      `성상: ${schedule.memo||'혼합'}`,
+      `성상: 혼합`,
       `폐기물양: ${schedule.final_waste||schedule.waste||''}`,
       `특이사항: ${schedule.driver_note||''}`,
       '담당자 확인 완료',
@@ -323,8 +323,8 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                     </button>
                   </div>
                   <button onClick={()=>{ copyDepartReport(schedule.eta||''); alert('복사되었습니다') }}
-                    style={{ width:'100%', marginTop:8, padding:'10px 0', borderRadius:8, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:13, fontWeight:600, cursor:'pointer' }}>
-                    📋 출발 보고 문자 복사
+                    style={{ marginTop:8, padding:'6px 12px', borderRadius:7, border:`1px solid ${amber}`, background:'none', color:amber, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                    📋 출발 보고 복사
                   </button>
                 </>
               )}
@@ -497,8 +497,8 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                   )}
                 </div>
                 <button onClick={()=>{ copyDoneReport(); alert('복사되었습니다') }}
-                  style={{ width:'100%', marginBottom:10, padding:'10px 0', borderRadius:8, border:`1.5px solid ${border}`, background:'#f8fafc', color:muted, fontSize:13, fontWeight:600, cursor:'pointer' }}>
-                  📋 작업 보고 문자 복사
+                  style={{ marginBottom:10, padding:'6px 12px', borderRadius:7, border:`1px solid ${amber}`, background:'none', color:amber, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                  📋 작업 보고 복사
                 </button>
                 {!editingDone && (
                   <button onClick={()=>{ setPhotos(schedule.photos||[]); setDriverNote(schedule.driver_note||''); setEditingDone(true) }}
