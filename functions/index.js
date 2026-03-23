@@ -27,8 +27,7 @@ exports.onScheduleChange = region('us-central1')
       if (!token) return
       await msg.send({
         token,
-        notification: { title, body },
-        webpush: { notification: { icon: ICON, badge: ICON } },
+        webpush: { notification: { title, body, icon: ICON, badge: ICON } },
       }).catch(e => logger.error('FCM 전송 실패:', e))
     }
 
@@ -38,8 +37,7 @@ exports.onScheduleChange = region('us-central1')
       if (!tokens.length) return
       await msg.sendEachForMulticast({
         tokens,
-        notification: { title, body },
-        webpush: { notification: { icon: ICON, badge: ICON } },
+        webpush: { notification: { title, body, icon: ICON, badge: ICON } },
       }).catch(e => logger.error('FCM multicast 실패:', e))
     }
 
@@ -60,13 +58,29 @@ exports.onScheduleChange = region('us-central1')
 
     // 일정 내용 변경 → 해당 기사에게 알림 (숫자 비교 포함)
     const WATCHED = ['date', 'time', 'address', 'cname', 'waste', 'order']
-    const contentChanged = before && after.driver_id &&
-      WATCHED.some(k => String(before[k] ?? '') !== String(after[k] ?? ''))
+    const changedKeys = before && after.driver_id
+      ? WATCHED.filter(k => String(before[k] ?? '') !== String(after[k] ?? ''))
+      : []
+    const contentChanged = changedKeys.length > 0
+    const isOrderOnly = contentChanged && changedKeys.every(k => k === 'order')
+
     if (contentChanged) {
-      const date  = after.date || ''
-      const time  = after.time ? ` ${after.time}` : ''
-      const place = after.cname || after.address || ''
-      await sendTo(after.driver_id, '일정이 변경되었습니다', `${date}${time} ${place}`.trim())
+      if (isOrderOnly) {
+        // 순서만 변경된 경우: 60초 내 같은 기사에게 중복 발송 방지
+        const debounceRef = db.collection('fcm_debounce').doc(`order_${after.driver_id}`)
+        const debounceDoc = await debounceRef.get()
+        const lastSent = debounceDoc.exists ? debounceDoc.data().sentAt?.toDate() : null
+        const now = new Date()
+        if (!lastSent || (now - lastSent) >= 60000) {
+          await debounceRef.set({ sentAt: now })
+          await sendTo(after.driver_id, '일정 순서가 변경되었습니다', `${after.date || ''} 일정`.trim())
+        }
+      } else {
+        const date  = after.date || ''
+        const time  = after.time ? ` ${after.time}` : ''
+        const place = after.cname || after.address || ''
+        await sendTo(after.driver_id, '일정이 변경되었습니다', `${date}${time} ${place}`.trim())
+      }
     }
 
     // 상태 변경 → 관리자에게 알림
@@ -121,9 +135,13 @@ exports.checkOverdue = pubsub
 
       await msg.sendEachForMulticast({
         tokens,
-        notification: {
-          title: '⚠️ 출발 미보고',
-          body: `${s.time} ${driverName} - ${place}`,
+        webpush: {
+          notification: {
+            title: '⚠️ 출발 미보고',
+            body: `${s.time} ${driverName} - ${place}`,
+            icon: ICON,
+            badge: ICON,
+          },
         },
       }).catch(() => null)
     }
