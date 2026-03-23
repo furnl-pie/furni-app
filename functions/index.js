@@ -16,20 +16,28 @@ exports.onScheduleChange = region('us-central1')
     const db  = getFirestore()
     const msg = getMessaging()
 
+    const logger = require('firebase-functions/logger')
+
     const sendTo = async (userId, title, body) => {
+      logger.info('sendTo', { userId, title })
       const snap = await db.collection('fcm_tokens').doc(userId).get()
-      if (!snap.exists) return
+      if (!snap.exists) { logger.warn('토큰 없음:', userId); return }
       const token = snap.data().token
-      if (!token) return
-      await msg.send({ token, notification: { title, body } }).catch(() => null)
+      if (!token) { logger.warn('토큰 값 없음:', userId); return }
+      const result = await msg.send({ token, notification: { title, body, imageUrl: 'https://furni-app-silk.vercel.app/icon-512.png' }, webpush: { notification: { icon: 'https://furni-app-silk.vercel.app/icon-192.png' } } }).catch(e => { logger.error('FCM 전송 실패:', e); return null })
+      logger.info('FCM 전송 결과:', result)
     }
 
     const sendToAdmins = async (title, body) => {
+      logger.info('sendToAdmins', { title })
       const snaps = await db.collection('fcm_tokens').where('role', '==', 'admin').get()
       const tokens = snaps.docs.map(d => d.data().token).filter(Boolean)
+      logger.info('관리자 토큰 수:', tokens.length)
       if (!tokens.length) return
-      await msg.sendEachForMulticast({ tokens, notification: { title, body } }).catch(() => null)
+      await msg.sendEachForMulticast({ tokens, notification: { title, body }, webpush: { notification: { icon: 'https://furni-app-silk.vercel.app/icon-192.png' } } }).catch(e => logger.error('FCM multicast 실패:', e))
     }
+
+    logger.info('변경 감지', { driver_id: after.driver_id, status: after.status, before_driver: before?.driver_id })
 
     // 기사 새로 배정 → 해당 기사에게 알림
     if (after.driver_id && after.driver_id !== before?.driver_id) {
@@ -40,9 +48,10 @@ exports.onScheduleChange = region('us-central1')
     }
 
     // 기사 배정된 상태에서 일정 내용 변경 → 해당 기사에게 알림
-    const WATCHED = ['date', 'time', 'address', 'cname', 'waste']
+    const WATCHED = ['date', 'time', 'address', 'cname', 'waste', 'order']
     const contentChanged = before && after.driver_id &&
       WATCHED.some(k => (before[k] || '') !== (after[k] || ''))
+    logger.info('내용 변경 여부:', contentChanged)
     if (contentChanged) {
       const date  = after.date || ''
       const time  = after.time ? ` ${after.time}` : ''
