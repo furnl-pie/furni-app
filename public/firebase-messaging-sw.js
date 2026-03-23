@@ -3,12 +3,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js')
 
 firebase.initializeApp({
-  apiKey:            aSyB4OXJHmSexQxWJerkfGvLcm6K_RnZaspo,
-  authDomain:        furni-app-a118d.firebaseapp.com,
-  projectId:         furni-app-a118d,
-  storageBucket:     furni-app-a118d.firebasestorage.app,
-  messagingSenderId: 864776702066,
-  appId:             1:864776702066:web:63187294261576be7c5aeb,
+  apiKey:            'AIzaSyB4OXJHmSexQxWJerkfGvLcm6K_RnZaspo',
+  authDomain:        'furni-app-a118d.firebaseapp.com',
+  projectId:         'furni-app-a118d',
+  storageBucket:     'furni-app-a118d.firebasestorage.app',
+  messagingSenderId: '864776702066',
+  appId:             '1:864776702066:web:63187294261576be7c5aeb',
 })
 
 const messaging = firebase.messaging()
