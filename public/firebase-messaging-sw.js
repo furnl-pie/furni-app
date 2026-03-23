@@ -17,7 +17,29 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging()
 
-// onBackgroundMessage 미등록 시 Firebase 동작:
-// - 앱 열려있을 때(foreground): 페이지의 onMessage가 처리, 시스템 알림 자동 억제
-// - 앱 닫혀있을 때(background): Firebase SW가 notification 필드로 자동 표시
-// → onBackgroundMessage 등록 시 Firebase 자동 표시가 억제되어 직접 처리해야 하므로 제거
+const ICON = 'https://furni-app-silk.vercel.app/icon-192.png'
+const APP_URL = 'https://furni-app-silk.vercel.app/'
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close()
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      const existing = clients.find(c => c.url.startsWith(APP_URL))
+      if (existing) return existing.focus()
+      return self.clients.openWindow(APP_URL)
+    })
+  )
+})
+
+// data-only 메시지: notification 필드 없음 → 브라우저 자동 표시 없음
+// onBackgroundMessage가 유일한 표시 경로 → 중복 없음
+// 앱이 열려있을 때(foreground)는 onMessage(useFCM.js)가 처리하고 여기는 호출 안 됨
+messaging.onBackgroundMessage(payload => {
+  const title = payload.data?.title || '배차 알림'
+  const body  = payload.data?.body  || ''
+  self.registration.showNotification(title, {
+    body,
+    icon: ICON,
+    badge: ICON,
+  })
+})

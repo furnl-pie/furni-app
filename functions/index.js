@@ -18,8 +18,6 @@ exports.onScheduleChange = region('us-central1')
 
     const logger = require('firebase-functions/logger')
 
-    const ICON = 'https://furni-app-silk.vercel.app/icon-192.png'
-
     const sendTo = async (userId, title, body) => {
       const snap = await db.collection('fcm_tokens').doc(userId).get()
       if (!snap.exists) return
@@ -27,8 +25,7 @@ exports.onScheduleChange = region('us-central1')
       if (!token) return
       await msg.send({
         token,
-        notification: { title, body },
-        webpush: { notification: { icon: ICON, badge: ICON } },
+        data: { title, body },
       }).catch(e => logger.error('FCM 전송 실패:', e))
     }
 
@@ -38,8 +35,7 @@ exports.onScheduleChange = region('us-central1')
       if (!tokens.length) return
       await msg.sendEachForMulticast({
         tokens,
-        notification: { title, body },
-        webpush: { notification: { icon: ICON, badge: ICON } },
+        data: { title, body },
       }).catch(e => logger.error('FCM multicast 실패:', e))
     }
 
@@ -137,11 +133,10 @@ exports.checkOverdue = pubsub
 
       await msg.sendEachForMulticast({
         tokens,
-        notification: {
+        data: {
           title: '⚠️ 출발 미보고',
           body: `${s.time} ${driverName} - ${place}`,
         },
-        webpush: { notification: { icon: ICON, badge: ICON } },
       }).catch(() => null)
     }
   })
