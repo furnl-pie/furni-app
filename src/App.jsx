@@ -100,12 +100,6 @@ export default function App() {
           />
       }
 
-      {fcmMsg && (
-        <div style={{ position:'fixed', top:80, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:16, padding:'16px 24px', fontSize:15, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', maxWidth:340, textAlign:'center' }}>
-          {fcmMsg}
-        </div>
-      )}
-
       {showLogoutConfirm && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:300, padding:28, textAlign:'center' }}>
