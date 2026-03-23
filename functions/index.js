@@ -31,11 +31,23 @@ exports.onScheduleChange = region('asia-northeast3')
       await msg.sendEachForMulticast({ tokens, notification: { title, body } }).catch(() => null)
     }
 
-    // 기사 배정 또는 변경 → 해당 기사에게 알림
+    // 기사 새로 배정 → 해당 기사에게 알림
     if (after.driver_id && after.driver_id !== before?.driver_id) {
       const date  = after.date || ''
       const place = after.cname || after.address || ''
       await sendTo(after.driver_id, '새 일정이 배정되었습니다', `${date} ${place}`.trim())
+      return
+    }
+
+    // 기사 배정된 상태에서 일정 내용 변경 → 해당 기사에게 알림
+    const WATCHED = ['date', 'time', 'address', 'cname', 'waste']
+    const contentChanged = before && after.driver_id &&
+      WATCHED.some(k => (before[k] || '') !== (after[k] || ''))
+    if (contentChanged) {
+      const date  = after.date || ''
+      const time  = after.time ? ` ${after.time}` : ''
+      const place = after.cname || after.address || ''
+      await sendTo(after.driver_id, '일정이 변경되었습니다', `${date}${time} ${place}`.trim())
     }
 
     // 상태 변경 → 관리자에게 알림
