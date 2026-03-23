@@ -41,12 +41,8 @@ export default function App() {
   useEffect(() => {
     if (!user) return
     const ref = doc(db, 'users', user.id)
-    updateDoc(ref, { online: true })
-      .then(() => console.log('[presence] online:', user.id))
-      .catch(e => console.error('[presence] online 실패:', e))
-    const setOffline = () => updateDoc(ref, { online: false })
-      .then(() => console.log('[presence] offline:', user.id))
-      .catch(e => console.error('[presence] offline 실패:', e))
+    updateDoc(ref, { online: true }).catch(() => {})
+    const setOffline = () => updateDoc(ref, { online: false }).catch(() => {})
     window.addEventListener('beforeunload', setOffline)
     return () => {
       setOffline()
