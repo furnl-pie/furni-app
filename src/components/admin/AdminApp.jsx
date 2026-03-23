@@ -136,7 +136,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const drivers = users
     .filter(u => u.role === 'driver')
     .sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
-  console.log('[drivers online]', drivers.map(d => ({ id: d.id, online: d.online })))
+  console.log('[drivers online]', drivers.map(d => `${d.id}=${d.online}`))
 
   const filtered = schedules.filter(s => {
     if (filterDriver.size > 0) {
