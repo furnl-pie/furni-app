@@ -30,7 +30,8 @@ self.addEventListener('notificationclick', e => {
   )
 })
 
-const ICON = 'https://furni-app-silk.vercel.app/icon-192.png'
+const ICON  = 'https://furni-app-silk.vercel.app/icon-192.png'
+const BADGE = 'https://furni-app-silk.vercel.app/icon-badge.png'
 
 // data-only 메시지: Chrome 자동표시 없음 → onBackgroundMessage가 유일한 표시 경로
 // 앱이 포그라운드면 onMessage(useFCM.js)가 처리, 여기는 백그라운드/종료 시에만 실행
@@ -40,6 +41,6 @@ messaging.onBackgroundMessage(payload => {
   self.registration.showNotification(title, {
     body,
     icon: ICON,
-    badge: ICON,
+    badge: BADGE,
   })
 })
