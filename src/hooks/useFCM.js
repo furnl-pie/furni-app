@@ -32,8 +32,8 @@ export function useFCM(user, onNotification) {
 
     // 앱이 열려있을 때 포그라운드 알림
     const unsub = onMessage(messaging, payload => {
-      const title = payload.data?.title || '배차 알림'
-      const body  = payload.data?.body  || ''
+      const title = payload.notification?.title || '배차 알림'
+      const body  = payload.notification?.body  || ''
       if (onNotification) onNotification(`${title}: ${body}`)
     })
 

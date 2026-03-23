@@ -17,7 +17,6 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging()
 
-const ICON = 'https://furni-app-silk.vercel.app/icon-192.png'
 const APP_URL = 'https://furni-app-silk.vercel.app/'
 
 self.addEventListener('notificationclick', e => {
@@ -31,15 +30,5 @@ self.addEventListener('notificationclick', e => {
   )
 })
 
-// data-only 메시지: notification 필드 없음 → 브라우저 자동 표시 없음
-// onBackgroundMessage가 유일한 표시 경로 → 중복 없음
-// 앱이 열려있을 때(foreground)는 onMessage(useFCM.js)가 처리하고 여기는 호출 안 됨
-messaging.onBackgroundMessage(payload => {
-  const title = payload.data?.title || '배차 알림'
-  const body  = payload.data?.body  || ''
-  self.registration.showNotification(title, {
-    body,
-    icon: ICON,
-    badge: ICON,
-  })
-})
+// webpush.notification 사용 시 Firebase가 백그라운드 알림을 자동 처리
+// onBackgroundMessage 불필요 (등록하면 오히려 자동처리를 막음)

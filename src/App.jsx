@@ -101,7 +101,7 @@ export default function App() {
       }
 
       {fcmMsg && (
-        <div style={{ position:'fixed', top:160, left:'50%', transform:'translateX(-50%)', zIndex:9998, background:navy, color:'#fff', borderRadius:16, padding:'20px 36px', fontSize:18, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', whiteSpace:'nowrap' }}>
+        <div style={{ position:'fixed', top:220, left:'50%', transform:'translateX(-50%)', zIndex:9998, background:navy, color:'#fff', borderRadius:16, padding:'20px 36px', fontSize:18, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', whiteSpace:'nowrap' }}>
           {fcmMsg}
         </div>
       )}
