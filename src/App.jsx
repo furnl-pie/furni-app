@@ -33,7 +33,8 @@ export default function App() {
   }, [user])
 
   const [fcmMsg, setFcmMsg] = useState(null)
-  useFCM(user, msg => { setFcmMsg(msg); setTimeout(() => setFcmMsg(null), 5000) })
+  // 관리자만 FCM 포그라운드 토스트 표시 (기사는 DriverApp의 Firestore 리스너가 처리)
+  useFCM(user, user?.role === 'admin' ? msg => { setFcmMsg(msg); setTimeout(() => setFcmMsg(null), 5000) } : null)
 
   const doLogout = () => {
     localStorage.setItem('auto_login', '0')
