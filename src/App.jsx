@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAppData } from './hooks/useAppData'
+import { useFCM } from './hooks/useFCM'
 import { updateUsers } from './utils/users'
 import LoginPage from './components/LoginPage'
 import AdminApp from './components/admin/AdminApp'
@@ -30,6 +31,9 @@ export default function App() {
     window.addEventListener('popstate', handler)
     return () => window.removeEventListener('popstate', handler)
   }, [user])
+
+  const [fcmMsg, setFcmMsg] = useState(null)
+  useFCM(user, msg => { setFcmMsg(msg); setTimeout(() => setFcmMsg(null), 5000) })
 
   const doLogout = () => {
     localStorage.setItem('auto_login', '0')
@@ -95,6 +99,12 @@ export default function App() {
             onLogout={logoutHandler}
           />
       }
+
+      {fcmMsg && (
+        <div style={{ position:'fixed', top:80, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:16, padding:'16px 24px', fontSize:15, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', maxWidth:340, textAlign:'center' }}>
+          {fcmMsg}
+        </div>
+      )}
 
       {showLogoutConfirm && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>

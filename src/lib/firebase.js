@@ -2,6 +2,7 @@
 // firebase.google.com → 프로젝트 → 프로젝트 설정 → 내 앱 → SDK 설정에서 값 복사
 import { initializeApp } from 'firebase/app'
 import { getFirestore }  from 'firebase/firestore'
+import { getMessaging }  from 'firebase/messaging'
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,3 +15,4 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
+export const messaging = getMessaging(app)
