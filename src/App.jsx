@@ -32,9 +32,8 @@ export default function App() {
     return () => window.removeEventListener('popstate', handler)
   }, [user])
 
-  const [fcmMsg, setFcmMsg] = useState(null)
-  // 관리자만 FCM 포그라운드 토스트 표시 (기사는 DriverApp의 Firestore 리스너가 처리)
-  useFCM(user, user?.role === 'admin' ? msg => { setFcmMsg(msg); setTimeout(() => setFcmMsg(null), 5000) } : null)
+  // FCM 토큰 등록만 수행 (포그라운드 토스트 없음 - 시스템 알림으로 통일)
+  useFCM(user, null)
 
   const doLogout = () => {
     localStorage.setItem('auto_login', '0')
@@ -100,12 +99,6 @@ export default function App() {
             onLogout={logoutHandler}
           />
       }
-
-      {fcmMsg && (
-        <div style={{ position:'fixed', top:220, left:'50%', transform:'translateX(-50%)', zIndex:9998, background:navy, color:'#fff', borderRadius:16, padding:'20px 36px', fontSize:18, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', whiteSpace:'nowrap' }}>
-          {fcmMsg}
-        </div>
-      )}
 
       {showLogoutConfirm && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>

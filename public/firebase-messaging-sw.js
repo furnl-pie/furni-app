@@ -32,12 +32,11 @@ self.addEventListener('notificationclick', e => {
 
 const ICON = 'https://furni-app-silk.vercel.app/icon-192.png'
 
-// onBackgroundMessage: 앱이 포그라운드가 아닐 때(백그라운드/종료) 실행
-// - 포그라운드일 때는 onMessage(useFCM.js)가 처리하고 여기는 호출 안 됨 (Firebase 보장)
-// - onBackgroundMessage 등록 시 Firebase 자동표시 억제 → 여기서 직접 showNotification 호출
+// data-only 메시지: Chrome 자동표시 없음 → onBackgroundMessage가 유일한 표시 경로
+// 앱이 포그라운드면 onMessage(useFCM.js)가 처리, 여기는 백그라운드/종료 시에만 실행
 messaging.onBackgroundMessage(payload => {
-  const title = payload.notification?.title || '배차 알림'
-  const body  = payload.notification?.body  || ''
+  const title = payload.data?.title || '배차 알림'
+  const body  = payload.data?.body  || ''
   self.registration.showNotification(title, {
     body,
     icon: ICON,

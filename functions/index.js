@@ -18,8 +18,6 @@ exports.onScheduleChange = region('us-central1')
 
     const logger = require('firebase-functions/logger')
 
-    const ICON = 'https://furni-app-silk.vercel.app/icon-192.png'
-
     const sendTo = async (userId, title, body) => {
       const snap = await db.collection('fcm_tokens').doc(userId).get()
       if (!snap.exists) return
@@ -27,7 +25,7 @@ exports.onScheduleChange = region('us-central1')
       if (!token) return
       await msg.send({
         token,
-        webpush: { notification: { title, body, icon: ICON, badge: ICON } },
+        data: { title, body },
       }).catch(e => logger.error('FCM 전송 실패:', e))
     }
 
@@ -37,7 +35,7 @@ exports.onScheduleChange = region('us-central1')
       if (!tokens.length) return
       await msg.sendEachForMulticast({
         tokens,
-        webpush: { notification: { title, body, icon: ICON, badge: ICON } },
+        data: { title, body },
       }).catch(e => logger.error('FCM multicast 실패:', e))
     }
 
@@ -97,8 +95,6 @@ exports.onScheduleChange = region('us-central1')
     }
   })
 
-const OVERDUE_ICON = 'https://furni-app-silk.vercel.app/icon-192.png'
-
 // 30분마다 출발 미보고 일정 체크 → 관리자 알림
 exports.checkOverdue = pubsub
   .schedule('every 30 minutes')
@@ -137,13 +133,9 @@ exports.checkOverdue = pubsub
 
       await msg.sendEachForMulticast({
         tokens,
-        webpush: {
-          notification: {
-            title: '⚠️ 출발 미보고',
-            body: `${s.time} ${driverName} - ${place}`,
-            icon: OVERDUE_ICON,
-            badge: OVERDUE_ICON,
-          },
+        data: {
+          title: '⚠️ 출발 미보고',
+          body: `${s.time} ${driverName} - ${place}`,
         },
       }).catch(() => null)
     }
