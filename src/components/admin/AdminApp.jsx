@@ -198,9 +198,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       <div style={{ background:navy, color:'#fff', padding:'12px 16px' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ background:'#fff', borderRadius:10, padding:4, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <TruckIcon width={40} height={40}/>
-            </div>
+            <TruckIcon width={44} height={44}/>
             <div>
               <div style={{ fontSize:18, fontWeight:700, lineHeight:1.2 }}>동태관리</div>
               <div style={{ fontSize:11, opacity:.65 }}>관리자</div>

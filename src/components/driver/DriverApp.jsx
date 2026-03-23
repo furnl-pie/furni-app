@@ -129,9 +129,7 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
       <div style={{ background:navy, color:'#fff', padding:'16px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ background:'#fff', borderRadius:10, padding:4, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <TruckIcon width={48} height={48}/>
-            </div>
+            <TruckIcon width={52} height={52}/>
             <div>
               <div style={{ fontSize:20, fontWeight:700 }}>동태관리</div>
               <div style={{ fontSize:15, opacity:.8, marginTop:1, fontWeight:600 }}>{user.name} 기사님</div>
