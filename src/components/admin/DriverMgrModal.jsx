@@ -93,8 +93,11 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                         ▼
                       </button>
                     </div>
-                    <div style={{ width:38, height:38, borderRadius:'50%', background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, fontWeight:700, color:blue, flexShrink:0 }}>
-                      {d.name.slice(0,1)}
+                    <div style={{ position:'relative', flexShrink:0 }}>
+                      <div style={{ width:38, height:38, borderRadius:'50%', background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, fontWeight:700, color:blue }}>
+                        {d.name.slice(0,1)}
+                      </div>
+                      {d.online && <div style={{ position:'absolute', bottom:1, right:1, width:10, height:10, borderRadius:'50%', background:'#22c55e', border:'2px solid #fff' }}/>}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:14, fontWeight:600, color:textC }}>{d.name}</div>

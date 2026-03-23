@@ -345,7 +345,8 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
               return (
                 <button key={d.id}
                   onClick={()=>toggleDriverFilter(d.id)}
-                  style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on?chip?.border:border}`, background:on?chip?.bg:'#fff', color:on?chip?.color:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on?chip?.border:border}`, background:on?chip?.bg:'#fff', color:on?chip?.color:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:5 }}>
+                  {d.online && <span style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', display:'inline-block', flexShrink:0 }}/>}
                   {d.name}
                 </button>
               )

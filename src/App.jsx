@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { doc, updateDoc } from 'firebase/firestore'
+import { db } from './lib/firebase'
 import { useAppData } from './hooks/useAppData'
 import { useFCM } from './hooks/useFCM'
 import { updateUsers } from './utils/users'
@@ -34,6 +36,19 @@ export default function App() {
 
   // FCM 토큰 등록만 수행 (포그라운드 토스트 없음 - 시스템 알림으로 통일)
   useFCM(user, null)
+
+  // 접속 상태 추적
+  useEffect(() => {
+    if (!user) return
+    const ref = doc(db, 'users', user.id)
+    updateDoc(ref, { online: true }).catch(() => {})
+    const setOffline = () => updateDoc(ref, { online: false }).catch(() => {})
+    window.addEventListener('beforeunload', setOffline)
+    return () => {
+      setOffline()
+      window.removeEventListener('beforeunload', setOffline)
+    }
+  }, [user?.id])
 
   const doLogout = () => {
     localStorage.setItem('auto_login', '0')
