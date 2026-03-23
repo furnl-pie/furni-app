@@ -120,7 +120,7 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
     <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
 
       {notification && (
-        <div style={{ position:'fixed', top:80, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:16, padding:'20px 36px', fontSize:18, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:14 }}>
+        <div style={{ position:'fixed', top:160, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:16, padding:'20px 36px', fontSize:18, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:14 }}>
           {notification}
           <button onClick={()=>setNotification(null)} style={{ background:'none', border:'none', color:'rgba(255,255,255,.6)', fontSize:16, cursor:'pointer', padding:0, lineHeight:1 }}>✕</button>
         </div>
