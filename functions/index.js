@@ -5,7 +5,7 @@ const { getMessaging } = require('firebase-admin/messaging')
 
 initializeApp()
 
-exports.onScheduleChange = region('asia-northeast3')
+exports.onScheduleChange = region('us-central1')
   .runWith({ maxInstances: 10 })
   .firestore.document('schedules/{scheduleId}')
   .onWrite(async (change) => {
