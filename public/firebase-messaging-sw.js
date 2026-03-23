@@ -17,6 +17,17 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging()
 
-// webpush.notification 필드가 있으면 Firebase SDK가 자동으로 알림을 표시함
-// onBackgroundMessage에서 showNotification을 따로 호출하면 중복 발생 → 여기서는 호출하지 않음
-messaging.onBackgroundMessage(() => {})
+messaging.onBackgroundMessage(async payload => {
+  // 앱이 현재 열려있으면 onMessage(useFCM.js)가 처리 → SW에서는 표시 안 함
+  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+  const isVisible = clients.some(c => c.visibilityState === 'visible')
+  if (isVisible) return
+
+  const title = payload.notification?.title || '배차 알림'
+  const body  = payload.notification?.body  || ''
+  self.registration.showNotification(title, {
+    body,
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+  })
+})
