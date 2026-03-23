@@ -17,17 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging()
 
-messaging.onBackgroundMessage(async payload => {
-  // 앱이 현재 열려있으면 onMessage(useFCM.js)가 처리 → SW에서는 표시 안 함
-  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-  const isVisible = clients.some(c => c.visibilityState === 'visible')
-  if (isVisible) return
-
-  const title = payload.notification?.title || '배차 알림'
-  const body  = payload.notification?.body  || ''
-  self.registration.showNotification(title, {
-    body,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-  })
-})
+// onBackgroundMessage 미등록 시 Firebase 동작:
+// - 앱 열려있을 때(foreground): 페이지의 onMessage가 처리, 시스템 알림 자동 억제
+// - 앱 닫혀있을 때(background): Firebase SW가 notification 필드로 자동 표시
+// → onBackgroundMessage 등록 시 Firebase 자동 표시가 억제되어 직접 처리해야 하므로 제거
