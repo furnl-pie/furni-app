@@ -15,4 +15,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
-export const messaging = getMessaging(app)
+
+let messaging = null
+try {
+  messaging = getMessaging(app)
+} catch (e) {
+  console.warn('FCM 미지원 환경:', e)
+}
+export { messaging }

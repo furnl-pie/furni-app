@@ -7,7 +7,7 @@ const VAPID_KEY = 'BObvuk9qzRNXDNnMTPVNxCWNw5VDOjKeSS52DfnsL86O0b4XibQKvSByf4sG1
 
 export function useFCM(user, onNotification) {
   useEffect(() => {
-    if (!user || !('serviceWorker' in navigator)) return
+    if (!user || !messaging || !('serviceWorker' in navigator)) return
 
     const init = async () => {
       const permission = await Notification.requestPermission()
