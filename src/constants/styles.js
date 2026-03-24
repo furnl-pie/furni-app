@@ -6,7 +6,9 @@ export function getKSTToday() {
 export const today = getKSTToday()
 
 export function nowTime() {
-  return new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12:false })
+  const d = new Date()
+  d.setMinutes(Math.round(d.getMinutes() / 5) * 5, 0, 0)
+  return d.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12:false })
 }
 
 // ── 기사 정렬 ──────────────────────────────────────────────────────
