@@ -104,11 +104,18 @@ export function parseKakaoChat(text) {
 
     const address = contentLines[2] || ''
     const rest = contentLines.slice(3)
-    const wasteIdx = rest.findIndex(l => /\d+\/\d+차|[0-9.]+톤|[0-9]+차|이하|이상|물량/i.test(l))
-    const waste = wasteIdx >= 0 ? rest[wasteIdx] : ''
-    const memo = rest.filter((_, i) => i !== wasteIdx).join(' / ')
 
-    results.push({ cname, date, time, address, cphone, waste, memo,
+    const doorLine = rest.find(l => /^공동\s*[:：]/.test(l))
+    const unitLine = rest.find(l => /^세대\s*[:：]/.test(l))
+    const door_pw = doorLine ? doorLine.replace(/^공동\s*[:：]\s*/, '').trim() : ''
+    const unit_pw = unitLine ? unitLine.replace(/^세대\s*[:：]\s*/, '').trim() : ''
+
+    const filtered = rest.filter(l => l !== doorLine && l !== unitLine)
+    const wasteIdx = filtered.findIndex(l => /\d+\/\d+차|[0-9.]+톤|[0-9]+차|이하|이상|물량/i.test(l))
+    const waste = wasteIdx >= 0 ? filtered[wasteIdx] : ''
+    const memo = filtered.filter((_, i) => i !== wasteIdx).join(' / ')
+
+    results.push({ cname, date, time, address, cphone, door_pw, unit_pw, waste, memo,
       _id: Math.random().toString(36).slice(2), driver_hint:'', driver_note:'' })
   }
   return results
@@ -118,5 +125,5 @@ export const newRow = () => {
   const now = new Date()
   const hh = String(now.getHours()).padStart(2,'0')
   const mm = String(now.getMinutes()).padStart(2,'0')
-  return { _id: Math.random().toString(36).slice(2), date:today, time:`${hh}:${mm}`, address:'', waste:'', cname:'', cphone:'', memo:'', driver_hint:'', driver_note:'' }
+  return { _id: Math.random().toString(36).slice(2), date:today, time:`${hh}:${mm}`, address:'', waste:'', cname:'', cphone:'', door_pw:'', unit_pw:'', memo:'', driver_hint:'', driver_note:'' }
 }
