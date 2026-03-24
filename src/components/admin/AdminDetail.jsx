@@ -46,9 +46,11 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
     time:   schedule.time   || '',
     address:schedule.address|| '',
     waste:  schedule.waste  || '',
-    cname:  schedule.cname  || '',
-    cphone: schedule.cphone || '',
-    memo:   schedule.memo   || '',
+    cname:    schedule.cname    || '',
+    cphone:   schedule.cphone   || '',
+    door_pw:  schedule.door_pw  || '',
+    unit_pw:  schedule.unit_pw  || '',
+    memo:     schedule.memo     || '',
   })
   const setIF = (k,v) => setInfoForm(p=>({...p,[k]:v}))
   const saveInfo = () => { onUpdate(infoForm); setEditInfo(false) }
@@ -58,9 +60,11 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
       time:   schedule.time   || '',
       address:schedule.address|| '',
       waste:  schedule.waste  || '',
-      cname:  schedule.cname  || '',
-      cphone: schedule.cphone || '',
-      memo:   schedule.memo   || '',
+      cname:    schedule.cname    || '',
+      cphone:   schedule.cphone   || '',
+      door_pw:  schedule.door_pw  || '',
+      unit_pw:  schedule.unit_pw  || '',
+      memo:     schedule.memo     || '',
     })
     setEditInfo(false)
   }
@@ -279,6 +283,16 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                   <input value={infoForm.cphone} onChange={e=>setIF('cphone',e.target.value)} placeholder="010-0000-0000" style={{ ...iStyle, fontSize:13 }}/>
                 </div>
               </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>공동 비밀번호</div>
+                  <input value={infoForm.door_pw} onChange={e=>setIF('door_pw',e.target.value)} placeholder="공동현관 비번" style={{ ...iStyle, fontSize:13 }}/>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>세대 비밀번호</div>
+                  <input value={infoForm.unit_pw} onChange={e=>setIF('unit_pw',e.target.value)} placeholder="세대 비번" style={{ ...iStyle, fontSize:13 }}/>
+                </div>
+              </div>
               <div>
                 <div style={{ fontSize:11, color:muted, marginBottom:4 }}>메모</div>
                 <input value={infoForm.memo} onChange={e=>setIF('memo',e.target.value)} placeholder="관리자 메모 (선택)" style={{ ...iStyle, fontSize:13 }}/>
@@ -302,6 +316,8 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                   )}
                 </div>
               </div>
+              {schedule.door_pw && <Row label="공동 비밀번호" value={schedule.door_pw}/>}
+              {schedule.unit_pw && <Row label="세대 비밀번호" value={schedule.unit_pw}/>}
               {schedule.memo && <Row label="관리자 메모" value={schedule.memo}/>}
             </>
           )}

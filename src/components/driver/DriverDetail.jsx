@@ -240,6 +240,8 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
           <Row label="폐기물량"    value={schedule.waste}/>
           <Row label="현장 담당자" value={schedule.cname}/>
           <Row label="연락처"      value={schedule.cphone}/>
+          {schedule.door_pw && <Row label="공동 비밀번호" value={schedule.door_pw}/>}
+          {schedule.unit_pw && <Row label="세대 비밀번호" value={schedule.unit_pw}/>}
           {schedule.memo && <Row label="메모" value={schedule.memo}/>}
           <div style={{ margin:'14px 0' }}><CopyAddress address={schedule.address}/></div>
           <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none', display:'block' }}>
