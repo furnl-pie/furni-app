@@ -1,11 +1,27 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { db } from '../../lib/firebase'
 import { Btn } from '../common/ui'
 import { navy, blue, muted, green, red, border, textC, iStyle } from '../../constants/styles'
 
 export default function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
-  const [pwForm, setPwForm] = useState({ current:'', next:'', confirm:'' })
-  const [err,    setErr]    = useState('')
-  const [ok,     setOk]     = useState('')
+  const [pwForm, setPwForm]           = useState({ current:'', next:'', confirm:'' })
+  const [err,    setErr]              = useState('')
+  const [ok,     setOk]               = useState('')
+  const [overdueEnabled, setOverdue]  = useState(true)
+
+  useEffect(() => {
+    const ref = doc(db, 'settings', 'notifications')
+    const unsub = onSnapshot(ref, snap => {
+      if (snap.exists()) setOverdue(snap.data().overdueEnabled !== false)
+    })
+    return unsub
+  }, [])
+
+  const toggleOverdue = async (val) => {
+    setOverdue(val)
+    await setDoc(doc(db, 'settings', 'notifications'), { overdueEnabled: val }, { merge: true })
+  }
 
   const changePw = () => {
     setErr(''); setOk('')
@@ -33,6 +49,19 @@ export default function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
             <div style={{ fontSize:14, fontWeight:700, color:textC }}>{user.name}</div>
             <div style={{ fontSize:12, color:muted }}>
               <span style={{ fontFamily:'monospace', background:'#e2e8f0', padding:'1px 6px', borderRadius:4 }}>ID: {user.id}</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}` }}>
+          <div style={{ fontSize:14, fontWeight:700, color:textC, marginBottom:12 }}>알림 설정</div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:textC }}>⏰ 30분 미출발 알림</div>
+              <div style={{ fontSize:11, color:muted, marginTop:2 }}>배정 시간 초과 시 관리자에게 알림</div>
+            </div>
+            <div onClick={()=>toggleOverdue(!overdueEnabled)}
+              style={{ width:44, height:24, borderRadius:12, background:overdueEnabled?green:'#cbd5e1', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0 }}>
+              <div style={{ position:'absolute', top:3, left:overdueEnabled?23:3, width:18, height:18, borderRadius:'50%', background:'#fff', boxShadow:'0 1px 3px rgba(0,0,0,.3)', transition:'left .2s' }}/>
             </div>
           </div>
         </div>

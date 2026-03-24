@@ -103,6 +103,10 @@ exports.checkOverdue = pubsub
     const db  = getFirestore()
     const msg = getMessaging()
 
+    // 알림 설정 확인 (관리자가 비활성화하면 스킵)
+    const settingsDoc = await db.collection('settings').doc('notifications').get()
+    if (settingsDoc.exists && settingsDoc.data().overdueEnabled === false) return
+
     // 현재 KST 시각
     const now     = new Date(Date.now() + 9 * 60 * 60 * 1000)
     const today   = now.toISOString().slice(0, 10)
