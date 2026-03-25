@@ -121,7 +121,7 @@ export default function HelpModal({ onClose }) {
               <Section title="① 출발 보고">
                 <Step num="1" color={blue}><strong>🚚 출발</strong> 버튼 탭</Step>
                 <Step num="2" color={blue}>도착 예상 시간 확인 (기본값: 30분 후 반올림)</Step>
-                <Step num="3" color={blue}><strong>출발 확인</strong> → 상태: 이동중, 문자 자동 발송</Step>
+                <Step num="3" color={blue}><strong>출발 확인</strong> → 상태: 이동중, 문자앱 열림 → 내용 확인 후 전송</Step>
                 <Tip>📋 <strong>출발 보고 복사</strong> 버튼으로 카카오톡 보고 양식을 복사할 수 있습니다.</Tip>
                 <Tip>💬 문자 발송 후 <strong>재발송</strong>으로 ETA를 수정해 재발송 가능합니다.</Tip>
                 <Tip warn>잘못 눌렀다면 <strong>출발 취소</strong> 버튼으로 대기 상태로 되돌릴 수 있습니다.</Tip>
