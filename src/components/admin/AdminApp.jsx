@@ -616,7 +616,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
         )}
       </div>
 
-      {showModal && <BulkScheduleModal drivers={drivers} schedules={schedules} onAddMany={list=>{ onAddMany(list); setModal(false) }} onClose={()=>setModal(false)}/>}
+      {showModal && <BulkScheduleModal drivers={drivers} schedules={schedules} onAddMany={list=>{ onAddMany(list); setModal(false) }} onUpdate={onUpdate} onClose={()=>setModal(false)}/>}
       {showDriverMgr && <DriverMgrModal drivers={drivers} schedules={schedules} onAdd={onAddDriver} onUpdate={onUpdateDriver} onDelete={onDeleteDriver} onClose={()=>setDriverMgr(false)}/>}
       {showAdminSettings && <AdminSettingsModal user={user} onUpdateDriver={onUpdateDriver} onClose={()=>setAdminSettings(false)}/>}
 

@@ -3,12 +3,13 @@ import { Btn } from '../common/ui'
 import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow } from '../../utils/parsing'
 import { navy, blue, green, amber, red, border, muted, textC, DRIVER_COLORS } from '../../constants/styles'
 
-export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, onClose }) {
+export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, onUpdate, onClose }) {
   const [step, setStep]       = useState(1)
   const [inputMode, setInputMode] = useState('paste') // 'paste' | 'kakao' | 'manual'
   const [rows, setRows]       = useState([newRow()])
   const [assigns, setAssigns] = useState({})
   const [coAssigns, setCoAssigns] = useState({})
+  const [dupeConflict, setDupeConflict] = useState(null) // { dupes, newOnes }
 
   const [pasteRaw, setPasteRaw]   = useState('')
   const [parsed, setParsed]       = useState(null)
@@ -159,27 +160,46 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
   const setAssign = (_id, v) => setAssigns(prev=>({...prev,[_id]:v}))
   const assignAll = dId => { const map={}; rows.forEach(r=>{ map[r._id]=dId }); setAssigns(map) }
 
-  const submit = () => {
-    const list = rows.map((r, i) => ({
-      ...r,
-      order:          i,
-      driver_id:      assigns[r._id] || null,
-      co_driver_id:   coAssigns[r._id] || null,
-      driver_note:    r.driver_note || '',
-      status:'대기', start_time:null, end_time:null,
-      eta:null, sms_sent:false, photos:[],
-    }))
+  const buildList = () => rows.map((r, i) => ({
+    ...r,
+    order:          i,
+    driver_id:      assigns[r._id] || null,
+    co_driver_id:   coAssigns[r._id] || null,
+    driver_note:    r.driver_note || '',
+    status:'대기', start_time:null, end_time:null,
+    eta:null, sms_sent:false, photos:[],
+  }))
 
+  const submit = () => {
+    const list = buildList()
     const dupes = list.filter(r =>
       schedules.some(s => s.date === r.date && s.address === r.address)
     )
     if (dupes.length) {
-      const names = dupes.map(r => `${r.date} ${r.address}`).join('\n')
-      const go = window.confirm(`아래 ${dupes.length}건이 이미 등록된 일정과 중복됩니다:\n\n${names}\n\n중복 제외하고 등록할까요?`)
-      if (!go) return
-      onAddMany(list.filter(r => !dupes.includes(r)))
-    } else {
-      onAddMany(list)
+      setDupeConflict({ dupes, newOnes: list.filter(r => !dupes.includes(r)) })
+      return
+    }
+    onAddMany(list)
+  }
+
+  const MERGE_FIELDS = ['door_pw','unit_pw','memo','driver_note','cphone','cname','waste','time','driver_id','co_driver_id']
+
+  const handleDupeAction = (action) => {
+    const { dupes, newOnes } = dupeConflict
+    setDupeConflict(null)
+    if (action === 'merge') {
+      dupes.forEach(nr => {
+        const existing = schedules.find(s => s.date === nr.date && s.address === nr.address)
+        if (!existing || !onUpdate) return
+        const patch = {}
+        MERGE_FIELDS.forEach(f => { if (!existing[f] && nr[f]) patch[f] = nr[f] })
+        if (Object.keys(patch).length) onUpdate(existing.id, patch)
+      })
+      if (newOnes.length) onAddMany(newOnes)
+      else onClose()
+    } else if (action === 'skip') {
+      if (newOnes.length) onAddMany(newOnes)
+      else onClose()
     }
   }
 
@@ -196,7 +216,34 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:16, fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth: step===1 ? 960 : 700, maxHeight:'92vh', display:'flex', flexDirection:'column' }}>
+      <div style={{ position:'relative', background:'#fff', borderRadius:16, width:'100%', maxWidth: step===1 ? 960 : 700, maxHeight:'92vh', display:'flex', flexDirection:'column' }}>
+
+        {dupeConflict && (
+          <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,.97)', zIndex:20, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:16, padding:24 }}>
+            <div style={{ maxWidth:440, width:'100%' }}>
+              <div style={{ fontSize:16, fontWeight:700, color:navy, marginBottom:10 }}>⚠️ 중복 일정 {dupeConflict.dupes.length}건 발견</div>
+              <div style={{ background:'#fef9ec', border:`1px solid #fde68a`, borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:12, color:'#92400e', lineHeight:1.8, maxHeight:160, overflowY:'auto' }}>
+                {dupeConflict.dupes.map(r=><div key={r._id}>• {r.date} {r.address}</div>)}
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <button onClick={()=>handleDupeAction('merge')}
+                  style={{ padding:'12px 16px', background:blue, color:'#fff', border:'none', borderRadius:9, fontSize:13, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
+                  📋 빈 항목만 채워 기존 일정 업데이트{dupeConflict.newOnes.length>0?` + 신규 ${dupeConflict.newOnes.length}건 등록`:''}
+                </button>
+                {dupeConflict.newOnes.length > 0 && (
+                  <button onClick={()=>handleDupeAction('skip')}
+                    style={{ padding:'12px 16px', background:'#f8fafc', color:textC, border:`1px solid ${border}`, borderRadius:9, fontSize:13, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
+                    ⏭ 중복 제외하고 신규 {dupeConflict.newOnes.length}건만 등록
+                  </button>
+                )}
+                <button onClick={()=>setDupeConflict(null)}
+                  style={{ padding:'10px 16px', background:'none', color:muted, border:'none', fontSize:13, cursor:'pointer' }}>
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={{ padding:'14px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:16 }}>
