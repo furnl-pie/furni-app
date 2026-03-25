@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
 import AdminDetail from './AdminDetail'
 import BillingPage from './BillingPage'
+import DisposalPage from './DisposalPage'
 import BulkScheduleModal from './BulkScheduleModal'
 import DriverMgrModal from './DriverMgrModal'
 import AdminSettingsModal from './AdminSettingsModal'
@@ -19,10 +20,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
 
   const dragId = useRef(null)
 
-  // 청구 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
+  // 청구/처리 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
   useEffect(() => {
-    if (view !== 'billing') return
-    window.history.pushState({ billing: true }, '')
+    if (view !== 'billing' && view !== 'disposal') return
+    window.history.pushState({ subview: true }, '')
     const handler = () => setView('list')
     window.addEventListener('popstate', handler)
     return () => window.removeEventListener('popstate', handler)
@@ -188,6 +189,9 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   if (view==='billing')
     return <BillingPage schedules={schedules} onBack={()=>setView('list')}/>
 
+  if (view==='disposal')
+    return <DisposalPage onBack={()=>setView('list')}/>
+
   if (view==='detail' && selected)
     return <AdminDetail schedule={selected} onUpdate={p=>onUpdate(selected.id,p)} onBack={()=>setView('list')} drivers={drivers}/>
 
@@ -205,6 +209,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             </div>
           </div>
           <div style={{ display:'flex', gap:6 }}>
+            <button onClick={()=>setView('disposal')}
+              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              🚛 처리
+            </button>
             <button onClick={()=>setView('billing')}
               style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
               💰 청구

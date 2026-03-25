@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import DriverDetail from './DriverDetail'
+import DisposalTab from './DisposalTab'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, border, muted, textC, iStyle, today } from '../../constants/styles'
@@ -7,6 +8,7 @@ import { userName } from '../../utils/users'
 
 export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [view, setView]        = useState('list')
+  const [tab, setTab]          = useState('schedule') // 'schedule' | 'disposal'
   const [selectedId, setSelId] = useState(null)
   const [filterDate, setFD]    = useState(today)
   const [showPwModal, setPwModal] = useState(false)
@@ -144,10 +146,25 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
             <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:10 }}>로그아웃</Btn>
           </div>
         </div>
-        <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)} className="driver-date"
-          style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:20, width:'100%', boxSizing:'border-box', colorScheme:'dark' }}/>
+        {tab === 'schedule' && (
+          <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)} className="driver-date"
+            style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:20, width:'100%', boxSizing:'border-box', colorScheme:'dark' }}/>
+        )}
       </div>
 
+      {/* 탭 바 */}
+      <div style={{ display:'flex', background:'#fff', borderBottom:`1px solid ${border}` }}>
+        {[['schedule','📋 일정'],['disposal','🚛 처리']].map(([t,l])=>(
+          <button key={t} onClick={()=>setTab(t)}
+            style={{ flex:1, padding:'12px 0', fontSize:14, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===t?blue:'transparent'}`, color:tab===t?blue:muted, background:'none', cursor:'pointer' }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'disposal' && <DisposalTab user={user}/>}
+
+      {tab === 'schedule' && (
       <div style={{ padding:16, maxWidth:480, margin:'0 auto' }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
           {[['대기',cnt('대기'),muted],['진행중',cnt('진행중'),amber],['완료',cnt('완료'),green]].map(([l,v,c])=>(
@@ -194,6 +211,7 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
           )
         })}
       </div>
+      )}
 
       {showPwModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
