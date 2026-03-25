@@ -3,6 +3,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, order
 import { db } from '../../lib/firebase'
 import { Btn, Card } from '../common/ui'
 import { navy, blue, green, red, border, muted, textC, iStyle, today } from '../../constants/styles'
+import { readFilesAsBase64 } from '../../utils/image'
 
 const CLOUD  = import.meta.env.VITE_CLOUDINARY_CLOUD
 const PRESET = import.meta.env.VITE_CLOUDINARY_PRESET
@@ -60,13 +61,8 @@ export default function DisposalTab({ user }) {
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
   const addPhotos = async e => {
-    const files = Array.from(e.target.files)
-    const readers = await Promise.all(files.map(f => new Promise(res => {
-      const r = new FileReader()
-      r.onload = ev => res(ev.target.result)
-      r.readAsDataURL(f)
-    })))
-    set('photos', [...form.photos, ...readers])
+    const resized = await readFilesAsBase64(e.target.files)
+    set('photos', [...form.photos, ...resized])
     e.target.value = ''
   }
 
