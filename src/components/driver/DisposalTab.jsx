@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { Btn, Card } from '../common/ui'
 import { navy, blue, green, red, border, muted, textC, iStyle, today } from '../../constants/styles'
@@ -36,6 +36,7 @@ const emptyForm = (user) => ({
 
 export default function DisposalTab({ user }) {
   const [form,       setForm]       = useState(emptyForm(user))
+  const [editingId,  setEditingId]  = useState(null) // 수정 중인 record id
   const [submitting, setSubmitting] = useState(false)
   const [ok,         setOk]         = useState(false)
   const [records,    setRecords]    = useState([])
@@ -65,13 +66,41 @@ export default function DisposalTab({ user }) {
 
   const removePhoto = i => set('photos', form.photos.filter((_, idx) => idx !== i))
 
+  const startEdit = (r) => {
+    const isCustomSite = !SITES.slice(0,-1).includes(r.site) && r.site !== 'HK' && r.site !== '강서천일'
+    setForm({
+      date:        r.date,
+      site:        isCustomSite ? '기타' : r.site,
+      site_custom: isCustomSite ? r.site : '',
+      time:        r.time || '',
+      cost:        r.cost || '',
+      load:        r.load || '',
+      car_number:  r.car_number || '',
+      quality:     r.quality || '혼합',
+      memo:        r.memo || '',
+      photos:      r.photos || [],
+    })
+    setEditingId(r.id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const cancelEdit = () => {
+    setForm(emptyForm(user))
+    setEditingId(null)
+  }
+
+  const deleteRecord = async (id) => {
+    if (!window.confirm('이 처리 기록을 삭제할까요?')) return
+    await deleteDoc(doc(db, 'disposals', id))
+  }
+
   const submit = async () => {
     setSubmitting(true)
     try {
       const finalSite = form.site === '기타' ? (form.site_custom || '기타') : form.site
       const folder = `disposal/${form.date}`
       const uploadedPhotos = await Promise.all(form.photos.map(p => uploadPhoto(p, folder)))
-      await addDoc(collection(db, 'disposals'), {
+      const data = {
         date:        form.date,
         site:        finalSite,
         time:        form.time,
@@ -81,10 +110,18 @@ export default function DisposalTab({ user }) {
         quality:     form.quality,
         memo:        form.memo,
         photos:      uploadedPhotos,
-        driver_id:   user.id,
-        driver_name: user.name,
-        createdAt:   serverTimestamp(),
-      })
+      }
+      if (editingId) {
+        await updateDoc(doc(db, 'disposals', editingId), data)
+        setEditingId(null)
+      } else {
+        await addDoc(collection(db, 'disposals'), {
+          ...data,
+          driver_id:   user.id,
+          driver_name: user.name,
+          createdAt:   serverTimestamp(),
+        })
+      }
       setForm(emptyForm(user))
       setOk(true)
       setTimeout(() => setOk(false), 2500)
@@ -104,7 +141,15 @@ export default function DisposalTab({ user }) {
 
       {/* 입력 폼 */}
       <Card style={{ marginBottom:20 }}>
-        <div style={{ fontSize:14, fontWeight:700, color:navy, marginBottom:14 }}>처리비 보고</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:navy }}>{editingId ? '처리비 수정' : '처리비 보고'}</div>
+          {editingId && (
+            <button onClick={cancelEdit}
+              style={{ background:'none', border:`1px solid ${border}`, borderRadius:7, padding:'4px 10px', fontSize:12, color:muted, cursor:'pointer' }}>
+              취소
+            </button>
+          )}
+        </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
           <div>
@@ -135,7 +180,7 @@ export default function DisposalTab({ user }) {
           </div>
           <div>
             <div style={{ fontSize:11, color:muted, marginBottom:4 }}>적재량</div>
-            <input value={form.load} onChange={e=>set('load',e.target.value)} placeholder="예: 2톤" style={{ ...iStyle, fontSize:13 }}/>
+            <input value={form.load} onChange={e=>set('load',e.target.value)} placeholder="예: 1차" style={{ ...iStyle, fontSize:13 }}/>
           </div>
         </div>
 
@@ -185,7 +230,7 @@ export default function DisposalTab({ user }) {
           </div>
         )}
         <Btn onClick={submit} disabled={submitting} style={{ width:'100%', padding:13, fontSize:15 }}>
-          {submitting ? '저장 중...' : '보고 제출'}
+          {submitting ? '저장 중...' : editingId ? '수정 완료' : '보고 제출'}
         </Btn>
       </Card>
 
@@ -202,8 +247,20 @@ export default function DisposalTab({ user }) {
         myRecords.map(r => (
           <Card key={r.id} style={{ marginBottom:10 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-              <span style={{ fontWeight:700, color:navy, fontSize:15 }}>{r.site}</span>
-              {r.time && <span style={{ fontFamily:'monospace', fontSize:13, color:muted }}>{r.time}</span>}
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontWeight:700, color:navy, fontSize:15 }}>{r.site}</span>
+                {r.time && <span style={{ fontFamily:'monospace', fontSize:13, color:muted }}>{r.time}</span>}
+              </div>
+              <div style={{ display:'flex', gap:6 }}>
+                <button onClick={()=>startEdit(r)}
+                  style={{ background:'#eff6ff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:12, color:blue, fontWeight:600, cursor:'pointer' }}>
+                  수정
+                </button>
+                <button onClick={()=>deleteRecord(r.id)}
+                  style={{ background:'#fef2f2', border:'none', borderRadius:6, padding:'4px 10px', fontSize:12, color:red, fontWeight:600, cursor:'pointer' }}>
+                  삭제
+                </button>
+              </div>
             </div>
             <div style={{ fontSize:13, color:textC, display:'flex', gap:14, flexWrap:'wrap', marginBottom:r.memo||r.photos?.length?6:0 }}>
               {r.cost        && <span>💰 {r.cost}</span>}
