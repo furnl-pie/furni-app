@@ -72,7 +72,7 @@ export default function HelpModal({ onClose }) {
             <>
               <Section title="📱 화면 구성">
                 <div style={{ fontSize:13, color:textC, lineHeight:1.8 }}>
-                  <div style={{ marginBottom:6 }}><strong>상단 헤더</strong> — 이름, 비밀번호 변경, 로그아웃</div>
+                  <div style={{ marginBottom:6 }}><strong>상단 헤더</strong> — 이름, ⚙ 설정 (차량번호·비밀번호·알림), 로그아웃</div>
                   <div style={{ marginBottom:6 }}><strong>날짜 선택기</strong> — 일정 탭에서만 표시, 날짜별 일정 조회</div>
                   <div style={{ marginBottom:6 }}><strong>탭 바</strong> — 📋 일정 / 🚛 처리 전환</div>
                 </div>
@@ -201,10 +201,13 @@ export default function HelpModal({ onClose }) {
                 <Tip warn>알림이 오지 않으면 스마트폰 설정 → 브라우저 앱 → 알림 권한을 허용으로 바꿔주세요.</Tip>
               </Section>
 
-              <Section title="🔒 비밀번호 변경">
-                <Step num="1">상단 헤더 <strong>🔒 비밀번호</strong> 버튼 탭</Step>
-                <Step num="2">현재 비밀번호 → 새 비밀번호(4자 이상) → 확인 입력</Step>
-                <Step num="3"><strong>변경</strong> 버튼 탭</Step>
+              <Section title="⚙ 설정">
+                <Step num="1">상단 헤더 <strong>⚙ 설정</strong> 버튼 탭</Step>
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:8 }}>
+                  <div>• <strong>차량번호</strong> — 입력 후 저장 버튼 탭 (처리 탭에 자동 입력)</div>
+                  <div>• <strong>비밀번호 변경</strong> — 현재 비밀번호 → 새 비밀번호(4자 이상) → 변경</div>
+                  <div>• <strong>알림 설정</strong> — 푸시 알림 허용/차단 상태 확인 및 허용</div>
+                </div>
                 <Tip warn>비밀번호를 잊어버린 경우 관리자에게 초기화를 요청하세요.</Tip>
               </Section>
 
@@ -220,7 +223,7 @@ export default function HelpModal({ onClose }) {
                   ['일정이 안 보여요', '상단 날짜가 오늘로 되어 있는지 확인하세요.'],
                   ['출발을 잘못 눌렀어요', '일정 상세에서 출발 취소 버튼으로 되돌릴 수 있습니다.'],
                   ['완료 후 사진 추가?', '완료 상태에서 수정 버튼을 눌러 사진을 추가할 수 있습니다.'],
-                  ['처리비 잘못 제출했어요', '관리자에게 삭제 요청을 해주세요.'],
+                  ['처리비 잘못 제출했어요', '처리 탭의 해당 기록에서 직접 삭제할 수 있습니다.'],
                 ].map(([q, a]) => (
                   <div key={q} style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:8, padding:'10px 12px', marginBottom:8 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:blue, marginBottom:4 }}>Q. {q}</div>

@@ -13,10 +13,15 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   const [showHelp, setHelp]    = useState(false)
   const [selectedId, setSelId] = useState(null)
   const [filterDate, setFD]    = useState(today)
-  const [showPwModal, setPwModal] = useState(false)
+  const [showSettings, setSettings] = useState(false)
+  const [carNum, setCarNum]    = useState(user.car_number || '')
+  const [carOk, setCarOk]      = useState(false)
   const [pwForm, setPwForm]    = useState({ current:'', next:'', confirm:'' })
   const [pwErr, setPwErr]      = useState('')
   const [pwOk, setPwOk]        = useState(false)
+  const [notifPerm, setNotifPerm] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  )
   const [notification, setNotification] = useState(null)
   const notifTimer   = useRef(null)
   const prevMineRef  = useRef(null)
@@ -97,6 +102,12 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
     }
   }, [view])
 
+  const saveCar = async () => {
+    await onUpdateDriver(user.id, { car_number: carNum })
+    setCarOk(true)
+    setTimeout(() => setCarOk(false), 2000)
+  }
+
   const changePw = async () => {
     setPwErr('')
     if (pwForm.current !== user.pw) { setPwErr('현재 비밀번호가 틀렸습니다'); return }
@@ -105,7 +116,13 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
     await onUpdateDriver(user.id, { pw: pwForm.next })
     setPwOk(true)
     setPwForm({ current:'', next:'', confirm:'' })
-    setTimeout(() => { setPwModal(false); setPwOk(false) }, 1500)
+    setTimeout(() => setPwOk(false), 2000)
+  }
+
+  const requestNotif = async () => {
+    if (typeof Notification === 'undefined') return
+    const perm = await Notification.requestPermission()
+    setNotifPerm(perm)
   }
 
   if (view === 'detail' && selected) {
@@ -119,6 +136,9 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   }
 
   const cnt = st => mine.filter(s=>s.status===st).length
+
+  const notifLabel = notifPerm === 'granted' ? '알림 허용됨' : notifPerm === 'denied' ? '알림 차단됨 (설정에서 변경)' : '알림 허용 안 됨'
+  const notifColor = notifPerm === 'granted' ? green : '#dc2626'
 
   return (
     <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
@@ -145,9 +165,9 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
               style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 10px', fontSize:14, fontWeight:700, cursor:'pointer', lineHeight:1 }}>
               ?
             </button>
-            <button onClick={()=>setPwModal(true)}
+            <button onClick={()=>setSettings(true)}
               style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 12px', fontSize:10, cursor:'pointer' }}>
-              🔒 비밀번호
+              ⚙ 설정
             </button>
             <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:10 }}>로그아웃</Btn>
           </div>
@@ -221,53 +241,92 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
 
       {showHelp && <HelpModal onClose={()=>setHelp(false)}/>}
 
-      {showPwModal && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
-          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:340, padding:24 }}>
-            <div style={{ fontSize:16, fontWeight:700, color:navy, marginBottom:4 }}>🔒 비밀번호 변경</div>
-            <div style={{ fontSize:12, color:muted, marginBottom:20 }}>{user.name} 기사님</div>
+      {showSettings && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:'16px 16px 0 0', width:'100%', maxWidth:480, maxHeight:'85vh', display:'flex', flexDirection:'column' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 20px', borderBottom:`1px solid ${border}`, flexShrink:0 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:navy }}>⚙ 설정</div>
+              <button onClick={()=>{ setSettings(false); setPwErr(''); setPwOk(false); setPwForm({current:'',next:'',confirm:''}); setCarOk(false) }}
+                style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
+            </div>
 
-            {pwOk ? (
-              <div style={{ textAlign:'center', padding:'20px 0' }}>
-                <div style={{ fontSize:32, marginBottom:8 }}>✅</div>
-                <div style={{ fontSize:15, fontWeight:700, color:green }}>변경 완료!</div>
+            <div style={{ overflowY:'auto', padding:'16px 20px 32px' }}>
+
+              {/* 차량번호 */}
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:navy, marginBottom:10 }}>🚛 차량번호</div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <input value={carNum} onChange={e=>setCarNum(e.target.value)}
+                    placeholder="예: 12가3456"
+                    style={{ ...iStyle, flex:1, fontSize:14 }}/>
+                  <Btn onClick={saveCar} style={{ padding:'0 18px', fontSize:13 }}>저장</Btn>
+                </div>
+                {carOk && <div style={{ fontSize:12, color:green, marginTop:6, fontWeight:600 }}>✓ 저장되었습니다</div>}
               </div>
-            ) : (
-              <>
-                <div style={{ marginBottom:12 }}>
-                  <div style={{ fontSize:12, color:muted, marginBottom:4 }}>현재 비밀번호</div>
-                  <input type="password" value={pwForm.current}
-                    onChange={e=>setPwForm(p=>({...p,current:e.target.value}))}
-                    placeholder="현재 비밀번호 입력"
-                    style={iStyle}/>
+
+              <div style={{ borderTop:`1px solid ${border}`, marginBottom:24 }}/>
+
+              {/* 비밀번호 변경 */}
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:navy, marginBottom:10 }}>🔒 비밀번호 변경</div>
+                {pwOk ? (
+                  <div style={{ textAlign:'center', padding:'16px 0', fontSize:14, fontWeight:700, color:green }}>✅ 변경 완료!</div>
+                ) : (
+                  <>
+                    <div style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:11, color:muted, marginBottom:4 }}>현재 비밀번호</div>
+                      <input type="password" value={pwForm.current}
+                        onChange={e=>setPwForm(p=>({...p,current:e.target.value}))}
+                        placeholder="현재 비밀번호 입력"
+                        style={{ ...iStyle, fontSize:13 }}/>
+                    </div>
+                    <div style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:11, color:muted, marginBottom:4 }}>새 비밀번호</div>
+                      <input type="password" value={pwForm.next}
+                        onChange={e=>setPwForm(p=>({...p,next:e.target.value}))}
+                        placeholder="새 비밀번호 (4자 이상)"
+                        style={{ ...iStyle, fontSize:13 }}/>
+                    </div>
+                    <div style={{ marginBottom:12 }}>
+                      <div style={{ fontSize:11, color:muted, marginBottom:4 }}>새 비밀번호 확인</div>
+                      <input type="password" value={pwForm.confirm}
+                        onChange={e=>setPwForm(p=>({...p,confirm:e.target.value}))}
+                        placeholder="새 비밀번호 다시 입력"
+                        onKeyDown={e=>e.key==='Enter'&&changePw()}
+                        style={{ ...iStyle, fontSize:13 }}/>
+                    </div>
+                    {pwErr && (
+                      <div style={{ fontSize:12, color:'#dc2626', marginBottom:10, padding:'8px 12px', background:'#fef2f2', borderRadius:8 }}>
+                        ⚠ {pwErr}
+                      </div>
+                    )}
+                    <Btn onClick={changePw} style={{ width:'100%', padding:12 }}>변경</Btn>
+                  </>
+                )}
+              </div>
+
+              <div style={{ borderTop:`1px solid ${border}`, marginBottom:24 }}/>
+
+              {/* 알림 설정 */}
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:navy, marginBottom:10 }}>🔔 알림 설정</div>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', background:'#f8fafc', borderRadius:10, border:`1px solid ${border}` }}>
+                  <div>
+                    <div style={{ fontSize:13, color:textC, fontWeight:600 }}>푸시 알림</div>
+                    <div style={{ fontSize:11, color:notifColor, marginTop:2 }}>{notifLabel}</div>
+                  </div>
+                  {notifPerm !== 'granted' && notifPerm !== 'denied' && (
+                    <Btn onClick={requestNotif} style={{ padding:'6px 14px', fontSize:12 }}>허용</Btn>
+                  )}
                 </div>
-                <div style={{ marginBottom:12 }}>
-                  <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호</div>
-                  <input type="password" value={pwForm.next}
-                    onChange={e=>setPwForm(p=>({...p,next:e.target.value}))}
-                    placeholder="새 비밀번호 (4자 이상)"
-                    style={iStyle}/>
-                </div>
-                <div style={{ marginBottom:16 }}>
-                  <div style={{ fontSize:12, color:muted, marginBottom:4 }}>새 비밀번호 확인</div>
-                  <input type="password" value={pwForm.confirm}
-                    onChange={e=>setPwForm(p=>({...p,confirm:e.target.value}))}
-                    placeholder="새 비밀번호 다시 입력"
-                    onKeyDown={e=>e.key==='Enter'&&changePw()}
-                    style={iStyle}/>
-                </div>
-                {pwErr && (
-                  <div style={{ fontSize:12, color:'#dc2626', marginBottom:12, padding:'8px 12px', background:'#fef2f2', borderRadius:8 }}>
-                    ⚠ {pwErr}
+                {notifPerm === 'denied' && (
+                  <div style={{ fontSize:11, color:muted, marginTop:8, lineHeight:1.6 }}>
+                    스마트폰 설정 → 브라우저 앱 → 알림 권한을 허용으로 변경하세요.
                   </div>
                 )}
-                <div style={{ display:'flex', gap:10 }}>
-                  <Btn onClick={()=>{ setPwModal(false); setPwForm({current:'',next:'',confirm:''}); setPwErr('') }}
-                    outline color={muted} style={{ flex:1 }}>취소</Btn>
-                  <Btn onClick={changePw} style={{ flex:2 }}>변경</Btn>
-                </div>
-              </>
-            )}
+              </div>
+
+            </div>
           </div>
         </div>
       )}
