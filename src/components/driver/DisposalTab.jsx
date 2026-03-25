@@ -19,7 +19,7 @@ async function uploadPhoto(base64, folder) {
 }
 
 const SITES = ['HK', '강서천일', '기타']
-const QUALITY_OPTIONS = ['혼합', '목재', '철재', '플라스틱', '기타']
+const QUALITY_OPTIONS = ['혼합', '목재', '왈가닥', '기타']
 
 const emptyForm = (user) => ({
   date:        today,
