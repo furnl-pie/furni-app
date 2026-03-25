@@ -21,11 +21,17 @@ async function uploadPhoto(base64, folder) {
 const SITES = ['HK', '강서천일', '기타']
 const QUALITY_OPTIONS = ['혼합', '목재', '왈가닥', '기타']
 
+const roundedNow = () => {
+  const d = new Date()
+  d.setMinutes(Math.round(d.getMinutes() / 10) * 10, 0, 0)
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
 const emptyForm = (user) => ({
   date:        today,
   site:        'HK',
   site_custom: '',
-  time:        '',
+  time:        roundedNow(),
   cost:        '',
   load:        '',
   car_number:  user?.car_number || '',
@@ -164,9 +170,12 @@ export default function DisposalTab({ user }) {
 
         <div style={{ marginBottom:10 }}>
           <div style={{ fontSize:11, color:muted, marginBottom:4 }}>처리장</div>
-          <select value={form.site} onChange={e=>set('site',e.target.value)} style={{ ...iStyle, fontSize:13 }}>
-            {SITES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div style={{ position:'relative' }}>
+            <select value={form.site} onChange={e=>set('site',e.target.value)} style={{ ...iStyle, fontSize:13, paddingRight:30 }}>
+              {SITES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <span style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:muted, fontSize:11 }}>▼</span>
+          </div>
           {form.site === '기타' && (
             <input value={form.site_custom} onChange={e=>set('site_custom',e.target.value)}
               placeholder="처리장 직접 입력" style={{ ...iStyle, fontSize:13, marginTop:6 }}/>
@@ -191,9 +200,12 @@ export default function DisposalTab({ user }) {
           </div>
           <div>
             <div style={{ fontSize:11, color:muted, marginBottom:4 }}>상성</div>
-            <select value={form.quality} onChange={e=>set('quality',e.target.value)} style={{ ...iStyle, fontSize:13 }}>
-              {QUALITY_OPTIONS.map(q => <option key={q} value={q}>{q}</option>)}
-            </select>
+            <div style={{ position:'relative' }}>
+              <select value={form.quality} onChange={e=>set('quality',e.target.value)} style={{ ...iStyle, fontSize:13, paddingRight:30 }}>
+                {QUALITY_OPTIONS.map(q => <option key={q} value={q}>{q}</option>)}
+              </select>
+              <span style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:muted, fontSize:11 }}>▼</span>
+            </div>
           </div>
         </div>
 
