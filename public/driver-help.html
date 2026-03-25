@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>동태관리 앱 기사 사용설명서</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans KR',sans-serif;color:#1e293b;background:#fff;font-size:14px;line-height:1.7;}
+
+  .page{max-width:720px;margin:0 auto;padding:40px 32px;}
+
+  /* 표지 */
+  .cover{text-align:center;padding:60px 0 48px;border-bottom:3px solid #1b3a5c;margin-bottom:48px;}
+  .cover-icon{font-size:64px;margin-bottom:16px;}
+  .cover-title{font-size:32px;font-weight:900;color:#1b3a5c;margin-bottom:8px;}
+  .cover-sub{font-size:16px;color:#64748b;margin-bottom:24px;}
+  .cover-badge{display:inline-block;background:#1b3a5c;color:#fff;border-radius:20px;padding:6px 20px;font-size:13px;font-weight:600;}
+
+  /* 목차 */
+  .toc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px 28px;margin-bottom:48px;}
+  .toc-title{font-size:15px;font-weight:700;color:#1b3a5c;margin-bottom:14px;}
+  .toc-item{display:flex;align-items:baseline;gap:8px;padding:4px 0;font-size:13px;color:#64748b;}
+  .toc-item .num{font-weight:700;color:#2563eb;min-width:20px;}
+  .toc-item .dots{flex:1;border-bottom:1px dotted #cbd5e1;margin:0 4px 4px;}
+  .toc-item .page-num{color:#94a3b8;font-size:12px;}
+
+  /* 섹션 */
+  .section{margin-bottom:48px;}
+  .section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #1b3a5c;}
+  .section-num{width:32px;height:32px;background:#1b3a5c;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+  .section-title{font-size:20px;font-weight:700;color:#1b3a5c;}
+
+  /* 서브 섹션 */
+  .subsection{margin-bottom:24px;}
+  .subsection-title{font-size:15px;font-weight:700;color:#2563eb;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+
+  /* 단계 박스 */
+  .step-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:10px;}
+  .step-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+  .step-row:last-child{margin-bottom:0;}
+  .step-badge{background:#2563eb;color:#fff;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:2px;}
+  .step-badge.green{background:#059669;}
+  .step-badge.amber{background:#b45309;}
+  .step-badge.navy{background:#1b3a5c;}
+  .step-badge.purple{background:#7c3aed;}
+  .step-badge.red{background:#dc2626;}
+
+  /* 팁 박스 */
+  .tip{background:#eff6ff;border-left:3px solid #2563eb;border-radius:0 8px 8px 0;padding:12px 16px;margin:10px 0;font-size:13px;color:#1e40af;}
+  .tip-icon{font-weight:700;margin-right:4px;}
+  .warn{background:#fef3c7;border-left:3px solid #b45309;border-radius:0 8px 8px 0;padding:12px 16px;margin:10px 0;font-size:13px;color:#92400e;}
+
+  /* 카드 미리보기 */
+  .mock-card{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:10px;padding:14px 16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .mock-card.done{border-left-color:#059669;}
+  .mock-card.working{border-left-color:#b45309;}
+  .mock-time{font-family:monospace;font-size:17px;font-weight:700;color:#1b3a5c;}
+  .mock-addr{font-size:14px;font-weight:600;color:#1e293b;margin:4px 0;}
+  .mock-sub{font-size:12px;color:#64748b;}
+  .mock-badge{display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px;}
+  .badge-wait{background:#f1f5f9;color:#64748b;}
+  .badge-move{background:#dbeafe;color:#1d4ed8;}
+  .badge-work{background:#fef3c7;color:#92400e;}
+  .badge-done{background:#dcfce7;color:#14532d;}
+
+  /* 폼 미리보기 */
+  .mock-form{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin:12px 0;}
+  .form-row{display:flex;gap:10px;margin-bottom:8px;}
+  .form-field{flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;font-size:12px;color:#64748b;}
+  .form-field .label{font-size:10px;color:#94a3b8;margin-bottom:2px;}
+  .form-field .value{font-size:13px;color:#1e293b;font-weight:500;}
+
+  /* 플로우 */
+  .flow{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap;}
+  .flow-step{background:#fff;border:2px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:#1e293b;text-align:center;}
+  .flow-step.active{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+  .flow-arrow{color:#94a3b8;font-size:16px;}
+
+  /* 표 */
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;}
+  th{background:#f1f5f9;padding:8px 12px;text-align:left;font-weight:600;color:#1b3a5c;border:1px solid #e2e8f0;}
+  td{padding:8px 12px;border:1px solid #e2e8f0;color:#1e293b;vertical-align:top;}
+  tr:nth-child(even) td{background:#f8fafc;}
+
+  /* 인쇄 */
+  @media print {
+    body{font-size:12px;}
+    .page{padding:20px 24px;}
+    .section{page-break-inside:avoid;}
+    .cover{padding:40px 0 32px;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 표지 -->
+  <div class="cover">
+    <div class="cover-icon">🚛</div>
+    <div class="cover-title">동태관리 앱</div>
+    <div class="cover-sub">기사 사용설명서</div>
+    <div class="cover-badge">FN 퍼니 · Driver Guide</div>
+  </div>
+
+  <!-- 목차 -->
+  <div class="toc">
+    <div class="toc-title">목차</div>
+    <div class="toc-item"><span class="num">1</span><span>로그인 &amp; 화면 구성</span><span class="dots"></span></div>
+    <div class="toc-item"><span class="num">2</span><span>일정 탭 — 오늘의 일정 확인</span><span class="dots"></span></div>
+    <div class="toc-item"><span class="num">3</span><span>일정 상세 — 현장 정보 확인</span><span class="dots"></span></div>
+    <div class="toc-item"><span class="num">4</span><span>업무 보고 순서 (출발 → 작업시작 → 완료)</span><span class="dots"></span></div>
+    <div class="toc-item"><span class="num">5</span><span>처리 탭 — 처리비 보고</span><span class="dots"></span></div>
+    <div class="toc-item"><span class="num">6</span><span>기타 기능 (비밀번호 변경 · 로그아웃)</span><span class="dots"></span></div>
+    <div class="toc-item"><span class="num">7</span><span>자주 묻는 질문</span><span class="dots"></span></div>
+  </div>
+
+  <!-- 1. 로그인 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">로그인 &amp; 화면 구성</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🔐 로그인</div>
+      <div class="step-box">
+        <div class="step-row"><span class="step-badge">1</span><span>관리자에게 받은 <strong>아이디</strong>와 <strong>비밀번호</strong>를 입력합니다.</span></div>
+        <div class="step-row"><span class="step-badge">2</span><span><strong>자동 로그인</strong>에 체크하면 다음에 앱을 열 때 자동으로 로그인됩니다.</span></div>
+        <div class="step-row"><span class="step-badge">3</span><span>로그인 후 기사 메인 화면이 열립니다.</span></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">📱 화면 구성</div>
+      <table>
+        <tr><th>영역</th><th>설명</th></tr>
+        <tr><td><strong>상단 헤더</strong></td><td>앱 이름, 기사 이름/연락처, 비밀번호 변경, 로그아웃 버튼</td></tr>
+        <tr><td><strong>날짜 선택</strong></td><td>일정 탭에서만 표시. 날짜를 바꾸면 해당 날짜 일정만 보임</td></tr>
+        <tr><td><strong>탭 바</strong></td><td>📋 일정 / 🚛 처리 — 두 가지 탭 전환</td></tr>
+        <tr><td><strong>내용 영역</strong></td><td>선택한 탭에 따라 일정 목록 또는 처리비 보고 화면 표시</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2. 일정 탭 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">일정 탭 — 오늘의 일정 확인</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">📋 일정 목록 보는 법</div>
+      <p style="margin-bottom:12px;color:#64748b;font-size:13px;">상단 날짜 선택기에서 날짜를 선택하면 해당 날짜에 배정된 일정만 표시됩니다.</p>
+
+      <div class="mock-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span class="mock-time">09:00</span>
+          <span class="mock-badge badge-wait">대기</span>
+        </div>
+        <div class="mock-addr">서울시 강서구 화곡로 302 △△아파트 101동 1102호</div>
+        <div class="mock-sub">폐기물 2톤 · 담당: 홍길동</div>
+      </div>
+
+      <div class="mock-card working">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span class="mock-time">11:00</span>
+          <span class="mock-badge badge-work">● 진행중</span>
+        </div>
+        <div class="mock-addr">서울시 영등포구 여의도동 ◇◇오피스텔 1505호</div>
+        <div class="mock-sub">폐기물 1.5톤 · 담당: 김철수</div>
+        <div style="font-size:12px;color:#059669;margin-top:6px;font-family:monospace;">▶ 09:30 → ■ (진행중)</div>
+      </div>
+
+      <div class="mock-card done">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span class="mock-time">14:00</span>
+          <span class="mock-badge badge-done">✓ 완료</span>
+        </div>
+        <div class="mock-addr">경기도 안양시 안양천서로 289 ○○아파트 2303호</div>
+        <div class="mock-sub">폐기물 3톤 · 담당: 이영희</div>
+        <div style="font-size:12px;color:#059669;margin-top:6px;font-family:monospace;">▶ 13:45 → ■ 16:10</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🎨 상태 색상 의미</div>
+      <table>
+        <tr><th>카드 색상</th><th>상태</th><th>의미</th></tr>
+        <tr><td><span class="mock-badge badge-wait">대기</span></td><td>회색 테두리</td><td>아직 출발 전</td></tr>
+        <tr><td><span class="mock-badge badge-move">🚚 이동중</span></td><td>파란 테두리</td><td>현장으로 이동 중</td></tr>
+        <tr><td><span class="mock-badge badge-work">● 진행중</span></td><td>주황 테두리</td><td>현장 작업 중</td></tr>
+        <tr><td><span class="mock-badge badge-done">✓ 완료</span></td><td>초록 테두리</td><td>작업 완료</td></tr>
+      </table>
+    </div>
+
+    <div class="tip"><span class="tip-icon">💡</span>상단의 <strong>대기 / 진행중 / 완료</strong> 숫자 카드는 해당 날짜 전체 건수를 보여줍니다.</div>
+  </div>
+
+  <!-- 3. 일정 상세 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">일정 상세 — 현장 정보 확인</div>
+    </div>
+
+    <p style="margin-bottom:14px;color:#64748b;font-size:13px;">일정 카드를 <strong>탭</strong>하면 상세 화면으로 이동합니다.</p>
+
+    <div class="subsection">
+      <div class="subsection-title">📍 현장 정보 카드</div>
+      <table>
+        <tr><th>항목</th><th>설명</th></tr>
+        <tr><td>예정 시간</td><td>관리자가 설정한 방문 예정 시간</td></tr>
+        <tr><td>폐기물량</td><td>예상 폐기물 양</td></tr>
+        <tr><td>현장 담당자</td><td>현장 연락 담당자 이름</td></tr>
+        <tr><td>연락처</td><td>담당자 전화번호</td></tr>
+        <tr><td>공동 비밀번호</td><td>공동현관 도어락 비밀번호 (있는 경우)</td></tr>
+        <tr><td>세대 비밀번호</td><td>세대 도어락 비밀번호 (있는 경우)</td></tr>
+        <tr><td>메모</td><td>관리자 전달 메모</td></tr>
+      </table>
+
+      <div class="tip"><span class="tip-icon">💡</span><strong>주소 복사</strong> 버튼을 누르면 주소가 클립보드에 복사됩니다. 네이버지도 등에 바로 붙여넣기 가능합니다.</div>
+      <div class="tip"><span class="tip-icon">📞</span>하단 초록 <strong>전화 버튼</strong>을 누르면 담당자에게 바로 전화가 연결됩니다.</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">📎 현장 참고 사진</div>
+      <p style="font-size:13px;color:#64748b;">관리자가 첨부한 현장 참고 사진이 있으면 이 카드가 표시됩니다. 사진을 탭하면 크게 볼 수 있습니다.</p>
+    </div>
+  </div>
+
+  <!-- 4. 업무 보고 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">업무 보고 순서</div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-step">대기</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step active">① 출발</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">② 작업시작</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">③ 작업완료</div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="subsection" style="margin-top:20px;">
+      <div class="subsection-title">① 출발 보고</div>
+      <div class="step-box">
+        <div class="step-row"><span class="step-badge">1</span><span>현장으로 출발할 때 <strong>🚚 출발</strong> 버튼을 탭합니다.</span></div>
+        <div class="step-row"><span class="step-badge">2</span><span><strong>도착 예상 시간</strong>을 확인하고 필요하면 수정합니다. (기본값: 30분 후 반올림)</span></div>
+        <div class="step-row"><span class="step-badge">3</span><span><strong>출발 확인</strong> 버튼을 탭하면 문자가 자동으로 발송되고 상태가 <strong>이동중</strong>으로 바뀝니다.</span></div>
+      </div>
+      <div class="tip"><span class="tip-icon">📋</span><strong>출발 보고 복사</strong> 버튼을 누르면 카카오톡에 붙여넣기 할 수 있는 출발 보고 양식이 복사됩니다.</div>
+      <div class="tip"><span class="tip-icon">💬</span>문자 발송 후 <strong>재발송</strong> 버튼으로 ETA를 수정하여 재발송할 수 있습니다.</div>
+      <div class="warn"><span class="tip-icon">⚠</span>출발을 잘못 눌렀다면 <strong>출발 취소</strong> 버튼으로 되돌릴 수 있습니다.</div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="subsection">
+      <div class="subsection-title">② 작업 시작 보고</div>
+      <div class="step-box">
+        <div class="step-row"><span class="step-badge green">1</span><span>현장 도착 후 작업을 시작할 때 <strong>도착 · 작업시작</strong> 버튼을 탭합니다.</span></div>
+        <div class="step-row"><span class="step-badge green">2</span><span>(선택) <strong>예상 물량</strong>과 <strong>예상 작업시간</strong>을 입력합니다.</span></div>
+        <div class="step-row"><span class="step-badge green">3</span><span>(선택) <strong>현장 사진</strong>을 찍어 첨부합니다.</span></div>
+        <div class="step-row"><span class="step-badge green">4</span><span><strong>작업시작</strong> 버튼을 탭하면 작업 시작 시간이 기록되고 상태가 <strong>진행중</strong>으로 바뀝니다.</span></div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="subsection">
+      <div class="subsection-title">③ 작업 완료 보고</div>
+      <div class="step-box">
+        <div class="step-row"><span class="step-badge amber">1</span><span>작업이 끝나면 <strong>완료 사진</strong>을 찍어 첨부합니다. (카메라 버튼 또는 갤러리에서 선택)</span></div>
+        <div class="step-row"><span class="step-badge amber">2</span><span><strong>특이사항</strong>이 있으면 입력합니다.</span></div>
+        <div class="step-row"><span class="step-badge amber">3</span><span><strong>최종 물량</strong>을 확인하고 입력합니다.</span></div>
+        <div class="step-row"><span class="step-badge amber">4</span><span><strong>작업완료</strong> 버튼을 탭합니다. 상태가 <strong>완료</strong>로 바뀌고 종료 시간이 기록됩니다.</span></div>
+      </div>
+      <div class="tip"><span class="tip-icon">📋</span><strong>작업 보고 복사</strong> 버튼을 누르면 아래 형식의 작업보고서가 클립보드에 복사됩니다.</div>
+      <div class="mock-form" style="font-size:12px;font-family:monospace;line-height:1.8;color:#1e293b;">
+        [FN퍼니 작업보고]<br>
+        작업날짜: 26.3.25<br>
+        업체명: 한샘에이치(한준현)<br>
+        작업인원: 2인 김일석<br>
+        현장주소: 안양시 안양천서로 289...<br>
+        작업시간: 09:30 - 11:45 (2시간 15분)<br>
+        성상: 혼합<br>
+        폐기물양: 2톤<br>
+        특이사항: -<br>
+        담당자 확인 완료
+      </div>
+      <div class="warn"><span class="tip-icon">⚠</span>완료 후 수정이 필요하면 <strong>수정</strong> 버튼을 눌러 사진·특이사항·물량을 변경할 수 있습니다.</div>
+    </div>
+  </div>
+
+  <!-- 5. 처리 탭 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">처리 탭 — 처리비 보고</div>
+    </div>
+
+    <p style="margin-bottom:14px;color:#64748b;font-size:13px;">폐기물 처리장 방문 후 처리비 내역을 보고합니다. 하단 탭에서 <strong>🚛 처리</strong>를 탭하면 이동합니다.</p>
+
+    <div class="subsection">
+      <div class="subsection-title">📝 처리비 보고 입력 항목</div>
+      <table>
+        <tr><th>항목</th><th>설명</th><th>기본값</th></tr>
+        <tr><td>날짜</td><td>처리한 날짜</td><td>오늘 날짜 자동 입력</td></tr>
+        <tr><td>처리시간</td><td>처리장 방문 시간</td><td>직접 입력</td></tr>
+        <tr><td>처리장</td><td>처리장 이름 선택</td><td>HK (강서천일 / 기타 선택 가능, 기타는 직접입력)</td></tr>
+        <tr><td>처리비용</td><td>납부한 처리비</td><td>직접 입력</td></tr>
+        <tr><td>적재량</td><td>처리한 물량</td><td>직접 입력</td></tr>
+        <tr><td>차량번호</td><td>본인 차량번호</td><td>등록된 차량번호 자동 입력</td></tr>
+        <tr><td>상성</td><td>폐기물 종류</td><td>혼합 (목재 / 철재 / 플라스틱 / 기타 선택 가능)</td></tr>
+        <tr><td>특이사항</td><td>메모</td><td>선택 입력</td></tr>
+        <tr><td>사진</td><td>처리 영수증 등 사진</td><td>+ 사진 추가 버튼</td></tr>
+      </table>
+
+      <div class="step-box" style="margin-top:14px;">
+        <div class="step-row"><span class="step-badge navy">1</span><span>항목을 입력합니다.</span></div>
+        <div class="step-row"><span class="step-badge navy">2</span><span>필요하면 <strong>사진 추가</strong>로 영수증 사진을 첨부합니다.</span></div>
+        <div class="step-row"><span class="step-badge navy">3</span><span><strong>보고 제출</strong> 버튼을 탭합니다.</span></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">📅 내 처리 기록 조회</div>
+      <p style="font-size:13px;color:#64748b;">보고 양식 아래에 날짜별 처리 기록이 표시됩니다. 날짜 선택기로 과거 기록도 확인할 수 있습니다.</p>
+    </div>
+  </div>
+
+  <!-- 6. 기타 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">기타 기능</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🔒 비밀번호 변경</div>
+      <div class="step-box">
+        <div class="step-row"><span class="step-badge">1</span><span>상단 헤더의 <strong>🔒 비밀번호</strong> 버튼을 탭합니다.</span></div>
+        <div class="step-row"><span class="step-badge">2</span><span>현재 비밀번호, 새 비밀번호 (4자 이상), 새 비밀번호 확인을 입력합니다.</span></div>
+        <div class="step-row"><span class="step-badge">3</span><span><strong>변경</strong> 버튼을 탭합니다.</span></div>
+      </div>
+      <div class="warn"><span class="tip-icon">⚠</span>비밀번호를 잊어버린 경우 관리자에게 초기화를 요청하세요.</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🚪 로그아웃</div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:8px;">두 가지 방법으로 로그아웃할 수 있습니다.</p>
+      <table>
+        <tr><th>방법</th><th>설명</th></tr>
+        <tr><td>헤더 로그아웃 버튼</td><td>우측 상단 로그아웃 버튼 탭 → 즉시 로그아웃</td></tr>
+        <tr><td>뒤로가기 버튼</td><td>스마트폰 뒤로가기 버튼 → 로그아웃 확인 팝업 표시</td></tr>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🔔 앱 알림</div>
+      <table>
+        <tr><th>알림 종류</th><th>내용</th></tr>
+        <tr><td>새 일정 배정</td><td>관리자가 새 일정을 배정했을 때</td></tr>
+        <tr><td>일정 변경</td><td>날짜·시간·주소 등이 변경됐을 때</td></tr>
+        <tr><td>일정 취소</td><td>일정이 취소됐을 때</td></tr>
+        <tr><td>순서 변경</td><td>일정 방문 순서가 바뀌었을 때 (60초 단위)</td></tr>
+      </table>
+      <div class="tip"><span class="tip-icon">💡</span>알림이 오지 않으면 스마트폰 설정에서 해당 앱(브라우저)의 알림 권한이 허용되어 있는지 확인하세요.</div>
+    </div>
+  </div>
+
+  <!-- 7. FAQ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title">자주 묻는 질문</div>
+    </div>
+
+    <div class="step-box" style="margin-bottom:12px;">
+      <div class="step-row"><span class="step-badge purple">Q</span><span style="font-weight:700;">일정이 안 보여요</span></div>
+      <div style="padding-left:48px;font-size:13px;color:#64748b;">상단 날짜 선택기가 오늘 날짜로 되어 있는지 확인하세요. 다른 날짜로 설정되어 있으면 오늘 일정이 보이지 않습니다.</div>
+    </div>
+
+    <div class="step-box" style="margin-bottom:12px;">
+      <div class="step-row"><span class="step-badge purple">Q</span><span style="font-weight:700;">출발 버튼을 잘못 눌렀어요</span></div>
+      <div style="padding-left:48px;font-size:13px;color:#64748b;">일정 상세 화면에서 <strong>출발 취소</strong> 버튼을 눌러 대기 상태로 되돌릴 수 있습니다.</div>
+    </div>
+
+    <div class="step-box" style="margin-bottom:12px;">
+      <div class="step-row"><span class="step-badge purple">Q</span><span style="font-weight:700;">완료 처리 후 사진을 추가하고 싶어요</span></div>
+      <div style="padding-left:48px;font-size:13px;color:#64748b;">완료 상태에서도 <strong>수정</strong> 버튼을 눌러 사진·특이사항·최종물량을 수정할 수 있습니다.</div>
+    </div>
+
+    <div class="step-box" style="margin-bottom:12px;">
+      <div class="step-row"><span class="step-badge purple">Q</span><span style="font-weight:700;">알림이 두 번 와요</span></div>
+      <div style="padding-left:48px;font-size:13px;color:#64748b;">브라우저를 강력 새로고침(Ctrl+Shift+R) 하여 서비스 워커를 최신 버전으로 업데이트하면 해결됩니다.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-row"><span class="step-badge purple">Q</span><span style="font-weight:700;">처리비 보고를 잘못 제출했어요</span></div>
+      <div style="padding-left:48px;font-size:13px;color:#64748b;">잘못된 건은 관리자에게 삭제 요청을 해주세요.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:32px 0 8px;color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;">
+    FN 퍼니 · 동태관리 앱 기사 사용설명서 · 문의: 관리자
+  </div>
+
+</div>
+
+<div style="text-align:center;padding:16px;background:#f1f5f9;">
+  <button onclick="window.print()" style="background:#1b3a5c;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">
+    🖨 PDF로 저장하기
+  </button>
+  <div style="margin-top:8px;font-size:12px;color:#64748b;">인쇄 → 대상: PDF로 저장</div>
+</div>
+</body>
+</html>

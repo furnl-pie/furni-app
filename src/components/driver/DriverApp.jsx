@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import DriverDetail from './DriverDetail'
 import DisposalTab from './DisposalTab'
+import HelpModal from './HelpModal'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, border, muted, textC, iStyle, today } from '../../constants/styles'
@@ -9,6 +10,7 @@ import { userName } from '../../utils/users'
 export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [view, setView]        = useState('list')
   const [tab, setTab]          = useState('schedule') // 'schedule' | 'disposal'
+  const [showHelp, setHelp]    = useState(false)
   const [selectedId, setSelId] = useState(null)
   const [filterDate, setFD]    = useState(today)
   const [showPwModal, setPwModal] = useState(false)
@@ -139,6 +141,10 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
             </div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
+            <button onClick={()=>setHelp(true)}
+              style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 10px', fontSize:14, fontWeight:700, cursor:'pointer', lineHeight:1 }}>
+              ?
+            </button>
             <button onClick={()=>setPwModal(true)}
               style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 12px', fontSize:10, cursor:'pointer' }}>
               🔒 비밀번호
@@ -212,6 +218,8 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
         })}
       </div>
       )}
+
+      {showHelp && <HelpModal onClose={()=>setHelp(false)}/>}
 
       {showPwModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
