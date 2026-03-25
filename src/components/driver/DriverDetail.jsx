@@ -112,9 +112,14 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
     setDepartModal(true)
   }
 
+  const openSms = (phone, message) => {
+    if (phone) window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`
+  }
+
   const confirmDepart = () => {
     onUpdate({ status:'이동중', depart_time: nowTime(), eta, sms_sent: true })
     setDepartModal(false)
+    openSms(schedule.cphone, smsPreview)
   }
 
   const openWorkModal = () => {
@@ -156,6 +161,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
   const confirmResend = () => {
     onUpdate({ eta, sms_sent: true })
     setResendModal(false)
+    openSms(schedule.cphone, smsPreview)
   }
 
   const cancelDepart = () => {
@@ -674,7 +680,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
             <div style={{ marginBottom:20 }}>
               <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
                 💬 현장 담당자 발송 문자
-                <span style={{ background:'#dcfce7', color:green, fontSize:12, padding:'2px 8px', borderRadius:4, fontWeight:700 }}>자동 발송</span>
+                <span style={{ background:'#dcfce7', color:green, fontSize:12, padding:'2px 8px', borderRadius:4, fontWeight:700 }}>문자앱 연결</span>
               </div>
               <div style={{ background:'#f0fdf4', border:`1px solid #bbf7d0`, borderRadius:10, padding:'12px 14px' }}>
                 <div style={{ fontSize:13, color:'#166534', lineHeight:1.85, whiteSpace:'pre-wrap', fontFamily:'monospace' }}>{smsPreview}</div>
@@ -683,7 +689,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
             </div>
             <div style={{ display:'flex', gap:10 }}>
               <Btn onClick={()=>setDepartModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
-              <Btn onClick={confirmDepart} color={blue} style={{ flex:2, fontSize:16 }}>출발 · 문자 발송</Btn>
+              <Btn onClick={confirmDepart} color={blue} style={{ flex:2, fontSize:16 }}>출발 · 문자앱 열기</Btn>
             </div>
           </div>
         </div>
@@ -840,7 +846,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
             </div>
             <div style={{ display:'flex', gap:10 }}>
               <Btn onClick={()=>setResendModal(false)} outline color={muted} style={{ flex:1, fontSize:15 }}>취소</Btn>
-              <Btn onClick={confirmResend} color={green} style={{ flex:2, fontSize:16 }}>발송</Btn>
+              <Btn onClick={confirmResend} color={green} style={{ flex:2, fontSize:16 }}>문자앱 열기</Btn>
             </div>
           </div>
         </div>
