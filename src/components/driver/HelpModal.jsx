@@ -160,7 +160,7 @@ export default function HelpModal({ onClose }) {
                     ['차량번호', '등록된 번호 자동 입력'],
                     ['상성', '혼합(기본) / 목재 / 왈가닥 / 기타'],
                     ['특이사항', '선택 입력'],
-                    ['사진', '영수증 등 첨부 (선택)'],
+                    ['사진', '처리 전 차량 사진 필수 첨부'],
                   ].map(([k, v], i) => (
                     <div key={k} style={{ display:'flex', gap:10, padding:'8px 12px', borderBottom: i < 8 ? `1px solid ${border}` : 'none', background: i%2===0 ? '#fff' : '#f8fafc' }}>
                       <span style={{ fontWeight:600, color:textC, fontSize:13, minWidth:72 }}>{k}</span>

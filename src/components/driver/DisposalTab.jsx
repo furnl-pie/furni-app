@@ -101,6 +101,10 @@ export default function DisposalTab({ user }) {
   }
 
   const submit = async () => {
+    if (form.photos.length === 0) {
+      alert('처리 전 차량 사진을 첨부해주세요.')
+      return
+    }
     setSubmitting(true)
     try {
       const finalSite = form.site === '기타' ? (form.site_custom || '기타') : form.site
@@ -215,7 +219,10 @@ export default function DisposalTab({ user }) {
         </div>
 
         <div style={{ marginBottom:14 }}>
-          <div style={{ fontSize:11, color:muted, marginBottom:6 }}>사진</div>
+          <div style={{ fontSize:11, marginBottom:6, display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ color:muted }}>처리 전 차량 사진</span>
+            <span style={{ color:'#dc2626', fontWeight:700, fontSize:10 }}>필수</span>
+          </div>
           {form.photos.length > 0 && (
             <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:8 }}>
               {form.photos.map((p, i) => (
@@ -230,8 +237,8 @@ export default function DisposalTab({ user }) {
             </div>
           )}
           <button onClick={()=>fileRef.current?.click()}
-            style={{ background:'#f8fafc', border:`1.5px dashed ${border}`, borderRadius:8, padding:'8px 0', fontSize:13, color:muted, cursor:'pointer', width:'100%' }}>
-            + 사진 추가
+            style={{ background:'#f8fafc', border:`1.5px dashed ${form.photos.length===0?'#dc2626':border}`, borderRadius:8, padding:'8px 0', fontSize:13, color:form.photos.length===0?'#dc2626':muted, cursor:'pointer', width:'100%' }}>
+            + 사진 첨부 (필수)
           </button>
           <input ref={fileRef} type="file" accept="image/*" multiple onChange={addPhotos} style={{ display:'none' }}/>
         </div>
