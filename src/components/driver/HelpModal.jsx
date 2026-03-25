@@ -73,10 +73,13 @@ export default function HelpModal({ onClose }) {
               <Section title="📱 화면 구성">
                 <div style={{ fontSize:13, color:textC, lineHeight:1.8 }}>
                   <div style={{ marginBottom:6 }}><strong>상단 헤더</strong> — 이름, ⚙ 설정 (차량번호·비밀번호·알림), 로그아웃</div>
+                  <div style={{ marginBottom:6 }}><strong>? 버튼</strong> — 이 사용설명서 (앱 내에서 언제든 확인 가능)</div>
                   <div style={{ marginBottom:6 }}><strong>날짜 선택기</strong> — 일정 탭에서만 표시, 날짜별 일정 조회</div>
                   <div style={{ marginBottom:6 }}><strong>탭 바</strong> — 📋 일정 / 🚛 처리 전환</div>
                 </div>
               </Section>
+
+              <Tip>처음 로그인 후 <strong>⚙ 설정</strong>에서 차량번호를 등록하세요. 처리 탭 보고 시 자동으로 입력됩니다.</Tip>
 
               <Section title="📋 일정 목록">
                 <div style={{ fontSize:13, color:muted, marginBottom:10 }}>상단 날짜 선택기로 날짜를 바꾸면 해당 날짜 일정만 보입니다.</div>
