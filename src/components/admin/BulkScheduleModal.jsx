@@ -330,7 +330,8 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
                         {[
                           ['date','날짜 *'],['time','진입시간 *'],['address','주소 *'],
                           ['waste','폐기물양 *'],['cname','업체명/담당자 *'],['cphone','전화번호 *'],
-                          ['memo','비고'],['driver_hint','담당 기사명'],['driver_note','특이사항'],
+                          ['door_pw','공동 비밀번호'],['unit_pw','세대 비밀번호'],['memo','비고'],
+                          ['driver_hint','담당 기사명'],['driver_note','특이사항'],
                         ].map(([field, label])=>(
                           <div key={field}>
                             <div style={{ fontSize:11, fontWeight:600, color:muted, marginBottom:4 }}>{label}</div>
@@ -407,7 +408,7 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
                     <thead>
                       <tr style={{ background:'#f8fafc', borderBottom:`1px solid ${border}`, position:'sticky', top:0, zIndex:1 }}>
                         <th style={{ padding:'10px 10px', textAlign:'center', color:muted, fontWeight:600, width:36 }}>#</th>
-                        {[['날짜 *',90],['시간 *',76],['주소 *',200],['폐기물량 *',80],['업체/담당자 *',90],['연락처 *',110],['메모',110],['특이사항',110]].map(([h,w])=>(
+                        {[['날짜 *',90],['시간 *',76],['주소 *',200],['폐기물량 *',80],['업체/담당자 *',90],['연락처 *',110],['공동PW',90],['세대PW',90],['메모',110],['특이사항',110]].map(([h,w])=>(
                           <th key={h} style={{ padding:'10px 8px', textAlign:'left', color:muted, fontWeight:600, minWidth:w, whiteSpace:'nowrap' }}>{h}</th>
                         ))}
                         <th style={{ padding:'10px 8px', width:60 }}/>
@@ -423,6 +424,8 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
                           <td style={{ padding:'6px 6px' }}><input value={r.waste}   onChange={e=>setRow(r._id,'waste',e.target.value)}   placeholder="2톤"    style={is}/></td>
                           <td style={{ padding:'6px 6px' }}><input value={r.cname}  onChange={e=>setRow(r._id,'cname',e.target.value)}  placeholder="이름"   style={is}/></td>
                           <td style={{ padding:'6px 6px' }}><input value={r.cphone} onChange={e=>setRow(r._id,'cphone',e.target.value)} placeholder="010-0000-0000" style={is}/></td>
+                          <td style={{ padding:'6px 6px' }}><input value={r.door_pw||''} onChange={e=>setRow(r._id,'door_pw',e.target.value)} placeholder="공동 비밀번호" style={is}/></td>
+                          <td style={{ padding:'6px 6px' }}><input value={r.unit_pw||''} onChange={e=>setRow(r._id,'unit_pw',e.target.value)} placeholder="세대 비밀번호" style={is}/></td>
                           <td style={{ padding:'6px 6px' }}><input value={r.memo}   onChange={e=>setRow(r._id,'memo',e.target.value)}   placeholder="비고" style={is}/></td>
                           <td style={{ padding:'6px 6px' }}><input value={r.driver_note||''} onChange={e=>setRow(r._id,'driver_note',e.target.value)} placeholder="특이사항" style={is}/></td>
                           <td style={{ padding:'6px 8px' }}>

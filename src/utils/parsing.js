@@ -42,6 +42,8 @@ export const HEADER_MAP = {
   cphone:      ['전화번호','연락처','전화','핸드폰','phone','tel'],
   waste:       ['폐기물양','폐기물량','폐기물','양','waste'],
   memo:        ['비고','메모','참고','memo','note'],
+  door_pw:     ['공동비밀번호','공동pw','공동패스워드','공동'],
+  unit_pw:     ['세대비밀번호','세대pw','세대패스워드','세대'],
   driver_hint: ['담당자','기사','기사명','driver'],
   driver_note: ['특이사항','비고2','note2'],
 }
