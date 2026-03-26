@@ -217,7 +217,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
               <div style={{ fontSize:11, opacity:.65 }}>관리자</div>
             </div>
           </div>
-          <div style={{ display:'flex', gap:6 }}>
+          <div style={{ display:'flex', flexWrap: isPC ? 'nowrap' : 'wrap', gap:6, justifyContent:'flex-end', maxWidth: isPC ? 'none' : 220 }}>
             <button onClick={()=>setView('photos')}
               style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
               📥 사진
