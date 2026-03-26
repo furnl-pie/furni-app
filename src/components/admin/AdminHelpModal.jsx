@@ -193,7 +193,7 @@ export default function AdminHelpModal({ onClose }) {
                 <div style={{ fontSize:13, color:muted, marginBottom:10 }}>상단 헤더의 <strong>🚛 처리</strong> 버튼으로 진입합니다.</div>
                 <Row label="날짜 필터" desc="날짜별 처리 기록 조회. 시간 오름차순 정렬."/>
                 <Row label="합계" desc="해당 날짜 처리비용 합계 자동 계산"/>
-                <Row label="수정 버튼" desc="날짜·시간·처리장·비용·적재량·차량번호·상성·메모·사진 수정"/>
+                <Row label="수정 버튼" desc="날짜·시간·처리장·비용·적재량·차량번호·성상·메모·사진 수정"/>
                 <Row label="삭제 버튼" desc="처리 기록 삭제 (확인 팝업 표시)"/>
               </Section>
 

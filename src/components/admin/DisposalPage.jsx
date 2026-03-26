@@ -138,7 +138,7 @@ export default function DisposalPage({ onBack }) {
                 {r.cost       && <div><span style={{ color:muted }}>처리비용: </span>{r.cost}</div>}
                 {r.load       && <div><span style={{ color:muted }}>적재량: </span>{r.load}</div>}
                 {r.car_number && <div><span style={{ color:muted }}>차량번호: </span>{r.car_number}</div>}
-                {r.quality    && <div><span style={{ color:muted }}>상성: </span>{r.quality}</div>}
+                {r.quality    && <div><span style={{ color:muted }}>성상: </span>{r.quality}</div>}
               </div>
               {r.memo && (
                 <div style={{ fontSize:12, color:muted, marginBottom: r.photos?.length ? 8 : 0 }}>{r.memo}</div>
@@ -201,7 +201,7 @@ export default function DisposalPage({ onBack }) {
                   <input value={editForm.car_number} onChange={e=>setF('car_number',e.target.value)} placeholder="12가3456" style={iStyle}/>
                 </div>
                 <div>
-                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>상성</div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>성상</div>
                   <select value={editForm.quality} onChange={e=>setF('quality',e.target.value)} style={iStyle}>
                     {QUALITY_OPTIONS.map(q=><option key={q} value={q}>{q}</option>)}
                   </select>

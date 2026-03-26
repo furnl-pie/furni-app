@@ -199,7 +199,7 @@ export default function DisposalTab({ user }) {
             <input value={form.car_number} onChange={e=>set('car_number',e.target.value)} placeholder="예: 12가3456" style={{ ...iStyle, fontSize:13 }}/>
           </div>
           <div>
-            <div style={{ fontSize:11, color:muted, marginBottom:4 }}>상성</div>
+            <div style={{ fontSize:11, color:muted, marginBottom:4 }}>성상</div>
             <div style={{ position:'relative' }}>
               <select value={form.quality} onChange={e=>set('quality',e.target.value)} style={{ ...iStyle, fontSize:13, paddingRight:30 }}>
                 {QUALITY_OPTIONS.map(q => <option key={q} value={q}>{q}</option>)}
@@ -281,7 +281,7 @@ export default function DisposalTab({ user }) {
               {r.cost        && <span>💰 {r.cost}</span>}
               {r.load        && <span>📦 {r.load}</span>}
               {r.car_number  && <span>🚛 {r.car_number}</span>}
-              {r.quality     && <span>상성: {r.quality}</span>}
+              {r.quality     && <span>성상: {r.quality}</span>}
             </div>
             {r.memo && <div style={{ fontSize:12, color:muted, marginBottom:r.photos?.length?6:0 }}>{r.memo}</div>}
             {r.photos?.length > 0 && (
