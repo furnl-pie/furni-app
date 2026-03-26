@@ -84,9 +84,13 @@ export function useAppData() {
   // ── 일정 추가 ─────────────────────────────────────────────────
   const addSchedules = useCallback(async (list) => {
     const batch = writeBatch(db)
+    const photoJobs = [] // 나중에 업로드할 사진 작업
+
     list.forEach(s => {
       const id  = 's' + Date.now() + Math.random().toString(36).slice(2)
       const ref = doc(db, 'schedules', id)
+      // schedule_photos에 base64가 있으면 일단 빈 배열로 저장하고 나중에 업로드
+      const hasBase64Photos = s.schedule_photos?.some(p => p?.startsWith('data:'))
       batch.set(ref, {
         photos: [], schedule_photos: [], driver_note: '',
         status: '대기', sms_sent: false,
@@ -94,9 +98,23 @@ export function useAppData() {
         eta: null, est_waste: '', est_duration: '', final_waste: '',
         createdAt: serverTimestamp(),
         ...s, id,
+        schedule_photos: hasBase64Photos ? [] : (s.schedule_photos || []),
       })
+      if (hasBase64Photos) {
+        photoJobs.push({ id, date: s.date, photos: s.schedule_photos })
+      }
     })
     await batch.commit()
+
+    // 참고사진 Cloudinary 업로드 (폴더 업로드 시)
+    for (const job of photoJobs) {
+      const folder = `dispatch/${job.date}/${job.id}`
+      const urls = await uploadPhotos(job.photos, folder)
+      await updateDoc(doc(db, 'schedules', job.id), {
+        schedule_photos: urls,
+        updatedAt: serverTimestamp(),
+      })
+    }
   }, [])
 
   // ── 일정 수정 (사진은 Cloudinary 업로드 후 URL 저장) ──────────

@@ -2,14 +2,23 @@ import { useState, useRef } from 'react'
 import { Btn } from '../common/ui'
 import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow } from '../../utils/parsing'
 import { navy, blue, green, amber, red, border, muted, textC, DRIVER_COLORS } from '../../constants/styles'
+import { resizeImage } from '../../utils/image'
 
 export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, onUpdate, onClose }) {
   const [step, setStep]       = useState(1)
-  const [inputMode, setInputMode] = useState('paste') // 'paste' | 'kakao' | 'manual'
+  const [inputMode, setInputMode] = useState('paste') // 'paste' | 'kakao' | 'manual' | 'folder'
   const [rows, setRows]       = useState([newRow()])
   const [assigns, setAssigns] = useState({})
   const [coAssigns, setCoAssigns] = useState({})
   const [dupeConflict, setDupeConflict] = useState(null) // { dupes, newOnes }
+
+  // ── 폴더 업로드 상태 ────────────────────────────────────────────
+  const [folderRows,    setFolderRows]    = useState([])
+  const [folderMsg,     setFolderMsg]     = useState('')
+  const [folderLoading, setFolderLoading] = useState(false)
+  const [folderStats,   setFolderStats]   = useState(null)
+  const [isDragOver,    setIsDragOver]    = useState(false)
+  const folderInputRef = useRef(null)
 
   const [pasteRaw, setPasteRaw]   = useState('')
   const [parsed, setParsed]       = useState(null)
@@ -51,6 +60,136 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
     setParseMsg(looksLikeHeader
       ? `✅ ${data.length}행 감지 · 헤더 자동 인식 · 컬럼 매핑 확인 후 가져오기`
       : `⚠️ ${data.length}행 감지 · 헤더 미인식 → 열 순서(날짜/시간/주소/폐기물양/업체명/연락처/메모)로 자동 배정`)
+  }
+
+  // ── 폴더 파일 처리 ──────────────────────────────────────────────
+  const collectFilesFromEntry = (entry, pathPrefix) => new Promise(resolve => {
+    if (entry.isFile) {
+      entry.getFile(file => resolve([{ file, relativePath: pathPrefix + file.name }]))
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader()
+      let all = []
+      const read = () => reader.readEntries(async entries => {
+        if (!entries.length) return resolve(all)
+        const nested = await Promise.all(entries.map(e => collectFilesFromEntry(e, pathPrefix + entry.name + '/')))
+        all = all.concat(...nested)
+        read()
+      })
+      read()
+    } else {
+      resolve([])
+    }
+  })
+
+  const processFolderFiles = async (filesWithPaths) => {
+    setFolderLoading(true)
+    setFolderMsg('')
+    setFolderRows([])
+    setFolderStats(null)
+
+    try {
+      const isImg = n => /\.(jpg|jpeg|png|gif|webp|heic|bmp)$/i.test(n)
+      const isTxt = n => n.toLowerCase().endsWith('.txt')
+
+      // 서브폴더별로 그룹화 (relativePath: "root/sub/file.ext" or "root/file.ext")
+      const groups = {}
+      for (const { file, relativePath } of filesWithPaths) {
+        const parts = relativePath.split('/')
+        const subfolder = parts.length >= 3 ? parts[1] : '__root__'
+        if (!groups[subfolder]) groups[subfolder] = { txts: [], imgs: [] }
+        if (isTxt(file.name)) groups[subfolder].txts.push(file)
+        else if (isImg(file.name)) groups[subfolder].imgs.push(file)
+      }
+
+      const readText = file => new Promise(resolve => {
+        const reader = new FileReader()
+        reader.onload = e => resolve(e.target.result)
+        reader.readAsText(file, 'utf-8')
+      })
+
+      // 루트 이미지 (모든 일정에 공유)
+      const rootPhotos = []
+      for (const imgFile of (groups['__root__']?.imgs || [])) {
+        try { rootPhotos.push(await resizeImage(imgFile)) } catch {}
+      }
+
+      let allRows = []
+      let totalTxts = 0, totalImgs = rootPhotos.length
+
+      // 각 그룹(서브폴더) 처리
+      for (const [groupName, { txts, imgs }] of Object.entries(groups)) {
+        const groupRows = []
+        for (const txtFile of txts) {
+          const text = await readText(txtFile)
+          const parsed = parseKakaoChat(text)
+          groupRows.push(...parsed)
+          totalTxts++
+        }
+
+        const groupPhotos = []
+        if (groupName !== '__root__') {
+          for (const imgFile of imgs) {
+            try { groupPhotos.push(await resizeImage(imgFile)); totalImgs++ } catch {}
+          }
+        }
+
+        allRows.push(...groupRows.map(r => ({ ...r, _groupPhotos: groupPhotos })))
+      }
+
+      if (!allRows.length) {
+        setFolderMsg('⚠️ txt 파일에서 일정을 찾을 수 없습니다. 카카오톡 형식인지 확인해주세요.')
+        setFolderLoading(false)
+        return
+      }
+
+      // 루트 이미지를 모든 일정에 추가
+      const finalRows = allRows.map(r => ({
+        ...r,
+        _photos: [...(r._groupPhotos || []), ...rootPhotos],
+      }))
+
+      setFolderRows(finalRows)
+      setFolderStats({ schedules: finalRows.length, txts: totalTxts, imgs: totalImgs, shared: rootPhotos.length })
+      setFolderMsg(`✅ ${finalRows.length}건 파싱 완료`)
+    } catch (e) {
+      setFolderMsg('⚠️ 오류: ' + e.message)
+    }
+    setFolderLoading(false)
+  }
+
+  const handleFolderInput = async e => {
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+    const filesWithPaths = files.map(f => ({ file: f, relativePath: f.webkitRelativePath || f.name }))
+    await processFolderFiles(filesWithPaths)
+    e.target.value = ''
+  }
+
+  const handleFolderDrop = async e => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const items = Array.from(e.dataTransfer.items).filter(i => i.webkitGetAsEntry)
+    const nested = await Promise.all(items.map(item => collectFilesFromEntry(item.webkitGetAsEntry(), '')))
+    const all = nested.flat()
+    if (all.length) await processFolderFiles(all)
+  }
+
+  const applyFolder = () => {
+    if (!folderRows.length) return
+    const autoAssign = {}, autoCoAssign = {}
+    folderRows.forEach(r => {
+      if (r.driver_hint) {
+        const parts = r.driver_hint.split(/[,，]/)
+        const main = findDriver(parts[0])
+        if (main) autoAssign[r._id] = main.id
+        if (parts[1]) { const co = findDriver(parts[1]); if (co) autoCoAssign[r._id] = co.id }
+      }
+    })
+    setRows(folderRows)
+    setAssigns(autoAssign)
+    setCoAssigns(autoCoAssign)
+    setFolderMsg('')
+    setStep(2)
   }
 
   const handleKakaoParse = (text) => {
@@ -160,15 +299,20 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
   const setAssign = (_id, v) => setAssigns(prev=>({...prev,[_id]:v}))
   const assignAll = dId => { const map={}; rows.forEach(r=>{ map[r._id]=dId }); setAssigns(map) }
 
-  const buildList = () => rows.map((r, i) => ({
-    ...r,
-    order:          i,
-    driver_id:      assigns[r._id] || null,
-    co_driver_id:   coAssigns[r._id] || null,
-    driver_note:    r.driver_note || '',
-    status:'대기', start_time:null, end_time:null,
-    eta:null, sms_sent:false, photos:[],
-  }))
+  const buildList = () => rows.map((r, i) => {
+    // eslint-disable-next-line no-unused-vars
+    const { _photos, _groupPhotos, ...rest } = r
+    return {
+      ...rest,
+      order:          i,
+      driver_id:      assigns[r._id] || null,
+      co_driver_id:   coAssigns[r._id] || null,
+      driver_note:    r.driver_note || '',
+      status:'대기', start_time:null, end_time:null,
+      eta:null, sms_sent:false, photos:[],
+      schedule_photos: _photos || [],
+    }
+  })
 
   const submit = () => {
     const list = buildList()
@@ -267,10 +411,10 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
         {step===1 && (
           <>
-            <div style={{ display:'flex', borderBottom:`1px solid ${border}`, flexShrink:0 }}>
-              {[['paste','📊 엑셀 붙여넣기'],['kakao','💬 카카오톡'],['manual','✏️ 직접 입력']].map(([m,l])=>(
+            <div style={{ display:'flex', borderBottom:`1px solid ${border}`, flexShrink:0, overflowX:'auto' }}>
+              {[['paste','📊 엑셀 붙여넣기'],['kakao','💬 카카오톡'],['folder','📁 폴더 업로드'],['manual','✏️ 직접 입력']].map(([m,l])=>(
                 <button key={m} onClick={()=>setInputMode(m)}
-                  style={{ padding:'10px 18px', fontSize:13, fontWeight:600, border:'none', borderBottom:`2.5px solid ${inputMode===m?blue:'transparent'}`, color:inputMode===m?blue:muted, background:'none', cursor:'pointer' }}>
+                  style={{ padding:'10px 18px', fontSize:13, fontWeight:600, border:'none', borderBottom:`2.5px solid ${inputMode===m?blue:'transparent'}`, color:inputMode===m?blue:muted, background:'none', cursor:'pointer', whiteSpace:'nowrap' }}>
                   {l}
                 </button>
               ))}
@@ -325,6 +469,114 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
                           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                             <span style={{ fontWeight:700, color:navy }}>{i+1}. {r.cname}</span>
                             <span style={{ fontFamily:'monospace', color:blue, fontWeight:600 }}>{r.date} {r.time}</span>
+                          </div>
+                          <div style={{ color:textC, marginBottom:2 }}>{r.address}</div>
+                          <div style={{ color:muted, display:'flex', gap:12 }}>
+                            {r.waste && <span>폐기물: {r.waste}</span>}
+                            <span>{r.cphone}</span>
+                          </div>
+                          {r.memo && <div style={{ color:muted, fontSize:11, marginTop:2 }}>메모: {r.memo}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {inputMode==='folder' && (
+              <div style={{ flex:1, overflowY:'auto', padding:20 }}>
+                <input
+                  ref={folderInputRef}
+                  type="file"
+                  webkitdirectory=""
+                  multiple
+                  style={{ display:'none' }}
+                  onChange={handleFolderInput}
+                />
+
+                {/* 드래그&드롭 + 클릭 영역 */}
+                <div
+                  onClick={() => folderInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
+                  onDragLeave={() => setIsDragOver(false)}
+                  onDrop={handleFolderDrop}
+                  style={{
+                    border: `2px dashed ${isDragOver ? blue : border}`,
+                    borderRadius: 12,
+                    padding: '32px 20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    background: isDragOver ? '#eff6ff' : '#fafafa',
+                    marginBottom: 16,
+                    transition: 'all .15s',
+                  }}>
+                  {folderLoading ? (
+                    <div style={{ color: blue, fontSize: 14 }}>⏳ 파일 처리 중...</div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>📁</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: textC, marginBottom: 4 }}>폴더를 여기에 드래그하거나 클릭해서 선택</div>
+                      <div style={{ fontSize: 12, color: muted }}>txt 파일 → 일정 파싱 · 이미지 파일 → 참고사진 자동 연결</div>
+                    </>
+                  )}
+                </div>
+
+                {/* 사용 안내 */}
+                <div style={{ background:'#f0fdf4', border:`1px solid #86efac`, borderRadius:10, padding:'10px 14px', marginBottom:14, fontSize:12, color:'#166534', lineHeight:1.8 }}>
+                  <div style={{ fontWeight:700, marginBottom:4 }}>폴더 구조 예시</div>
+                  <div style={{ fontFamily:'monospace', fontSize:11, whiteSpace:'pre', background:'#fff', borderRadius:6, padding:'8px 10px', border:`1px solid #bbf7d0` }}>{`업로드폴더/
+├── 일정.txt          → 일정 파싱 (카카오톡 형식)
+├── 공유사진.jpg       → 모든 일정 참고사진 (루트 이미지)
+├── 업체A/
+│   ├── 안내.txt      → 업체A 일정 파싱
+│   └── 현장.jpg      → 업체A 일정 참고사진
+└── 업체B/
+    └── 현장.jpg      → 업체B 일정 참고사진`}</div>
+                  <div style={{ marginTop:6, fontSize:11 }}>• 루트 이미지 → 모든 일정 공유 참고사진&nbsp;&nbsp;• 서브폴더 이미지 → 해당 폴더 일정에만 연결</div>
+                </div>
+
+                {/* 파싱 결과 메시지 */}
+                {folderMsg && (
+                  <div style={{ marginBottom:12, padding:'8px 12px', borderRadius:8, background:folderRows.length>0?'#f0fdf4':'#fef2f2', border:`1px solid ${folderRows.length>0?'#86efac':'#fca5a5'}`, fontSize:13, color:folderRows.length>0?'#166534':red, fontWeight:500 }}>
+                    {folderMsg}
+                  </div>
+                )}
+
+                {/* 통계 */}
+                {folderStats && (
+                  <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap' }}>
+                    {[
+                      [`📄 txt 파일`, `${folderStats.txts}개`],
+                      [`🖼️ 이미지`, `${folderStats.imgs}장`],
+                      ...(folderStats.shared > 0 ? [[`🔗 공유 사진`, `${folderStats.shared}장`]] : []),
+                      [`📋 파싱된 일정`, `${folderStats.schedules}건`],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ background:'#fff', border:`1px solid ${border}`, borderRadius:8, padding:'6px 14px', fontSize:12 }}>
+                        <span style={{ color:muted }}>{label}: </span>
+                        <span style={{ fontWeight:700, color:navy }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 파싱 결과 미리보기 */}
+                {folderRows.length > 0 && (
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8 }}>파싱 결과 미리보기</div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:300, overflowY:'auto' }}>
+                      {folderRows.map((r, i) => (
+                        <div key={r._id} style={{ background:'#fff', border:`1px solid ${border}`, borderRadius:8, padding:'10px 12px', fontSize:12 }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4, flexWrap:'wrap', gap:4 }}>
+                            <span style={{ fontWeight:700, color:navy }}>{i+1}. {r.cname}</span>
+                            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                              {r._photos?.length > 0 && (
+                                <span style={{ background:'#eff6ff', color:blue, borderRadius:12, padding:'2px 8px', fontSize:11, fontWeight:600 }}>
+                                  🖼️ {r._photos.length}장
+                                </span>
+                              )}
+                              <span style={{ fontFamily:'monospace', color:blue, fontWeight:600 }}>{r.date} {r.time}</span>
+                            </div>
                           </div>
                           <div style={{ color:textC, marginBottom:2 }}>{r.address}</div>
                           <div style={{ color:muted, display:'flex', gap:12 }}>
@@ -497,10 +749,15 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
               <div style={{ display:'flex', gap:10, alignItems:'center' }}>
                 {inputMode==='manual' && <span style={{ fontSize:13, color:muted }}>총 {rows.length}건</span>}
                 {inputMode==='kakao'  && kakaoRows.length>0 && <span style={{ fontSize:13, color:muted }}>{kakaoRows.length}건 파싱됨</span>}
+                {inputMode==='folder' && folderRows.length>0 && <span style={{ fontSize:13, color:muted }}>{folderRows.length}건 파싱됨</span>}
                 <Btn onClick={onClose} outline color={muted} style={{ padding:'9px 16px' }}>취소</Btn>
                 {inputMode==='kakao' ? (
                   <Btn onClick={applyKakao} disabled={kakaoRows.length===0} style={{ padding:'9px 20px' }}>
                     가져오기 ({kakaoRows.length}건) →
+                  </Btn>
+                ) : inputMode==='folder' ? (
+                  <Btn onClick={applyFolder} disabled={folderRows.length===0||folderLoading} style={{ padding:'9px 20px' }}>
+                    {folderLoading ? '처리 중...' : `가져오기 (${folderRows.length}건) →`}
                   </Btn>
                 ) : (
                   <Btn onClick={goStep2} disabled={inputMode==='paste'&&!parsed&&rows.length===1&&!rows[0].address} style={{ padding:'9px 20px' }}>
