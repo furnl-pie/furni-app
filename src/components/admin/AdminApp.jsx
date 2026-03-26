@@ -6,6 +6,7 @@ import BulkScheduleModal from './BulkScheduleModal'
 import DriverMgrModal from './DriverMgrModal'
 import AdminSettingsModal from './AdminSettingsModal'
 import AdminHelpModal from './AdminHelpModal'
+import PhotoDownloadPage from './PhotoDownloadPage'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, today, getDriverSortKey } from '../../constants/styles'
@@ -24,7 +25,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
 
   // 청구/처리 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
   useEffect(() => {
-    if (view !== 'billing' && view !== 'disposal') return
+    if (view !== 'billing' && view !== 'disposal' && view !== 'photos') return
     window.history.pushState({ subview: true }, '')
     const handler = () => setView('list')
     window.addEventListener('popstate', handler)
@@ -195,6 +196,9 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   if (view==='disposal')
     return <DisposalPage onBack={()=>setView('list')}/>
 
+  if (view==='photos')
+    return <PhotoDownloadPage schedules={schedules} users={users} onBack={()=>setView('list')}/>
+
   if (view==='detail' && selected)
     return <AdminDetail schedule={selected} onUpdate={p=>onUpdate(selected.id,p)} onBack={()=>setView('list')} drivers={drivers}/>
 
@@ -212,6 +216,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             </div>
           </div>
           <div style={{ display:'flex', gap:6 }}>
+            <button onClick={()=>setView('photos')}
+              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              📥 사진
+            </button>
             <button onClick={()=>setView('disposal')}
               style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
               🚛 처리

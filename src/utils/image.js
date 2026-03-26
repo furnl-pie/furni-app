@@ -89,6 +89,23 @@ async function srcToBlob(src, filename) {
   return new Blob([u8], { type: mime })
 }
 
+// ── 기존 dirHandle에 폴더 계층 만들어 저장 (일괄 다운로드용) ────────
+export async function downloadPhotosToDir(rootHandle, photos, subFolders = [], prefix = '사진') {
+  let dirHandle = rootHandle
+  for (const name of subFolders) {
+    const safeName = name.replace(/[/\\:*?"<>|]/g, '_').slice(0, 60)
+    if (safeName) dirHandle = await dirHandle.getDirectoryHandle(safeName, { create: true })
+  }
+  for (let i = 0; i < photos.length; i++) {
+    const filename = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
+    const blob = await srcToBlob(photos[i], filename)
+    const fileHandle = await dirHandle.getFileHandle(filename, { create: true })
+    const writable = await fileHandle.createWritable()
+    await writable.write(blob)
+    await writable.close()
+  }
+}
+
 // ── 사진 일괄 다운로드 ─────────────────────────────────────────────
 // subFolders: ['기사이름', '현장주소'] 형태로 전달하면 폴더 계층 생성
 export async function downloadAllPhotos(photos, prefix = '완료사진', subFolders = []) {
