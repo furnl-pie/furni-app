@@ -116,7 +116,7 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
       const readText = file => new Promise(resolve => {
         const reader = new FileReader()
-        reader.onload = e => resolve(e.target.result)
+        reader.onload = e => resolve(e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n'))
         reader.readAsText(file, 'utf-8')
       })
 
