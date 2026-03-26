@@ -4,7 +4,7 @@ import Lightbox from '../common/Lightbox'
 import { Badge, Btn, Card, Row, CopyAddress } from '../common/ui'
 import { TimeEditRow } from '../common/TimeEdit'
 import { getUsers } from '../../utils/users'
-import { readFilesAsBase64, downloadAllPhotos, copyAllPhotosAsImage } from '../../utils/image'
+import { resizeImage, readFilesAsBase64, downloadAllPhotos, copyAllPhotosAsImage } from '../../utils/image'
 import {
   navy, blue, green, amber, red, border, muted, textC, iStyle, getKSTToday
 } from '../../constants/styles'
@@ -154,7 +154,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
     if (!imgUrls.length) return
 
-    // 각 URL을 fetch → base64 (CORS 실패 시 조용히 스킵)
+    // 각 URL을 fetch → 리사이즈 후 base64 (CORS 실패 시 조용히 스킵)
     const results = []
     for (const url of imgUrls) {
       try {
@@ -162,12 +162,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         if (!res.ok) continue
         const blob = await res.blob()
         if (!blob.type.startsWith('image/')) continue
-        await new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => { results.push(reader.result); resolve() }
-          reader.onerror = reject
-          reader.readAsDataURL(blob)
-        })
+        results.push(await resizeImage(blob))
       } catch { /* CORS 차단 등 — 무시 */ }
     }
     if (results.length) await appendSchedulePhotos(results)
