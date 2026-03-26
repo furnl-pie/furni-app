@@ -97,7 +97,6 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
       `성상: 혼합`,
       `폐기물양: ${schedule.final_waste||schedule.waste||''}`,
       `특이사항: ${schedule.driver_note||''}`,
-      '담당자 확인 완료',
     ]
     navigator.clipboard.writeText(lines.join('\n'))
   }
