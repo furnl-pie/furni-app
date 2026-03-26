@@ -64,17 +64,30 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
   // ── 폴더 파일 처리 ──────────────────────────────────────────────
   const collectFilesFromEntry = (entry, pathPrefix) => new Promise(resolve => {
+    if (!entry) return resolve([])
     if (entry.isFile) {
-      entry.getFile(file => resolve([{ file, relativePath: pathPrefix + file.name }]))
+      entry.getFile(
+        file => resolve([{ file, relativePath: pathPrefix + file.name }]),
+        () => resolve([])
+      )
     } else if (entry.isDirectory) {
       const reader = entry.createReader()
       let all = []
-      const read = () => reader.readEntries(async entries => {
-        if (!entries.length) return resolve(all)
-        const nested = await Promise.all(entries.map(e => collectFilesFromEntry(e, pathPrefix + entry.name + '/')))
-        all = all.concat(...nested)
-        read()
-      })
+      const read = () => {
+        reader.readEntries(
+          async entries => {
+            if (!entries.length) return resolve(all)
+            try {
+              const nested = await Promise.all(
+                entries.map(e => collectFilesFromEntry(e, pathPrefix + entry.name + '/'))
+              )
+              all = all.concat(nested.flat())
+            } catch { /* 무시 */ }
+            read()
+          },
+          () => resolve(all)
+        )
+      }
       read()
     } else {
       resolve([])
@@ -168,10 +181,15 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
   const handleFolderDrop = async e => {
     e.preventDefault()
     setIsDragOver(false)
-    const items = Array.from(e.dataTransfer.items).filter(i => i.webkitGetAsEntry)
-    const nested = await Promise.all(items.map(item => collectFilesFromEntry(item.webkitGetAsEntry(), '')))
+    const entries = Array.from(e.dataTransfer.items)
+      .map(item => item.webkitGetAsEntry?.())
+      .filter(Boolean)
+    if (!entries.length) return
+    setFolderLoading(true)
+    const nested = await Promise.all(entries.map(entry => collectFilesFromEntry(entry, '')))
     const all = nested.flat()
     if (all.length) await processFolderFiles(all)
+    else { setFolderLoading(false); setFolderMsg('⚠️ 파일을 읽을 수 없습니다. 폴더를 직접 드래그해주세요.') }
   }
 
   const applyFolder = () => {
