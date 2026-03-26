@@ -90,7 +90,8 @@ async function srcToBlob(src, filename) {
 }
 
 // ── 사진 일괄 다운로드 ─────────────────────────────────────────────
-export async function downloadAllPhotos(photos, prefix = '완료사진') {
+// subFolders: ['기사이름', '현장주소'] 형태로 전달하면 폴더 계층 생성
+export async function downloadAllPhotos(photos, prefix = '완료사진', subFolders = []) {
   // File System Access API 지원 시 폴더 선택 후 저장
   if (typeof window.showDirectoryPicker === 'function') {
     let dirHandle
@@ -98,6 +99,11 @@ export async function downloadAllPhotos(photos, prefix = '완료사진') {
       dirHandle = await window.showDirectoryPicker()
     } catch {
       return // 사용자가 취소
+    }
+    // 서브폴더 계층 생성
+    for (const name of subFolders) {
+      const safeName = name.replace(/[/\\:*?"<>|]/g, '_').slice(0, 50)
+      if (safeName) dirHandle = await dirHandle.getDirectoryHandle(safeName, { create: true })
     }
     for (let i = 0; i < photos.length; i++) {
       const filename = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
