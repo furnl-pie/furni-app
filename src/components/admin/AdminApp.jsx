@@ -5,6 +5,7 @@ import DisposalPage from './DisposalPage'
 import BulkScheduleModal from './BulkScheduleModal'
 import DriverMgrModal from './DriverMgrModal'
 import AdminSettingsModal from './AdminSettingsModal'
+import AdminHelpModal from './AdminHelpModal'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, today, getDriverSortKey } from '../../constants/styles'
@@ -16,6 +17,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [showModal, setModal]     = useState(false)
   const [showDriverMgr, setDriverMgr] = useState(false)
   const [showAdminSettings, setAdminSettings] = useState(false)
+  const [showHelp, setHelp] = useState(false)
   const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
 
   const dragId = useRef(null)
@@ -220,6 +222,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             <button onClick={()=>setDriverMgr(true)}
               style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
               👤 기사
+            </button>
+            <button onClick={()=>setHelp(true)}
+              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+              ?
             </button>
             <button onClick={()=>setAdminSettings(true)}
               style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
@@ -616,6 +622,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
         )}
       </div>
 
+      {showHelp && <AdminHelpModal onClose={()=>setHelp(false)}/>}
       {showModal && <BulkScheduleModal drivers={drivers} schedules={schedules} onAddMany={list=>{ onAddMany(list); setModal(false) }} onUpdate={onUpdate} onClose={()=>setModal(false)}/>}
       {showDriverMgr && <DriverMgrModal drivers={drivers} schedules={schedules} onAdd={onAddDriver} onUpdate={onUpdateDriver} onDelete={onDeleteDriver} onClose={()=>setDriverMgr(false)}/>}
       {showAdminSettings && <AdminSettingsModal user={user} onUpdateDriver={onUpdateDriver} onClose={()=>setAdminSettings(false)}/>}
