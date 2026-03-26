@@ -34,7 +34,7 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
 
   const buildFolders = s => {
     const driverName = getDriverName(s.driver_id)
-    const siteName   = [s.date, s.address?.slice(0, 20), s.cname].filter(Boolean).join('_')
+    const siteName   = [s.cname, s.address?.slice(0, 30)].filter(Boolean).join('_')
     return [driverName, siteName]
   }
 
@@ -135,7 +135,7 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
 
         {/* 폴더 구조 안내 */}
         <div style={{ background: '#eff6ff', border: `1px solid #bfdbfe`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#1e40af', lineHeight: 1.8 }}>
-          📁 저장 구조: <strong>선택폴더 / 기사이름 / 날짜_현장주소_담당자 / 사진_01.jpg</strong><br/>
+          📁 저장 구조: <strong>선택폴더 / 기사이름 / 업체명_주소 / 사진_01.jpg</strong><br/>
           <span style={{ color: '#64748b' }}>Chrome / Edge 데스크톱 전용 · 다른 환경에서는 개별 파일로 다운로드됩니다</span>
         </div>
 

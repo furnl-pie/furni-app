@@ -515,7 +515,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                   {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (<>
                     <button onClick={()=>{
                       const driverName = users.find(u=>u.id===schedule.driver_id)?.name || '미배치'
-                      const siteName = [schedule.address?.slice(0,20), schedule.cname].filter(Boolean).join('_')
+                      const siteName = [schedule.cname, schedule.address?.slice(0,30)].filter(Boolean).join('_')
                       downloadAllPhotos([...(schedule.work_photos||[]), ...completePhotos], '전체사진', [driverName, siteName])
                     }}
                       style={{ background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
