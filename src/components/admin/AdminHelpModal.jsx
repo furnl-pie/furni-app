@@ -168,7 +168,16 @@ export default function AdminHelpModal({ onClose }) {
                 <Tip warn>드래그앤드롭은 표 보기에서만 동작합니다. 모바일은 ✏️ 버튼 배정을 사용하세요.</Tip>
               </Section>
 
-              <Section title="🗑 삭제 모드">
+              <Section title="🗑 개별 삭제">
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:8 }}>
+                  각 일정 카드(카드 보기) 또는 행(표 보기)의 <strong>🗑 버튼</strong>으로 해당 일정만 바로 삭제할 수 있습니다.
+                </div>
+                <Step num="1" color={red}>일정의 <strong>🗑 버튼</strong> 클릭</Step>
+                <Step num="2" color={red}>확인 팝업에서 <strong>삭제</strong> 클릭</Step>
+                <Tip warn>삭제된 일정은 복구할 수 없습니다.</Tip>
+              </Section>
+
+              <Section title="🗑 일괄 삭제 모드">
                 <Step num="1" color={red}><strong>🗑 삭제</strong> 버튼 클릭 → 체크박스 활성화</Step>
                 <Step num="2" color={red}>삭제할 일정 선택</Step>
                 <Step num="3" color={red}><strong>🗑 N건 삭제</strong> → 확인 팝업 → 삭제</Step>

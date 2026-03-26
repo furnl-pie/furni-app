@@ -111,6 +111,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [deleteMode,     setDeleteMode]   = useState(false)
   const [checkedIds,     setCheckedIds]   = useState(new Set())
   const [showDelConfirm, setDelConfirm]   = useState(false)
+  const [confirmSingleDel, setConfirmSingleDel] = useState(null) // 개별 삭제 일정 id
 
   const [assignMode,     setAssignMode]   = useState(false)
   const [assignChecked,  setAssignChecked] = useState(new Set())
@@ -463,6 +464,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                                   style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
                                   이동/복사
                                 </button>
+                                <button onClick={e=>{ e.stopPropagation(); setConfirmSingleDel(s.id) }}
+                                  style={{ background:'#fef2f2', color:red, border:`1px solid #fecaca`, borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                                  🗑
+                                </button>
                               </div>
                             </div>
                             <div style={{ fontSize:15, fontWeight:600, color:textC, marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.address}</div>
@@ -606,10 +611,16 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                           <td style={{ padding:'8px 12px', textAlign:'center', fontFamily:'monospace', fontSize:15, color:s.start_time?green:'#ccc' }}>{s.start_time||'-'}</td>
                           <td style={{ padding:'8px 12px', textAlign:'center', fontFamily:'monospace', fontSize:15, color:s.end_time?blue:'#ccc' }}>{s.end_time||'-'}</td>
                           <td style={{ padding:'4px 8px', textAlign:'center', whiteSpace:'nowrap' }} onClick={e=>e.stopPropagation()}>
-                            <button onClick={()=>openCopyModal(s)}
-                              style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                              이동/복사
-                            </button>
+                            <div style={{ display:'flex', gap:4, justifyContent:'center' }}>
+                              <button onClick={()=>openCopyModal(s)}
+                                style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                이동/복사
+                              </button>
+                              <button onClick={()=>setConfirmSingleDel(s.id)}
+                                style={{ background:'#fef2f2', color:red, border:`1px solid #fecaca`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                                🗑
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       </Fragment>
@@ -622,6 +633,22 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
         )}
       </div>
 
+      {confirmSingleDel && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:24, maxWidth:320, width:'100%', textAlign:'center' }}>
+            <div style={{ fontSize:32, marginBottom:10 }}>🗑️</div>
+            <div style={{ fontWeight:700, fontSize:15, color:navy, marginBottom:8 }}>일정 삭제</div>
+            <div style={{ fontSize:13, color:muted, marginBottom:20 }}>
+              {schedules.find(s=>s.id===confirmSingleDel)?.address}<br/>삭제하면 복구할 수 없습니다.
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <Btn onClick={()=>setConfirmSingleDel(null)} outline style={{ flex:1, padding:'10px 0' }}>취소</Btn>
+              <Btn onClick={()=>{ onDelete([confirmSingleDel]); setConfirmSingleDel(null) }}
+                style={{ flex:1, padding:'10px 0', background:red, borderColor:red }}>삭제</Btn>
+            </div>
+          </div>
+        </div>
+      )}
       {showHelp && <AdminHelpModal onClose={()=>setHelp(false)}/>}
       {showModal && <BulkScheduleModal drivers={drivers} schedules={schedules} onAddMany={list=>{ onAddMany(list); setModal(false) }} onUpdate={onUpdate} onClose={()=>setModal(false)}/>}
       {showDriverMgr && <DriverMgrModal drivers={drivers} schedules={schedules} onAdd={onAddDriver} onUpdate={onUpdateDriver} onDelete={onDeleteDriver} onClose={()=>setDriverMgr(false)}/>}
