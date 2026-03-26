@@ -3,7 +3,6 @@ import { downloadAllPhotos } from '../../utils/image'
 
 export default function Lightbox({ photos, index, onClose }) {
   const [cur, setCur] = useState(index)
-  const [copied, setCopied] = useState(false)
   const total = photos.length
   const thumbRef = useRef(null)
 
@@ -50,13 +49,6 @@ export default function Lightbox({ photos, index, onClose }) {
   }
 
   const downloadAll = e => { e.stopPropagation(); downloadAllPhotos(photos, '완료사진') }
-
-  const copyAll = async e => {
-    e.stopPropagation()
-    await navigator.clipboard.writeText(photos.join('\n'))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   return (
     <div onClick={onClose} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
@@ -110,10 +102,6 @@ export default function Lightbox({ photos, index, onClose }) {
           <button onClick={downloadAll}
             style={{ background:'rgba(255,255,255,.2)', border:'none', color:'#fff', borderRadius:6, padding:'4px 10px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
             ⬇ 전체 {total}장
-          </button>
-          <button onClick={copyAll}
-            style={{ background: copied ? 'rgba(34,197,94,.5)' : 'rgba(255,255,255,.2)', border:'none', color:'#fff', borderRadius:6, padding:'4px 10px', fontSize:12, fontWeight:600, cursor:'pointer', transition:'background .2s' }}>
-            {copied ? '✓ 복사됨' : '🔗 전체 URL 복사'}
           </button>
         </>)}
       </div>

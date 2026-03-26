@@ -25,6 +25,49 @@ export const readFilesAsBase64 = async files => {
   return results
 }
 
+// ── 사진 전체를 그리드 이미지로 클립보드에 복사 ────────────────────
+export async function copyAllPhotosAsImage(photos) {
+  if (!photos.length) return false
+  try {
+    const blobs = await Promise.all(
+      photos.map((src, i) => srcToBlob(src, `photo_${i + 1}.jpg`))
+    )
+    const objUrls = blobs.map(b => URL.createObjectURL(b))
+    const imgs = await Promise.all(objUrls.map(url => new Promise((res, rej) => {
+      const img = new Image()
+      img.onload = () => res(img)
+      img.onerror = rej
+      img.src = url
+    })))
+
+    const size = 360
+    const cols = Math.min(3, imgs.length)
+    const rows = Math.ceil(imgs.length / cols)
+    const canvas = document.createElement('canvas')
+    canvas.width = cols * size
+    canvas.height = rows * size
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    imgs.forEach((img, i) => {
+      const x = (i % cols) * size
+      const y = Math.floor(i / cols) * size
+      const scale = Math.max(size / img.width, size / img.height)
+      const sw = size / scale, sh = size / scale
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, size, size)
+    })
+    objUrls.forEach(u => URL.revokeObjectURL(u))
+
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'))
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+    return true
+  } catch (e) {
+    console.error(e)
+    return false
+  }
+}
+
 // ── src → Blob 변환 ────────────────────────────────────────────────
 async function srcToBlob(src, filename) {
   if (src.includes('cloudinary.com')) {

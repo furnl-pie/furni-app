@@ -3,7 +3,7 @@ import Lightbox from '../common/Lightbox'
 import { Badge, Btn, Card, Row, CopyAddress } from '../common/ui'
 import { TimeEditRow } from '../common/TimeEdit'
 import { getUsers } from '../../utils/users'
-import { readFilesAsBase64, downloadAllPhotos } from '../../utils/image'
+import { readFilesAsBase64, downloadAllPhotos, copyAllPhotosAsImage } from '../../utils/image'
 import {
   navy, blue, green, amber, red, border, muted, textC, iStyle, getKSTToday
 } from '../../constants/styles'
@@ -30,6 +30,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
     total:   schedule.billing_total   ? String(schedule.billing_total)  : '',
   })
   const [billCopied, setBillCopied] = useState(false)
+  const [imgCopied, setImgCopied] = useState(false)
   const [billSaved,  setBillSaved]  = useState(false)
   const billUnitRef = useRef()
   const setBF = (k,v) => setBillingForm(p => {
@@ -128,9 +129,10 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const handleDragLeave = () => dropRef.current?.classList.remove('drag-over')
 
   const allWorkPhotos = [...(schedule.work_photos||[]), ...completePhotos]
+  const workLen = (schedule.work_photos||[]).length
 
   const openLightbox = (src, idx) => { setLbSource(src); setLightbox(idx) }
-  const lbPhotos = lbSource==='schedule' ? schedulePhotos : lbSource==='billing' ? allWorkPhotos : lbSource==='work' ? (schedule.work_photos||[]) : completePhotos
+  const lbPhotos = lbSource==='schedule' ? schedulePhotos : lbSource==='billing' ? allWorkPhotos : allWorkPhotos
 
   const users = getUsers()
 
@@ -484,7 +486,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
                   {workPics.map((src,i)=>(
                     <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
-                      <img src={src} alt={`현장${i+1}`} onClick={()=>openLightbox('work',i)}
+                      <img src={src} alt={`현장${i+1}`} onClick={()=>openLightbox('allwork',i)}
                         style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'pointer' }}/>
                       <button onClick={()=>removeWorkPhoto(i)}
                         style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.6)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
@@ -510,12 +512,19 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                   <span style={{ fontSize:12, color:muted, marginLeft:6, fontWeight:400 }}>{completePhotos.length}장</span>
                 </div>
                 <div style={{ display:'flex', gap:8 }}>
-                  {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (
+                  {((schedule.work_photos||[]).length > 0 || completePhotos.length > 0) && (<>
                     <button onClick={()=>downloadAllPhotos([...(schedule.work_photos||[]), ...completePhotos], `전체사진_${schedule.address.slice(0,10)}`)}
                       style={{ background:'#f1f5f9', color:muted, border:`1px solid ${border}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
                       ⬇ 전체 다운로드
                     </button>
-                  )}
+                    <button onClick={async ()=>{
+                      const ok = await copyAllPhotosAsImage([...(schedule.work_photos||[]), ...completePhotos])
+                      if (ok) { setImgCopied(true); setTimeout(()=>setImgCopied(false), 2000) }
+                    }}
+                      style={{ background: imgCopied ? '#dcfce7' : '#f1f5f9', color: imgCopied ? green : muted, border:`1px solid ${imgCopied ? '#86efac' : border}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer', transition:'all .2s' }}>
+                      {imgCopied ? '✓ 복사됨' : '🖼 이미지 복사'}
+                    </button>
+                  </>)}
                   <button onClick={()=>cpFileRef.current?.click()}
                     style={{ background:green, color:'#fff', border:'none', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
                     + 추가
@@ -527,7 +536,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
                   {completePhotos.map((src,i)=>(
                     <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:8, overflow:'hidden', border:`1px solid ${border}` }}>
-                      <img src={src} alt={`완료${i+1}`} onClick={()=>openLightbox('complete',i)}
+                      <img src={src} alt={`완료${i+1}`} onClick={()=>openLightbox('allwork', workLen + i)}
                         style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'pointer' }}/>
                       <button onClick={()=>removeCompletePhoto(i)}
                         style={{ position:'absolute', top:3, right:3, background:'rgba(0,0,0,.6)', color:'#fff', border:'none', borderRadius:'50%', width:20, height:20, fontSize:11, cursor:'pointer', lineHeight:1 }}>✕</button>
