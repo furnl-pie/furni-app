@@ -127,8 +127,10 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const handleDragOver = e => { e.preventDefault(); dropRef.current?.classList.add('drag-over') }
   const handleDragLeave = () => dropRef.current?.classList.remove('drag-over')
 
+  const allWorkPhotos = [...(schedule.work_photos||[]), ...completePhotos]
+
   const openLightbox = (src, idx) => { setLbSource(src); setLightbox(idx) }
-  const lbPhotos = lbSource==='schedule' ? schedulePhotos : lbSource==='work' ? (schedule.work_photos||[]) : completePhotos
+  const lbPhotos = lbSource==='schedule' ? schedulePhotos : lbSource==='billing' ? allWorkPhotos : lbSource==='work' ? (schedule.work_photos||[]) : completePhotos
 
   const users = getUsers()
 
@@ -607,12 +609,8 @@ ${billingForm.total}만원 (부가세 포함)
                   <div style={{ marginBottom:14 }}>
                     <div style={{ fontSize:15, fontWeight:600, color:muted, marginBottom:8 }}>전체 작업사진</div>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:4 }}>
-                      {(schedule.work_photos||[]).map((p,i) => (
-                        <img key={'w'+i} src={p} onClick={()=>openLightbox('work',i)}
-                          style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
-                      ))}
-                      {completePhotos.map((p,i) => (
-                        <img key={'c'+i} src={p} onClick={()=>openLightbox('complete',i)}
+                      {allWorkPhotos.map((p,i) => (
+                        <img key={i} src={p} onClick={()=>openLightbox('billing',i)}
                           style={{ width:'100%', aspectRatio:'1', objectFit:'cover', borderRadius:6, cursor:'pointer' }}/>
                       ))}
                     </div>

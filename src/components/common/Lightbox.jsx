@@ -60,7 +60,7 @@ export default function Lightbox({ photos, index, onClose }) {
 
   return (
     <div onClick={onClose} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.93)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:3000, padding:'16px 16px 0' }}>
+      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.93)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:4000, padding:'16px 16px 0' }}>
 
       {/* 닫기 */}
       <button onClick={onClose} style={{ position:'absolute', top:14, right:14, background:'rgba(255,255,255,.18)', border:'none', color:'#fff', fontSize:16, width:36, height:36, borderRadius:'50%', cursor:'pointer', zIndex:1 }}>✕</button>
