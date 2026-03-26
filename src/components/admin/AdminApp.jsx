@@ -190,7 +190,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   }, [view])
 
   if (view==='billing')
-    return <BillingPage schedules={schedules} onBack={()=>setView('list')}/>
+    return <BillingPage schedules={schedules} onUpdate={onUpdate} onBack={()=>setView('list')}/>
 
   if (view==='disposal')
     return <DisposalPage onBack={()=>setView('list')}/>

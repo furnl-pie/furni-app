@@ -1,18 +1,25 @@
 import { useState } from 'react'
-import { Card } from '../common/ui'
-import { navy, green, amber, border, muted, textC, getKSTToday, getDriverSortKey, driverChip } from '../../constants/styles'
+import { Card, Btn } from '../common/ui'
+import { navy, blue, green, amber, red, border, muted, textC, getKSTToday, getDriverSortKey, driverChip } from '../../constants/styles'
 import { userName, getUsers } from '../../utils/users'
 
-export default function BillingPage({ schedules, onBack }) {
+const iStyle = {
+  padding:'8px 10px', border:`1px solid ${border}`, borderRadius:7, fontSize:13,
+  outline:'none', background:'#fafafa', boxSizing:'border-box', width:'100%',
+}
+
+export default function BillingPage({ schedules, onUpdate, onBack }) {
   const thisMonth = getKSTToday().slice(0, 7)
   const [month, setMonth] = useState(thisMonth)
+  const [editBilling, setEditBilling]   = useState(null) // 수정 중인 schedule
+  const [editForm,    setEditForm]      = useState({})
+  const [confirmDel,  setConfirmDel]    = useState(null) // 삭제 확인 schedule id
 
   const billed = schedules
     .filter(s => s.billing_total && s.billing_date && s.billing_date.startsWith(month))
 
   const totalAmount = billed.reduce((sum, s) => sum + (s.billing_total || 0), 0)
 
-  // 기사별 그룹핑 → 각 그룹 내 날짜순 정렬 → 그룹은 기사 순서대로
   const drivers = getUsers().filter(u => u.role === 'driver')
   const grouped = billed.reduce((acc, s) => {
     const key = s.driver_id || '__none__'
@@ -63,6 +70,48 @@ export default function BillingPage({ schedules, onBack }) {
     a.download = `청구내역_${month}.csv`
     a.click()
     URL.revokeObjectURL(a.href)
+  }
+
+  const openEdit = s => {
+    setEditBilling(s)
+    setEditForm({
+      billing_date:    s.billing_date    || s.date || '',
+      billing_workers: s.billing_workers || '1',
+      billing_waste:   s.billing_waste   || s.waste || '',
+      billing_amount:  s.billing_amount  ? String(s.billing_amount)  : '',
+      billing_unit:    s.billing_unit    ? String(s.billing_unit)    : '',
+      billing_total:   s.billing_total   ? String(s.billing_total)   : '',
+    })
+  }
+
+  const setF = (k, v) => setEditForm(p => {
+    const next = { ...p, [k]: v }
+    const a = parseFloat(next.billing_amount) || 0
+    const u = parseFloat(next.billing_unit)   || 0
+    if (k === 'billing_amount' || k === 'billing_unit') {
+      next.billing_total = (a + u) > 0 ? String(Math.round((a + u) * 1.1 * 10) / 10) : ''
+    }
+    return next
+  })
+
+  const saveEdit = () => {
+    onUpdate(editBilling.id, {
+      billing_date:    editForm.billing_date,
+      billing_workers: editForm.billing_workers,
+      billing_waste:   editForm.billing_waste,
+      billing_amount:  parseFloat(editForm.billing_amount) || null,
+      billing_unit:    parseFloat(editForm.billing_unit)   || null,
+      billing_total:   parseFloat(editForm.billing_total)  || null,
+    })
+    setEditBilling(null)
+  }
+
+  const deleteBilling = id => {
+    onUpdate(id, {
+      billing_date: null, billing_workers: null, billing_waste: null,
+      billing_amount: null, billing_unit: null, billing_total: null,
+    })
+    setConfirmDel(null)
   }
 
   const th = extra => ({
@@ -116,7 +165,7 @@ export default function BillingPage({ schedules, onBack }) {
           </div>
         ) : (
           <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${border}`, overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>
                   <th style={th()}>날짜</th>
@@ -125,6 +174,7 @@ export default function BillingPage({ schedules, onBack }) {
                   <th style={th()}>폐기물량</th>
                   <th style={th()}>작업시간</th>
                   <th style={th({ textAlign: 'right' })}>청구금액</th>
+                  <th style={th()}></th>
                 </tr>
               </thead>
               <tbody>
@@ -134,10 +184,9 @@ export default function BillingPage({ schedules, onBack }) {
                   const cn = carNum(key)
                   const chip = driverChip(key, drivers)
                   return rows.map((s, i) => [
-                    // 기사 그룹 헤더
                     i === 0 && (
                       <tr key={`head-${key}`} style={{ background: chip ? chip.bg : '#f8fafc' }}>
-                        <td colSpan={5} style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: chip ? chip.color : navy, borderBottom: `1px solid ${border}`, borderTop: `2px solid ${chip ? chip.border : border}` }}>
+                        <td colSpan={6} style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: chip ? chip.color : navy, borderBottom: `1px solid ${border}`, borderTop: `2px solid ${chip ? chip.border : border}` }}>
                           {userName(key)}
                           {cn && <span style={{ marginLeft: 8, fontSize: 11, fontFamily: 'monospace', color: muted, fontWeight: 400 }}>{cn}</span>}
                           <span style={{ marginLeft: 10, fontSize: 12, color: muted, fontWeight: 400 }}>{rows.length}건</span>
@@ -147,7 +196,6 @@ export default function BillingPage({ schedules, onBack }) {
                         </td>
                       </tr>
                     ),
-                    // 일정 행
                     <tr key={s.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                       <td style={td({ textAlign: 'center', fontFamily: 'monospace', fontSize: 12 })}>{s.date || s.billing_date}</td>
                       <td style={td()}>{s.cname || '-'}</td>
@@ -155,11 +203,23 @@ export default function BillingPage({ schedules, onBack }) {
                       <td style={td({ textAlign: 'center', fontWeight: 600, color: amber })}>{s.billing_waste || s.waste || '-'}</td>
                       <td style={td({ textAlign: 'center', fontSize: 12, color: muted })}>{workDuration(s)}</td>
                       <td style={td({ textAlign: 'right', fontWeight: 600, color: textC, whiteSpace: 'nowrap' })}>{fmtAmount(s.billing_total)}</td>
+                      <td style={td({ textAlign: 'center', whiteSpace: 'nowrap' })}>
+                        <div style={{ display:'flex', gap:4, justifyContent:'center' }}>
+                          <button onClick={() => openEdit(s)}
+                            style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:6, padding:'3px 9px', fontSize:12, color:textC, cursor:'pointer', fontWeight:600 }}>
+                            수정
+                          </button>
+                          <button onClick={() => setConfirmDel(s.id)}
+                            style={{ background:'#fef2f2', border:`1px solid #fca5a5`, borderRadius:6, padding:'3px 9px', fontSize:12, color:red, cursor:'pointer', fontWeight:600 }}>
+                            삭제
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ])
                 })}
                 <tr style={{ background: '#f0fdf4' }}>
-                  <td colSpan={5} style={td({ textAlign: 'right', fontWeight: 700, color: muted, borderBottom: 'none', borderTop: `2px solid ${border}` })}>전체 합계</td>
+                  <td colSpan={6} style={td({ textAlign: 'right', fontWeight: 700, color: muted, borderBottom: 'none', borderTop: `2px solid ${border}` })}>전체 합계</td>
                   <td style={td({ textAlign: 'right', fontWeight: 700, color: green, fontSize: 15, borderBottom: 'none', borderTop: `2px solid ${border}`, whiteSpace: 'nowrap' })}>
                     {fmtAmount(totalAmount)}
                   </td>
@@ -169,6 +229,75 @@ export default function BillingPage({ schedules, onBack }) {
           </div>
         )}
       </div>
+
+      {/* 수정 모달 */}
+      {editBilling && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:16, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:14, width:'100%', maxWidth:400, maxHeight:'90vh', overflowY:'auto' }}>
+            <div style={{ padding:'14px 18px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div style={{ fontWeight:700, fontSize:15, color:navy }}>청구 정보 수정</div>
+              <button onClick={()=>setEditBilling(null)} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
+            </div>
+            <div style={{ padding:18 }}>
+              <div style={{ fontSize:13, color:muted, marginBottom:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{editBilling.address}</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <div style={{ fontSize:11, color:muted, marginBottom:4 }}>청구 날짜</div>
+                    <input type="date" value={editForm.billing_date} onChange={e=>setF('billing_date',e.target.value)} style={iStyle}/>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:11, color:muted, marginBottom:4 }}>작업인원</div>
+                    <select value={editForm.billing_workers} onChange={e=>setF('billing_workers',e.target.value)} style={iStyle}>
+                      {['1','2','3','4'].map(n=><option key={n} value={n}>{n}인</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>폐기물량</div>
+                  <input value={editForm.billing_waste} onChange={e=>setF('billing_waste',e.target.value)} placeholder="예: 2톤" style={iStyle}/>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <div style={{ fontSize:11, color:muted, marginBottom:4 }}>단가 (만원)</div>
+                    <input type="number" value={editForm.billing_amount} onChange={e=>setF('billing_amount',e.target.value)} placeholder="0" style={iStyle}/>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:11, color:muted, marginBottom:4 }}>상차비 (만원)</div>
+                    <input type="number" value={editForm.billing_unit} onChange={e=>setF('billing_unit',e.target.value)} placeholder="0" style={iStyle}/>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, color:muted, marginBottom:4 }}>청구금액 (만원, VAT 포함 자동계산)</div>
+                  <input type="number" value={editForm.billing_total} onChange={e=>setF('billing_total',e.target.value)} placeholder="0" style={{ ...iStyle, fontWeight:700, color:navy }}/>
+                  {editForm.billing_total && (
+                    <div style={{ fontSize:12, color:green, marginTop:4 }}>= {(Math.round(parseFloat(editForm.billing_total)*10000)).toLocaleString()}원</div>
+                  )}
+                </div>
+                <div style={{ display:'flex', gap:8, marginTop:4 }}>
+                  <Btn onClick={()=>setEditBilling(null)} outline style={{ flex:1, padding:'10px 0' }}>취소</Btn>
+                  <Btn onClick={saveEdit} style={{ flex:2, padding:'10px 0' }}>저장</Btn>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {confirmDel && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1010, padding:16, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:24, maxWidth:320, width:'100%', textAlign:'center' }}>
+            <div style={{ fontSize:32, marginBottom:10 }}>🗑️</div>
+            <div style={{ fontWeight:700, fontSize:15, color:navy, marginBottom:8 }}>청구 정보 삭제</div>
+            <div style={{ fontSize:13, color:muted, marginBottom:20 }}>청구 정보만 삭제됩니다.<br/>일정은 유지됩니다.</div>
+            <div style={{ display:'flex', gap:8 }}>
+              <Btn onClick={()=>setConfirmDel(null)} outline style={{ flex:1, padding:'10px 0' }}>취소</Btn>
+              <Btn onClick={()=>deleteBilling(confirmDel)} style={{ flex:1, padding:'10px 0', background:red, borderColor:red }}>삭제</Btn>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
