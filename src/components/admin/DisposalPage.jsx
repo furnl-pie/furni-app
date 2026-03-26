@@ -30,7 +30,7 @@ export default function DisposalPage({ onBack }) {
 
   const filtered = records
     .filter(r => r.date === filterDate)
-    .sort((a, b) => (b.time || '').localeCompare(a.time || ''))
+    .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
 
   const totalCost = filtered.reduce((sum, r) => {
     const n = parseInt((r.cost || '').replace(/[^0-9]/g, ''))
