@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import useWindowWidth from '../../utils/useWindowWidth'
 import { collection, onSnapshot, query, orderBy, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { Card, Btn } from '../common/ui'
@@ -13,6 +14,7 @@ const iStyle = {
 }
 
 export default function DisposalPage({ onBack }) {
+  const isPC = useWindowWidth() >= 1024
   const [records,    setRecords]    = useState([])
   const [filterDate, setFilterDate] = useState(today)
   const [editRecord, setEditRecord] = useState(null)  // 수정 중인 레코드
@@ -95,7 +97,7 @@ export default function DisposalPage({ onBack }) {
         </div>
       </div>
 
-      <div style={{ padding:16, maxWidth:600, margin:'0 auto' }}>
+      <div style={{ padding:16, maxWidth: isPC ? 1200 : 600, margin:'0 auto' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
           <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}
             style={{ padding:'8px 12px', borderRadius:8, border:`1px solid ${border}`, fontSize:14, background:'#fff', color:textC, outline:'none' }}/>
@@ -113,8 +115,9 @@ export default function DisposalPage({ onBack }) {
             <div style={{ fontSize:14 }}>이 날짜에 처리 기록이 없습니다</div>
           </div>
         ) : (
-          filtered.map(r => (
-            <Card key={r.id} style={{ marginBottom:10 }}>
+          <div style={{ display: isPC ? 'grid' : 'block', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, gap: isPC ? 12 : undefined }}>
+          {filtered.map(r => (
+            <Card key={r.id} style={{ marginBottom: isPC ? 0 : 10 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                 <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                   <span style={{ fontWeight:700, color:navy, fontSize:15 }}>{r.site}</span>
@@ -152,7 +155,8 @@ export default function DisposalPage({ onBack }) {
                 </div>
               )}
             </Card>
-          ))
+          ))}
+          </div>
         )}
       </div>
 

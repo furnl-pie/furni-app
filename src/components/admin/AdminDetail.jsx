@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import useWindowWidth from '../../utils/useWindowWidth'
 import Lightbox from '../common/Lightbox'
 import { Badge, Btn, Card, Row, CopyAddress } from '../common/ui'
 import { TimeEditRow } from '../common/TimeEdit'
@@ -135,6 +136,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const lbPhotos = lbSource==='schedule' ? schedulePhotos : lbSource==='billing' ? allWorkPhotos : allWorkPhotos
 
   const users = getUsers()
+  const isPC = useWindowWidth() >= 1024
 
   return (
     <div onPaste={handlePagePaste} style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
@@ -145,10 +147,10 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         <Badge status={schedule.status}/>
       </div>
 
-      <div style={{ padding:20, maxWidth:640, margin:'0 auto' }}>
+      <div style={{ padding:20, maxWidth: isPC ? 1300 : 640, margin:'0 auto', display: isPC ? 'grid' : 'block', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, columnGap: isPC ? 20 : undefined, alignItems: 'start' }}>
 
         {/* 기사 배치 */}
-        <div style={{ background:schedule.driver_id?'#f0fdf4':'#fef2f2', border:`1.5px solid ${schedule.driver_id?'#86efac':'#fca5a5'}`, borderRadius:12, padding:'14px 16px', marginBottom:12 }}>
+        <div style={{ background:schedule.driver_id?'#f0fdf4':'#fef2f2', border:`1.5px solid ${schedule.driver_id?'#86efac':'#fca5a5'}`, borderRadius:12, padding:'14px 16px', marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', marginBottom:10, color:schedule.driver_id?green:red }}>
             {schedule.driver_id?'✓ 담당 기사':'⚠ 기사 미배치'}
           </div>
@@ -226,7 +228,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         </div>
 
         {/* 기본 정보 */}
-        <Card style={{ marginBottom:12 }}>
+        <Card style={{ marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase' }}>현장 정보</div>
             {!editInfo
@@ -328,7 +330,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         </Card>
 
         {/* 일정 사진 */}
-        <Card style={{ marginBottom:12 }}>
+        <Card style={{ marginBottom:12, gridColumn: isPC ? '2' : undefined, gridRow: isPC ? '1 / 4' : undefined }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
             <div>
               <div style={{ fontSize:14, fontWeight:700, color:textC }}>일정 사진</div>
@@ -395,7 +397,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         </Card>
 
         {/* 업무 기록 */}
-        <Card style={{ marginBottom:12 }}>
+        <Card style={{ marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
           <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:10 }}>업무 기록</div>
 
           <TimeEditRow label="출발" value={schedule.depart_time} color={blue}
@@ -459,7 +461,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         </Card>
 
         {schedule.driver_note && (
-          <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:10, padding:'12px 14px', marginBottom:12 }}>
+          <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:10, padding:'12px 14px', marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
             <div style={{ fontSize:11, fontWeight:700, color:amber, marginBottom:6 }}>📋 기사 특이사항</div>
             <div style={{ fontSize:13, color:textC, lineHeight:1.7, whiteSpace:'pre-wrap' }}>{schedule.driver_note}</div>
           </div>
@@ -470,7 +472,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           const workPics = schedule.work_photos || []
           if (workPics.length === 0 && !schedule.start_time) return null
           return (
-            <Card style={{ marginBottom:12 }}>
+            <Card style={{ marginBottom:12, gridColumn: isPC ? '2' : undefined }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:textC }}>
                   📍 작업 시작 사진
@@ -505,7 +507,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         {(() => {
           if (completePhotos.length === 0 && schedule.status !== '완료') return null
           return (
-            <Card style={{ marginBottom:12 }}>
+            <Card style={{ marginBottom:12, gridColumn: isPC ? '2' : undefined }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:textC }}>
                   ✅ 작업 완료 사진

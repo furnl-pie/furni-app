@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
+import useWindowWidth from '../../utils/useWindowWidth'
 import { downloadPhotosToDir, downloadAllPhotos } from '../../utils/image'
 import { navy, blue, green, amber, red, border, muted, textC, iStyle } from '../../constants/styles'
 
 export default function PhotoDownloadPage({ schedules, users, onBack }) {
+  const isPC = useWindowWidth() >= 1024
   const today = new Date().toISOString().slice(0, 10)
   const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
 
@@ -83,7 +85,7 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
         <div style={{ flex: 1, fontSize: 16, fontWeight: 700 }}>📥 완료사진 일괄 다운로드</div>
       </div>
 
-      <div style={{ padding: 20, maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ padding: 20, maxWidth: isPC ? 1200 : 640, margin: '0 auto' }}>
 
         {/* 날짜 필터 */}
         <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${border}`, padding: '14px 16px', marginBottom: 14 }}>
@@ -145,7 +147,7 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
             해당 기간에 사진이 있는 완료 건이 없습니다
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: isPC ? 'grid' : 'flex', flexDirection: isPC ? undefined : 'column', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, gap: 8 }}>
             {withPhotos.map(s => {
               const pics   = [...(s.work_photos || []), ...(s.photos || [])]
               const wpLen  = (s.work_photos || []).length

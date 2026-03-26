@@ -11,8 +11,10 @@ import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, today, getDriverSortKey } from '../../constants/styles'
 import { userName } from '../../utils/users'
+import useWindowWidth from '../../utils/useWindowWidth'
 
 export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAddDriver, onUpdateDriver, onDeleteDriver, onLogout }) {
+  const isPC = useWindowWidth() >= 1024
   const [view, setView]           = useState('list')
   const [selectedId, setSelId]    = useState(null)
   const [showModal, setModal]     = useState(false)
@@ -414,7 +416,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         {g.items.length}건
                       </span>
                     </div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    <div style={{ display: isPC ? 'grid' : 'flex', flexDirection: isPC ? undefined : 'column', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, gap:8 }}>
                       {g.items.map(s => {
                         const lc = s.status==='완료' ? green : s.status==='진행중' ? amber : s.status==='이동중' ? blue : border
                         const isDeleteChecked = checkedIds.has(s.id)
