@@ -611,6 +611,9 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                             {s.co_driver_id && (
                               <span style={{ marginLeft:5, fontSize:11, background:'#dbeafe', color:blue, padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle' }}>2인</span>
                             )}
+                            {s.schedule_photos?.length > 0 && (
+                              <span title={`참고사진 ${s.schedule_photos.length}장`} style={{ marginLeft:5, fontSize:11, background:'#fdf4ff', color:'#9333ea', padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle', border:'1px solid #e9d5ff' }}>🖼️{s.schedule_photos.length}</span>
+                            )}
                           </td>
                           <td style={{ padding:'8px 12px', textAlign:'center', whiteSpace:'nowrap' }}>
                             <div style={{ fontSize:13, color:muted }}>{s.date}</div>
