@@ -147,10 +147,14 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         <Badge status={schedule.status}/>
       </div>
 
-      <div style={{ padding:20, maxWidth: isPC ? 1300 : 640, margin:'0 auto', display: isPC ? 'grid' : 'block', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, columnGap: isPC ? 20 : undefined, alignItems: 'start' }}>
+      <div style={{ padding:20, maxWidth: isPC ? 1300 : 640, margin:'0 auto' }}>
+        <div style={{ display: isPC ? 'grid' : 'block', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, gap: isPC ? 20 : undefined, alignItems: 'start' }}>
+
+        {/* LEFT COLUMN */}
+        <div>
 
         {/* 기사 배치 */}
-        <div style={{ background:schedule.driver_id?'#f0fdf4':'#fef2f2', border:`1.5px solid ${schedule.driver_id?'#86efac':'#fca5a5'}`, borderRadius:12, padding:'14px 16px', marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
+        <div style={{ background:schedule.driver_id?'#f0fdf4':'#fef2f2', border:`1.5px solid ${schedule.driver_id?'#86efac':'#fca5a5'}`, borderRadius:12, padding:'14px 16px', marginBottom:12 }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', marginBottom:10, color:schedule.driver_id?green:red }}>
             {schedule.driver_id?'✓ 담당 기사':'⚠ 기사 미배치'}
           </div>
@@ -228,7 +232,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         </div>
 
         {/* 기본 정보 */}
-        <Card style={{ marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
+        <Card style={{ marginBottom:12 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase' }}>현장 정보</div>
             {!editInfo
@@ -329,8 +333,82 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           )}
         </Card>
 
+        {/* 업무 기록 */}
+        <Card style={{ marginBottom:12 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:10 }}>업무 기록</div>
+
+          <TimeEditRow label="출발" value={schedule.depart_time} color={blue}
+            onSave={v=>onUpdate({ depart_time:v||null })}/>
+
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom:`1px solid ${border}`, fontSize:14, gap:8 }}>
+            <span style={{ color:muted, fontSize:13, flexShrink:0 }}>도착 예상 · 문자</span>
+            <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
+              <span style={{ fontWeight:500, color:schedule.eta?blue:muted, fontFamily:'monospace' }}>
+                {schedule.eta||'미입력'}
+              </span>
+              {schedule.sms_sent
+                ? <span style={{ fontSize:11, background:'#dcfce7', color:green, padding:'2px 7px', borderRadius:4, fontWeight:600, whiteSpace:'nowrap' }}>💬 발송됨</span>
+                : <span style={{ fontSize:11, background:'#f1f5f9', color:muted, padding:'2px 7px', borderRadius:4, whiteSpace:'nowrap' }}>미발송</span>
+              }
+            </div>
+          </div>
+
+          <TimeEditRow label="작업 시작" value={schedule.start_time} color={green}
+            onSave={v=>onUpdate({ start_time:v||null })}/>
+
+          {(schedule.est_waste||schedule.est_duration) && (
+            <Row label="예상 물량·시간"
+              value={[schedule.est_waste, schedule.est_duration].filter(Boolean).join('  ·  ')}
+              valueColor={amber}/>
+          )}
+
+          <TimeEditRow label="업무 완료" value={schedule.end_time} color={green}
+            onSave={v=>onUpdate({ end_time:v||null })}/>
+
+          {schedule.final_waste && (
+            <Row label="최종 물량" value={schedule.final_waste} valueColor={amber}/>
+          )}
+
+          {schedule.start_time && schedule.end_time && (() => {
+            const toMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m }
+            const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
+            if (diff <= 0) return null
+            const h = Math.floor(diff/60), m = diff%60
+            const total = h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`
+            return (
+              <div style={{ padding:'8px 0 4px' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13 }}>
+                  <span style={{ color:muted }}>작업 시간</span>
+                  <span style={{ fontWeight:600, color:blue }}>
+                    {schedule.start_time} ~ {schedule.end_time}
+                    <span style={{ marginLeft:8, background:'#dbeafe', color:blue, fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:700 }}>
+                      총 {total}
+                    </span>
+                  </span>
+                </div>
+                <div style={{ display:'flex', justifyContent:'flex-end', marginTop:10 }}>
+                  <button onClick={()=>setShowBilling(true)}
+                    style={{ background:schedule.billing_total?green:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+                    {schedule.billing_total ? `✓ 청구 완료 (${schedule.billing_total}만원)` : '💰 청구서 작성'}
+                  </button>
+                </div>
+              </div>
+            )
+          })()}
+        </Card>
+
+        {schedule.driver_note && (
+          <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:10, padding:'12px 14px', marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:amber, marginBottom:6 }}>📋 기사 특이사항</div>
+            <div style={{ fontSize:13, color:textC, lineHeight:1.7, whiteSpace:'pre-wrap' }}>{schedule.driver_note}</div>
+          </div>
+        )}
+
+        </div> {/* end left column */}
+        <div> {/* right column */}
+
         {/* 일정 사진 */}
-        <Card style={{ marginBottom:12, gridColumn: isPC ? '2' : undefined, gridRow: isPC ? '1 / 4' : undefined }}>
+        <Card style={{ marginBottom:12 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
             <div>
               <div style={{ fontSize:14, fontWeight:700, color:textC }}>일정 사진</div>
@@ -396,83 +474,12 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           </div>
         </Card>
 
-        {/* 업무 기록 */}
-        <Card style={{ marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
-          <div style={{ fontSize:11, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:10 }}>업무 기록</div>
-
-          <TimeEditRow label="출발" value={schedule.depart_time} color={blue}
-            onSave={v=>onUpdate({ depart_time:v||null })}/>
-
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom:`1px solid ${border}`, fontSize:14, gap:8 }}>
-            <span style={{ color:muted, fontSize:13, flexShrink:0 }}>도착 예상 · 문자</span>
-            <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
-              <span style={{ fontWeight:500, color:schedule.eta?blue:muted, fontFamily:'monospace' }}>
-                {schedule.eta||'미입력'}
-              </span>
-              {schedule.sms_sent
-                ? <span style={{ fontSize:11, background:'#dcfce7', color:green, padding:'2px 7px', borderRadius:4, fontWeight:600, whiteSpace:'nowrap' }}>💬 발송됨</span>
-                : <span style={{ fontSize:11, background:'#f1f5f9', color:muted, padding:'2px 7px', borderRadius:4, whiteSpace:'nowrap' }}>미발송</span>
-              }
-            </div>
-          </div>
-
-          <TimeEditRow label="작업 시작" value={schedule.start_time} color={green}
-            onSave={v=>onUpdate({ start_time:v||null })}/>
-
-          {(schedule.est_waste||schedule.est_duration) && (
-            <Row label="예상 물량·시간"
-              value={[schedule.est_waste, schedule.est_duration].filter(Boolean).join('  ·  ')}
-              valueColor={amber}/>
-          )}
-
-          <TimeEditRow label="업무 완료" value={schedule.end_time} color={green}
-            onSave={v=>onUpdate({ end_time:v||null })}/>
-
-          {schedule.final_waste && (
-            <Row label="최종 물량" value={schedule.final_waste} valueColor={amber}/>
-          )}
-
-          {schedule.start_time && schedule.end_time && (() => {
-            const toMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m }
-            const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
-            if (diff <= 0) return null
-            const h = Math.floor(diff/60), m = diff%60
-            const total = h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`
-            return (
-              <div style={{ padding:'8px 0 4px' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13 }}>
-                  <span style={{ color:muted }}>작업 시간</span>
-                  <span style={{ fontWeight:600, color:blue }}>
-                    {schedule.start_time} ~ {schedule.end_time}
-                    <span style={{ marginLeft:8, background:'#dbeafe', color:blue, fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:700 }}>
-                      총 {total}
-                    </span>
-                  </span>
-                </div>
-                <div style={{ display:'flex', justifyContent:'flex-end', marginTop:10 }}>
-                  <button onClick={()=>setShowBilling(true)}
-                    style={{ background:schedule.billing_total?green:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
-                    {schedule.billing_total ? `✓ 청구 완료 (${schedule.billing_total}만원)` : '💰 청구서 작성'}
-                  </button>
-                </div>
-              </div>
-            )
-          })()}
-        </Card>
-
-        {schedule.driver_note && (
-          <div style={{ background:'#fffbeb', border:`1px solid #fde68a`, borderRadius:10, padding:'12px 14px', marginBottom:12, gridColumn: isPC ? '1' : undefined }}>
-            <div style={{ fontSize:11, fontWeight:700, color:amber, marginBottom:6 }}>📋 기사 특이사항</div>
-            <div style={{ fontSize:13, color:textC, lineHeight:1.7, whiteSpace:'pre-wrap' }}>{schedule.driver_note}</div>
-          </div>
-        )}
-
         {/* 작업 시작 사진 */}
         {(() => {
           const workPics = schedule.work_photos || []
           if (workPics.length === 0 && !schedule.start_time) return null
           return (
-            <Card style={{ marginBottom:12, gridColumn: isPC ? '2' : undefined }}>
+            <Card style={{ marginBottom:12 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:textC }}>
                   📍 작업 시작 사진
@@ -507,7 +514,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
         {(() => {
           if (completePhotos.length === 0 && schedule.status !== '완료') return null
           return (
-            <Card style={{ marginBottom:12, gridColumn: isPC ? '2' : undefined }}>
+            <Card style={{ marginBottom:12 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:textC }}>
                   ✅ 작업 완료 사진
@@ -556,6 +563,9 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
             </Card>
           )
         })()}
+
+        </div> {/* end right column */}
+        </div> {/* end grid */}
       </div>
 
       {/* 청구서 작성 모달 */}
