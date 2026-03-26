@@ -121,10 +121,56 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const handleDrop = async e => {
     e.preventDefault()
     dropRef.current?.classList.remove('drag-over')
+
+    // 1) File 객체 (파일탐색기, 일부 앱)
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
-    if (!files.length) return
-    const urls = await readFilesAsBase64(files)
-    await appendSchedulePhotos(urls)
+    if (files.length) {
+      const urls = await readFilesAsBase64(files)
+      await appendSchedulePhotos(urls)
+      return
+    }
+
+    // 2) URL/HTML 형식 (카카오톡 등 메신저 앱 대응)
+    const imgUrls = []
+
+    // text/html 안의 <img src="..."> 추출
+    const html = e.dataTransfer.getData('text/html')
+    if (html) {
+      const matches = [...html.matchAll(/src=["']([^"']+)["']/gi)]
+      matches.forEach(m => { if (m[1] && !m[1].startsWith('data:')) imgUrls.push(m[1]) })
+    }
+
+    // text/uri-list (줄바꿈으로 구분된 URL 목록)
+    if (!imgUrls.length) {
+      const uriList = e.dataTransfer.getData('text/uri-list')
+      if (uriList) uriList.split(/\r?\n/).filter(u => u && !u.startsWith('#')).forEach(u => imgUrls.push(u))
+    }
+
+    // text/plain (단일 URL)
+    if (!imgUrls.length) {
+      const plain = e.dataTransfer.getData('text/plain')
+      if (plain && plain.startsWith('http')) imgUrls.push(plain.trim())
+    }
+
+    if (!imgUrls.length) return
+
+    // 각 URL을 fetch → base64 (CORS 실패 시 조용히 스킵)
+    const results = []
+    for (const url of imgUrls) {
+      try {
+        const res = await fetch(url, { mode: 'cors' })
+        if (!res.ok) continue
+        const blob = await res.blob()
+        if (!blob.type.startsWith('image/')) continue
+        await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => { results.push(reader.result); resolve() }
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+      } catch { /* CORS 차단 등 — 무시 */ }
+    }
+    if (results.length) await appendSchedulePhotos(results)
   }
   const handleDragOver = e => { e.preventDefault(); dropRef.current?.classList.add('drag-over') }
   const handleDragLeave = () => dropRef.current?.classList.remove('drag-over')
