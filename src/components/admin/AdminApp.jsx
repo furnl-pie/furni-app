@@ -209,64 +209,46 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   let lastDriverId = '__init__'
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ background:navy, color:'#fff', padding:'12px 16px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <TruckIcon width={44} height={44}/>
-            <div>
-              <div style={{ fontSize:18, fontWeight:700, lineHeight:1.2 }}>동태관리</div>
-              <div style={{ fontSize:11, opacity:.65 }}>관리자</div>
-            </div>
+    <div style={{ minHeight:'100vh', background:'#f8f9fc', fontFamily:"'Noto Sans KR', sans-serif" }}>
+      <div style={{ background:'#fff', borderBottom:'1px solid #eaecf0', height:54, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', position:'sticky', top:0, zIndex:100 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <TruckIcon width={34} height={34}/>
+          <div>
+            <div style={{ fontSize:15, fontWeight:800, color:'#111827', lineHeight:1.2, letterSpacing:'-.3px' }}>동태관리</div>
+            <div style={{ fontSize:10, color:'#9ca3af', fontWeight:500 }}>관리자</div>
           </div>
-          <div style={{ display:'flex', flexWrap: isPC ? 'nowrap' : 'wrap', gap:6, justifyContent:'flex-end', maxWidth: isPC ? 'none' : 220 }}>
-            <button onClick={()=>setView('photos')}
-              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              📥 사진
+        </div>
+        <div style={{ display:'flex', flexWrap: isPC ? 'nowrap' : 'wrap', gap:4, justifyContent:'flex-end', maxWidth: isPC ? 'none' : 220 }}>
+          {[['📥 사진', ()=>setView('photos')], ['🚛 처리', ()=>setView('disposal')], ['💰 청구', ()=>setView('billing')], ['👤 기사', ()=>setDriverMgr(true)], ['?', ()=>setHelp(true)], ['⚙️', ()=>setAdminSettings(true)]].map(([label, fn]) => (
+            <button key={label} onClick={fn}
+              style={{ height:32, padding:'0 11px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
+              onMouseEnter={e=>{ e.currentTarget.style.background='#eef2ff'; e.currentTarget.style.color='#4f46e5'; e.currentTarget.style.borderColor='#a5b4fc' }}
+              onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#6b7280'; e.currentTarget.style.borderColor='#eaecf0' }}>
+              {label}
             </button>
-            <button onClick={()=>setView('disposal')}
-              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              🚛 처리
-            </button>
-            <button onClick={()=>setView('billing')}
-              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              💰 청구
-            </button>
-            <button onClick={()=>setDriverMgr(true)}
-              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              👤 기사
-            </button>
-            <button onClick={()=>setHelp(true)}
-              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              ?
-            </button>
-            <button onClick={()=>setAdminSettings(true)}
-              style={{ background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', borderRadius:8, padding:'7px 11px', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              ⚙️
-            </button>
-            <button onClick={onLogout}
-              style={{ background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.2)', color:'rgba(255,255,255,.8)', borderRadius:8, padding:'7px 11px', fontSize:12, cursor:'pointer', whiteSpace:'nowrap' }}>
-              로그아웃
-            </button>
-          </div>
+          ))}
+          <button onClick={onLogout}
+            style={{ height:32, padding:'0 11px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#9ca3af', fontSize:12, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
+            로그아웃
+          </button>
         </div>
       </div>
 
       <div style={{ padding:20, maxWidth:1060, margin:'0 auto' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
-          {[['전체',stats.total,navy],['미배치',stats.unassigned,red],['진행중',stats.ing,amber],['완료',stats.done,green]].map(([l,v,c])=>(
-            <Card key={l} style={{ textAlign:'center', padding:'14px 8px' }}>
-              <div style={{ fontSize:28, fontWeight:700, color:c }}>{v}</div>
-              <div style={{ fontSize:12, color:muted, marginTop:2 }}>{l}</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
+          {[['전체',stats.total,'#6366f1'],['미배치',stats.unassigned,'#f43f5e'],['진행중',stats.ing,'#f59e0b'],['완료',stats.done,'#10b981']].map(([l,v,c])=>(
+            <Card key={l} style={{ textAlign:'center', padding:'12px 8px', borderTop:`3px solid ${c}` }}>
+              <div style={{ fontSize:28, fontWeight:800, color:c, lineHeight:1.1 }}>{v}</div>
+              <div style={{ fontSize:11, color:muted, marginTop:3, fontWeight:600, letterSpacing:'.3px' }}>{l}</div>
             </Card>
           ))}
         </div>
 
         {stats.unassigned>0 && (
-          <div style={{ background:'#fef2f2', border:`1px solid #fecaca`, borderRadius:10, padding:'10px 16px', marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ background:'#fff1f2', border:'1px solid #fecdd3', borderLeft:'3px solid #f43f5e', borderRadius:8, padding:'9px 14px', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
             <span>⚠️</span>
-            <span style={{ fontSize:13, fontWeight:600, color:red }}>기사 미배치 {stats.unassigned}건</span>
-            <span style={{ fontSize:12, color:'#b91c1c' }}>— ✏️ 버튼으로 바로 배치하세요</span>
+            <span style={{ fontSize:12, fontWeight:700, color:'#be123c' }}>기사 미배치 {stats.unassigned}건</span>
+            <span style={{ fontSize:12, color:'#e11d48' }}>— ✏️ 버튼으로 바로 배치하세요</span>
           </div>
         )}
 
@@ -517,12 +499,12 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         </button>
                       </th>
                     )}
-                    <th style={{ padding:'6px 8px', background:'#f8fafc', whiteSpace:'nowrap' }}>기사</th>
-                    <th style={{ padding:'6px 8px', background:'#f8fafc', whiteSpace:'nowrap' }}>
+                    <th style={{ padding:'8px 10px', background:'#f9fafb', whiteSpace:'nowrap', fontSize:11, fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.5px' }}>기사</th>
+                    <th style={{ padding:'8px 10px', background:'#f9fafb', whiteSpace:'nowrap' }}>
                       <select
                         value={filterStatus}
                         onChange={e => setFStatus(e.target.value)}
-                        style={{ padding:'4px 6px', borderRadius:7, border:`1.5px solid ${filterStatus ? amber : border}`, fontSize:15, fontWeight:600, color: filterStatus ? amber : muted, background: filterStatus ? '#fffbeb' : '#f8fafc', outline:'none', cursor:'pointer', fontFamily:"inherit" }}>
+                        style={{ padding:'3px 6px', borderRadius:7, border:`1.5px solid ${filterStatus ? amber : '#eaecf0'}`, fontSize:11, fontWeight:700, color: filterStatus ? amber : '#9ca3af', background: filterStatus ? '#fffbeb' : '#f9fafb', outline:'none', cursor:'pointer', fontFamily:"inherit", textTransform:'uppercase', letterSpacing:'.5px' }}>
                         <option value="">상태</option>
                         <option value="대기">대기</option>
                         <option value="이동중">이동중</option>
@@ -531,7 +513,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                       </select>
                     </th>
                     {['현장담당자','날짜·시간','주소','폐기물량','시작','완료',''].map(h=>(
-                      <th key={h} style={{ padding:'10px 12px', textAlign:'center', fontWeight:600, color:muted, fontSize:15, whiteSpace:'nowrap', background:'#f8fafc' }}>{h}</th>
+                      <th key={h} style={{ padding:'8px 10px', textAlign:'center', fontWeight:700, color:'#9ca3af', fontSize:11, whiteSpace:'nowrap', background:'#f9fafb', textTransform:'uppercase', letterSpacing:'.5px' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -552,11 +534,12 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         {showDiv && (
                           <tr>
                             <td colSpan={(deleteMode||assignMode) ? 10 : 9} style={{
-                              padding:'5px 14px', fontSize:15, fontWeight:700, letterSpacing:.4,
-                              background: chip ? chip.bg : '#fef2f2',
+                              padding:'5px 12px 5px 14px', fontSize:13, fontWeight:700,
+                              background:'#fafafa',
                               color: chip ? chip.color : red,
-                              borderTop:`2px solid ${chip ? chip.border : '#fecaca'}`,
-                              borderBottom:`1px solid ${border}`
+                              borderTop:`2px solid #f3f4f6`,
+                              borderBottom:`1px solid #f3f4f6`,
+                              borderLeft:`3px solid ${chip ? chip.border : '#fca5a5'}`
                             }}>
                               {s.driver_id ? `▸ ${userName(s.driver_id)}` : '▸ 미배치'}
                               <span style={{ marginLeft:10, fontWeight:400, opacity:.65, fontSize:15 }}>
@@ -622,32 +605,32 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                               </div>
                             )}
                           </td>
-                          <td style={{ padding:'8px 12px', textAlign:'center' }}><Badge status={s.status}/></td>
-                          <td style={{ padding:'8px 12px', textAlign:'center', whiteSpace:'nowrap', fontSize:15 }}>
+                          <td style={{ padding:'8px 10px', textAlign:'center' }}><Badge status={s.status}/></td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', whiteSpace:'nowrap', fontSize:13 }}>
                             {s.cname}
                             {s.co_driver_id && (
                               <span style={{ marginLeft:5, fontSize:11, background:'#dbeafe', color:blue, padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle' }}>2인</span>
                             )}
                             {s.schedule_photos?.length > 0 && (
-                              <span title={`참고사진 ${s.schedule_photos.length}장`} style={{ marginLeft:5, fontSize:11, background:'#fdf4ff', color:'#9333ea', padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle', border:'1px solid #e9d5ff' }}>🖼️{s.schedule_photos.length}</span>
+                              <span title={`참고사진 ${s.schedule_photos.length}장`} style={{ marginLeft:5, fontSize:11, background:'#faf5ff', color:'#9333ea', padding:'1px 5px', borderRadius:8, fontWeight:700, verticalAlign:'middle', border:'1px solid #e9d5ff' }}>🖼️{s.schedule_photos.length}</span>
                             )}
                           </td>
-                          <td style={{ padding:'8px 12px', textAlign:'center', whiteSpace:'nowrap' }}>
-                            <div style={{ fontSize:13, color:muted }}>{s.date}</div>
-                            <div style={{ fontFamily:'monospace', fontWeight:600, fontSize:15 }}>{s.time}</div>
+                          <td style={{ padding:'8px 10px', textAlign:'center', whiteSpace:'nowrap' }}>
+                            <div style={{ fontSize:11, color:'#9ca3af' }}>{s.date}</div>
+                            <div style={{ fontFamily:'monospace', fontWeight:700, fontSize:13, color:'#111827' }}>{s.time}</div>
                           </td>
-                          <td style={{ padding:'8px 12px', textAlign:'center', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontSize:15 }}>{s.address}</td>
-                          <td style={{ padding:'8px 12px', textAlign:'center', color:muted, whiteSpace:'nowrap', fontSize:15 }}>{s.waste}</td>
-                          <td style={{ padding:'8px 12px', textAlign:'center', fontFamily:'monospace', fontSize:15, color:s.start_time?green:'#ccc' }}>{s.start_time||'-'}</td>
-                          <td style={{ padding:'8px 12px', textAlign:'center', fontFamily:'monospace', fontSize:15, color:s.end_time?blue:'#ccc' }}>{s.end_time||'-'}</td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontSize:13, color:'#374151' }}>{s.address}</td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', color:'#9ca3af', whiteSpace:'nowrap', fontSize:13 }}>{s.waste}</td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', fontFamily:'monospace', fontSize:13, fontWeight:600, color:s.start_time?'#10b981':'#d1d5db' }}>{s.start_time||'—'}</td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', fontFamily:'monospace', fontSize:13, fontWeight:600, color:s.end_time?'#6366f1':'#d1d5db' }}>{s.end_time||'—'}</td>
                           <td style={{ padding:'4px 8px', textAlign:'center', whiteSpace:'nowrap' }} onClick={e=>e.stopPropagation()}>
                             <div style={{ display:'flex', gap:4, justifyContent:'center' }}>
                               <button onClick={()=>openCopyModal(s)}
-                                style={{ background:'#f0f9ff', color:blue, border:`1px solid #bae6fd`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                style={{ background:'#f9fafb', color:'#6b7280', border:'1px solid #eaecf0', borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
                                 이동/복사
                               </button>
                               <button onClick={()=>setConfirmSingleDel(s.id)}
-                                style={{ background:'#fef2f2', color:red, border:`1px solid #fecaca`, borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                                style={{ background:'#fff1f2', color:'#e11d48', border:'1px solid #fecdd3', borderRadius:6, padding:'4px 8px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
                                 🗑
                               </button>
                             </div>

@@ -180,11 +180,13 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const isPC = useWindowWidth() >= 1024
 
   return (
-    <div onPaste={handlePagePaste} style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <style>{`.drag-over{border-color:${blue}!important;background:#eff6ff!important}`}</style>
-      <div style={{ background:navy, color:'#fff', padding:'14px 20px', display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={onBack} style={{ background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
-        <div style={{ flex:1, fontSize:16, fontWeight:700 }}>일정 상세 (관리자)</div>
+    <div onPaste={handlePagePaste} style={{ minHeight:'100vh', background:'#f8f9fc', fontFamily:"'Noto Sans KR', sans-serif" }}>
+      <style>{`.drag-over{border-color:#6366f1!important;background:#eef2ff!important}`}</style>
+      <div style={{ background:'#fff', borderBottom:'1px solid #eaecf0', height:54, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', position:'sticky', top:0, zIndex:100 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button onClick={onBack} style={{ width:34, height:34, border:'1px solid #eaecf0', background:'#f9fafb', borderRadius:8, cursor:'pointer', fontSize:16, color:'#6b7280', display:'flex', alignItems:'center', justifyContent:'center' }}>←</button>
+          <span style={{ fontSize:15, fontWeight:700, color:'#111827' }}>일정 상세</span>
+        </div>
         <Badge status={schedule.status}/>
       </div>
 

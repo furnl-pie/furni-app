@@ -35,10 +35,10 @@ export const muted  = '#64748b'
 export const textC  = '#1e293b'
 
 export const STATUS_CFG = {
-  '대기':   { color: muted,  bg: '#f1f5f9', label: '대기' },
-  '이동중': { color: blue,   bg: '#dbeafe', label: '🚚 이동중' },
-  '진행중': { color: amber,  bg: '#fef3c7', label: '● 진행중' },
-  '완료':   { color: green,  bg: '#dcfce7', label: '✓ 완료' },
+  '대기':   { color: '#6b7280', bg: '#f3f4f6', border: 'transparent', label: '대기' },
+  '이동중': { color: '#c2410c', bg: '#fff7ed', border: '#fed7aa',      label: '🚚 이동중' },
+  '진행중': { color: '#4338ca', bg: '#eef2ff', border: '#c7d2fe',      label: '● 진행중' },
+  '완료':   { color: '#065f46', bg: '#ecfdf5', border: '#a7f3d0',      label: '✓ 완료' },
 }
 
 export const iStyle = {

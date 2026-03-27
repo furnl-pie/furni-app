@@ -141,7 +141,7 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   const notifColor = notifPerm === 'granted' ? green : '#dc2626'
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
+    <div style={{ minHeight:'100vh', background:'#f8f9fc', fontFamily:"'Noto Sans KR', sans-serif" }}>
 
       {notification && (
         <div style={{ position:'fixed', top:220, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:navy, color:'#fff', borderRadius:16, padding:'20px 36px', fontSize:18, fontWeight:600, boxShadow:'0 4px 24px rgba(0,0,0,.35)', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:14 }}>
@@ -150,39 +150,42 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
         </div>
       )}
 
-      <div style={{ background:navy, color:'#fff', padding:'16px 20px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+      <div style={{ background:'#fff', borderBottom:'1px solid #eaecf0', padding:'12px 20px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: tab==='schedule' ? 12 : 0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <TruckIcon width={52} height={52}/>
+            <TruckIcon width={40} height={40}/>
             <div>
-              <div style={{ fontSize:20, fontWeight:700 }}>동태관리</div>
-              <div style={{ fontSize:15, opacity:.8, marginTop:1, fontWeight:600 }}>{user.name} 기사님</div>
-              <div style={{ fontSize:12, opacity:.6, marginTop:1 }}>{user.phone}</div>
+              <div style={{ fontSize:15, fontWeight:800, color:'#111827', letterSpacing:'-.3px' }}>동태관리</div>
+              <div style={{ fontSize:13, color:'#374151', marginTop:1, fontWeight:600 }}>{user.name} 기사님</div>
+              <div style={{ fontSize:11, color:'#9ca3af', marginTop:1 }}>{user.phone}</div>
             </div>
           </div>
-          <div style={{ display:'flex', gap:8 }}>
+          <div style={{ display:'flex', gap:6 }}>
             <button onClick={()=>setHelp(true)}
-              style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 10px', fontSize:14, fontWeight:700, cursor:'pointer', lineHeight:1 }}>
+              style={{ height:30, padding:'0 10px', border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', borderRadius:7, fontSize:13, fontWeight:700, cursor:'pointer' }}>
               ?
             </button>
             <button onClick={()=>setSettings(true)}
-              style={{ background:'rgba(255,255,255,.15)', border:'none', color:'#fff', borderRadius:7, padding:'6px 12px', fontSize:10, cursor:'pointer' }}>
+              style={{ height:30, padding:'0 10px', border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', borderRadius:7, fontSize:11, cursor:'pointer' }}>
               ⚙ 설정
             </button>
-            <Btn onClick={onLogout} outline color="#aac" style={{ padding:'6px 12px', fontSize:10 }}>로그아웃</Btn>
+            <button onClick={onLogout}
+              style={{ height:30, padding:'0 10px', border:'1px solid #eaecf0', background:'transparent', color:'#9ca3af', borderRadius:7, fontSize:11, cursor:'pointer' }}>
+              로그아웃
+            </button>
           </div>
         </div>
         {tab === 'schedule' && (
           <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)} className="driver-date"
-            style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', WebkitTextFillColor:'#fff', fontSize:20, width:'100%', boxSizing:'border-box', colorScheme:'dark' }}/>
+            style={{ padding:'9px 12px', borderRadius:9, border:'1.5px solid #eaecf0', background:'#f9fafb', color:'#111827', fontSize:15, fontWeight:600, width:'100%', boxSizing:'border-box', outline:'none' }}/>
         )}
       </div>
 
       {/* 탭 바 */}
-      <div style={{ display:'flex', background:'#fff', borderBottom:`1px solid ${border}` }}>
+      <div style={{ display:'flex', background:'#fff', borderBottom:'1px solid #eaecf0' }}>
         {[['schedule','📋 일정'],['disposal','🚛 처리']].map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
-            style={{ flex:1, padding:'12px 0', fontSize:14, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===t?blue:'transparent'}`, color:tab===t?blue:muted, background:'none', cursor:'pointer' }}>
+            style={{ flex:1, padding:'12px 0', fontSize:13, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===t?'#6366f1':'transparent'}`, color:tab===t?'#6366f1':'#9ca3af', background:'none', cursor:'pointer', fontFamily:'inherit', transition:'all .12s' }}>
             {l}
           </button>
         ))}
@@ -193,10 +196,10 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
       {tab === 'schedule' && (
       <div style={{ padding:16, maxWidth:480, margin:'0 auto' }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
-          {[['대기',cnt('대기'),muted],['진행중',cnt('진행중'),amber],['완료',cnt('완료'),green]].map(([l,v,c])=>(
-            <Card key={l} style={{ textAlign:'center', padding:'12px 6px' }}>
-              <div style={{ fontSize:25, fontWeight:700, color:c }}>{v}</div>
-              <div style={{ fontSize:14, color:muted }}>{l}</div>
+          {[['대기',cnt('대기'),'#9ca3af'],['진행중',cnt('진행중'),'#f59e0b'],['완료',cnt('완료'),'#10b981']].map(([l,v,c])=>(
+            <Card key={l} style={{ textAlign:'center', padding:'12px 6px', borderTop:`3px solid ${c}` }}>
+              <div style={{ fontSize:25, fontWeight:800, color:c, lineHeight:1.1 }}>{v}</div>
+              <div style={{ fontSize:12, color:muted, marginTop:2, fontWeight:500 }}>{l}</div>
             </Card>
           ))}
         </div>
@@ -209,27 +212,34 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
         )}
 
         {mine.map(s=>{
-          const lc = s.status==='완료' ? green : s.status==='진행중' ? amber : border
+          const lc = s.status==='완료' ? '#10b981' : s.status==='진행중' ? '#6366f1' : s.status==='이동중' ? '#f59e0b' : '#d1d5db'
           return (
             <div key={s.id}
               onClick={()=>{ setSelId(s.id); setView('detail') }}
-              style={{ background:'#fff', borderRadius:12, border:`1px solid ${border}`, borderLeft:`4px solid ${lc}`, padding:'14px 16px', marginBottom:12, cursor:'pointer' }}
+              style={{ background:'#fff', borderRadius:12, border:'1px solid #eaecf0', borderLeft:`4px solid ${lc}`, padding:'14px 16px', marginBottom:10, cursor:'pointer', transition:'box-shadow .1s' }}
+              onMouseEnter={e=>e.currentTarget.style.boxShadow='0 2px 10px rgba(0,0,0,.08)'}
+              onMouseLeave={e=>e.currentTarget.style.boxShadow='none'}
             >
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-                <span style={{ fontFamily:'monospace', fontSize:18, fontWeight:700, color:navy }}>{s.time}</span>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
+                <span style={{ fontFamily:"'SF Mono','Fira Code',monospace", fontSize:20, fontWeight:800, color:'#111827', letterSpacing:'-.5px' }}>{s.time}</span>
                 <Badge status={s.status}/>
               </div>
-              <div style={{ fontSize:16, fontWeight:600, marginBottom:4, color:textC }}>{s.address}</div>
-              <div style={{ fontSize:14, color:muted }}>
-                폐기물 {s.waste} · 담당: {s.cname}
+              <div style={{ fontSize:14, fontWeight:700, marginBottom:5, color:'#111827', lineHeight:1.3 }}>{s.address}</div>
+              <div style={{ fontSize:12, color:'#9ca3af', display:'flex', flexWrap:'wrap', gap:6, alignItems:'center' }}>
+                <span>폐기물 {s.waste}</span>
+                <span>·</span>
+                <span>담당: {s.cname}</span>
                 {s.co_driver_id && (
-                  <span style={{ marginLeft:8, fontSize:12, background:'#dbeafe', color:blue, padding:'1px 7px', borderRadius:10, fontWeight:600 }}>
+                  <span style={{ background:'#dbeafe', color:'#1d4ed8', padding:'1px 7px', borderRadius:10, fontWeight:600, fontSize:11 }}>
                     2인 · {userName(user.id === s.driver_id ? s.co_driver_id : s.driver_id)}
                   </span>
                 )}
+                {s.schedule_photos?.length > 0 && (
+                  <span style={{ background:'#faf5ff', color:'#9333ea', border:'1px solid #e9d5ff', padding:'1px 6px', borderRadius:8, fontWeight:700, fontSize:11 }}>🖼 {s.schedule_photos.length}</span>
+                )}
               </div>
               {s.start_time && (
-                <div style={{ fontSize:13, color:green, marginTop:6, fontFamily:'monospace' }}>
+                <div style={{ fontSize:12, color:'#10b981', marginTop:8, fontFamily:"'SF Mono','Fira Code',monospace", fontWeight:600 }}>
                   ▶ {s.start_time}{s.end_time ? ` → ■ ${s.end_time}` : ' (진행중)'}
                 </div>
               )}

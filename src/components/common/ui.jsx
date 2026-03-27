@@ -5,7 +5,7 @@ import { STATUS_CFG, blue, muted, border, textC, navy, green } from '../../const
 export function Badge({ status }) {
   const s = STATUS_CFG[status] || STATUS_CFG['대기']
   return (
-    <span style={{ fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, color:s.color, background:s.bg, whiteSpace:'nowrap' }}>
+    <span style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:6, color:s.color, background:s.bg, border:`1px solid ${s.border||'transparent'}`, whiteSpace:'nowrap', display:'inline-flex', alignItems:'center', gap:2 }}>
       {s.label}
     </span>
   )

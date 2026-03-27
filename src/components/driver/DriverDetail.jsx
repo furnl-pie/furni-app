@@ -228,29 +228,61 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
   const lbPhotos = lbSource==='schedule_ref' ? (schedule.schedule_photos||[]) : lbSource==='work' ? (schedule.work_photos||[]) : displayPhotos
 
   return (
-    <div onPaste={handlePaste} style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ background:navy, color:'#fff', padding:'16px 20px', display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={onBack} style={{ background:'none', border:'none', color:'#fff', fontSize:26, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:18, fontWeight:700 }}>일정 상세</div>
+    <div onPaste={handlePaste} style={{ minHeight:'100vh', background:'#f8f9fc', fontFamily:"'Noto Sans KR', sans-serif" }}>
+      <div style={{ background:'#fff', borderBottom:'1px solid #eaecf0', height:54, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px', position:'sticky', top:0, zIndex:100 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button onClick={onBack} style={{ width:34, height:34, border:'1px solid #eaecf0', background:'#f9fafb', borderRadius:8, cursor:'pointer', fontSize:16, color:'#6b7280', display:'flex', alignItems:'center', justifyContent:'center' }}>←</button>
+          <span style={{ fontSize:15, fontWeight:700, color:'#111827' }}>일정 상세</span>
         </div>
         <Badge status={schedule.status}/>
       </div>
 
       <div style={{ padding:16, maxWidth:520, margin:'0 auto' }}>
 
-        <Card style={{ marginBottom:12 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>현장 정보</div>
-          <Row label="예정 시간"   value={`${schedule.date}  ${schedule.time}`}/>
-          <Row label="폐기물량"    value={schedule.waste}/>
-          <Row label="현장 담당자" value={schedule.cname}/>
-          <Row label="연락처"      value={schedule.cphone}/>
-          {schedule.door_pw && <Row label="공동 비밀번호" value={schedule.door_pw}/>}
-          {schedule.unit_pw && <Row label="세대 비밀번호" value={schedule.unit_pw}/>}
-          {schedule.memo && <Row label="메모" value={schedule.memo}/>}
-          <div style={{ margin:'14px 0' }}><CopyAddress address={schedule.address}/></div>
+        <Card style={{ marginBottom:12, borderTop:'3px solid #6366f1' }}>
+          {/* 날짜·시간 */}
+          <div style={{ textAlign:'center', paddingBottom:14, marginBottom:14, borderBottom:'1px solid #f3f4f6' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.5px', textTransform:'uppercase', marginBottom:6 }}>예정 시간</div>
+            <div style={{ fontSize:28, fontWeight:800, color:'#6366f1', fontFamily:"'SF Mono','Fira Code',monospace", letterSpacing:'-.5px' }}>{schedule.time}</div>
+            <div style={{ fontSize:13, color:'#9ca3af', marginTop:4 }}>{schedule.date}</div>
+          </div>
+          {/* 주소 */}
+          <div style={{ textAlign:'center', paddingBottom:14, marginBottom:14, borderBottom:'1px solid #f3f4f6' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.5px', textTransform:'uppercase', marginBottom:6 }}>현장 주소</div>
+            <div style={{ fontSize:14, fontWeight:700, color:'#111827', lineHeight:1.5 }}>{schedule.address}</div>
+            <div style={{ marginTop:8 }}><CopyAddress address={schedule.address}/></div>
+          </div>
+          {/* 나머지 정보 그리드 */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:14 }}>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.4px', textTransform:'uppercase', marginBottom:4 }}>폐기물량</div>
+              <div style={{ fontSize:13, fontWeight:600, color:'#111827' }}>{schedule.waste}</div>
+            </div>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.4px', textTransform:'uppercase', marginBottom:4 }}>현장 담당자</div>
+              <div style={{ fontSize:13, fontWeight:600, color:'#111827' }}>{schedule.cname}</div>
+            </div>
+            {schedule.door_pw && (
+              <div style={{ textAlign:'center' }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.4px', textTransform:'uppercase', marginBottom:4 }}>공동 비밀번호</div>
+                <div style={{ fontSize:13, fontWeight:700, color:'#111827', fontFamily:"'SF Mono','Fira Code',monospace" }}>{schedule.door_pw}</div>
+              </div>
+            )}
+            {schedule.unit_pw && (
+              <div style={{ textAlign:'center' }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.4px', textTransform:'uppercase', marginBottom:4 }}>세대 비밀번호</div>
+                <div style={{ fontSize:13, fontWeight:700, color:'#111827', fontFamily:"'SF Mono','Fira Code',monospace" }}>{schedule.unit_pw}</div>
+              </div>
+            )}
+          </div>
+          {schedule.memo && (
+            <div style={{ textAlign:'center', background:'#fafafa', border:'1px solid #f3f4f6', borderRadius:8, padding:'10px 14px', marginBottom:12 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.4px', textTransform:'uppercase', marginBottom:4 }}>메모</div>
+              <div style={{ fontSize:13, color:'#374151', lineHeight:1.6 }}>{schedule.memo}</div>
+            </div>
+          )}
           <a href={`tel:${schedule.cphone}`} style={{ textDecoration:'none', display:'block' }}>
-            <div style={{ background:green, color:'#fff', borderRadius:10, padding:16, textAlign:'center', fontWeight:700, fontSize:18 }}>
+            <div style={{ background:'#10b981', color:'#fff', borderRadius:10, padding:'15px 16px', textAlign:'center', fontWeight:700, fontSize:17 }}>
               📞 {schedule.cname}에게 전화
             </div>
           </a>
@@ -258,8 +290,9 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
 
         {(schedule.schedule_photos||[]).length > 0 && (
           <Card style={{ marginBottom:12 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>
-              📎 현장 참고 사진 ({schedule.schedule_photos.length}장)
+            <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.5px', textTransform:'uppercase', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+              현장 참고사진
+              <span style={{ background:'#faf5ff', color:'#9333ea', border:'1px solid #e9d5ff', borderRadius:8, padding:'1px 7px', fontWeight:700 }}>{schedule.schedule_photos.length}장</span>
             </div>
             <SlidePhotoViewer
               photos={schedule.schedule_photos}
@@ -269,7 +302,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
         )}
 
         <Card>
-          <div style={{ fontSize:13, fontWeight:700, color:muted, letterSpacing:1, textTransform:'uppercase', marginBottom:16 }}>업무 기록</div>
+          <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', letterSpacing:'.5px', textTransform:'uppercase', marginBottom:16 }}>업무 기록</div>
 
           <div style={{ display:'flex', alignItems:'center', marginBottom:22, gap:4 }}>
             {[['대기','대기'],['이동중','이동중'],['진행중','진행중'],['완료','완료']].map(([s,l],i)=>{
@@ -277,15 +310,15 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
               const cur = order.indexOf(schedule.status)
               const done = i < cur
               const active = i === cur
-              const dotColor = active ? blue : done ? green : border
-              const textColor = active ? blue : done ? green : muted
+              const dotColor = active ? '#6366f1' : done ? '#10b981' : '#d1d5db'
+              const textColor = active ? '#6366f1' : done ? '#10b981' : '#9ca3af'
               return (
                 <Fragment key={s}>
                   <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, flex:1 }}>
                     <div style={{ width:16, height:16, borderRadius:'50%', background: done||active ? dotColor : '#f1f5f9', border:`2px solid ${dotColor}` }}/>
-                    <div style={{ fontSize:13, fontWeight: active?700:400, color:textColor, whiteSpace:'nowrap' }}>{l}</div>
+                    <div style={{ fontSize:12, fontWeight: active?700:500, color:textColor, whiteSpace:'nowrap' }}>{l}</div>
                   </div>
-                  {i < 3 && <div style={{ flex:2, height:2, background: done ? green : border, marginBottom:20 }}/>}
+                  {i < 3 && <div style={{ flex:2, height:2, background: done ? '#10b981' : '#e5e7eb', marginBottom:20 }}/>}
                 </Fragment>
               )
             })}
@@ -299,7 +332,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                 <span style={{ fontSize:15, fontWeight:700, color:textC }}>출발</span>
               </div>
               <div style={{ flexShrink:0 }}>
-                {isReady && <Btn onClick={openDepartModal} color={blue} style={{ padding:'8px 16px', fontSize:14 }}>🚚 출발</Btn>}
+                {isReady && <Btn onClick={openDepartModal} color='#6366f1' style={{ padding:'8px 16px', fontSize:14 }}>🚚 출발</Btn>}
                 {(isMoving||isWorking||isDone) && schedule.depart_time && (
                   <button onClick={()=>setShowCancelDepart(true)}
                     style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'7px 11px', fontSize:13, color:muted, cursor:'pointer' }}>
