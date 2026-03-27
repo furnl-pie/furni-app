@@ -522,7 +522,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                       <select
                         value={filterStatus}
                         onChange={e => setFStatus(e.target.value)}
-                        style={{ padding:'4px 6px', borderRadius:7, border:`1.5px solid ${filterStatus ? amber : border}`, fontSize:12, fontWeight:600, color: filterStatus ? amber : muted, background: filterStatus ? '#fffbeb' : '#f8fafc', outline:'none', cursor:'pointer' }}>
+                        style={{ padding:'4px 6px', borderRadius:7, border:`1.5px solid ${filterStatus ? amber : border}`, fontSize:15, fontWeight:600, color: filterStatus ? amber : muted, background: filterStatus ? '#fffbeb' : '#f8fafc', outline:'none', cursor:'pointer' }}>
                         <option value="">상태 ▾</option>
                         <option value="대기">대기</option>
                         <option value="이동중">이동중</option>
