@@ -419,34 +419,33 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
             const h = Math.floor(diff/60), m = diff%60
             const total = h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`
             return (
-              <div style={{ padding:'8px 0 4px' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13 }}>
-                  <span style={{ color:muted }}>작업 시간</span>
-                  <span style={{ fontWeight:600, color:blue }}>
-                    {schedule.start_time} ~ {schedule.end_time}
-                    <span style={{ marginLeft:8, background:'#dbeafe', color:blue, fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:700 }}>
-                      총 {total}
-                    </span>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13, padding:'8px 0 4px' }}>
+                <span style={{ color:muted }}>작업 시간</span>
+                <span style={{ fontWeight:600, color:blue }}>
+                  {schedule.start_time} ~ {schedule.end_time}
+                  <span style={{ marginLeft:8, background:'#dbeafe', color:blue, fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:700 }}>
+                    총 {total}
                   </span>
-                </div>
-                <div style={{ display:'flex', justifyContent:'flex-end', marginTop:10 }}>
-                  <button onClick={()=>{
-                    setBillingForm({
-                      workers: schedule.billing_workers || (schedule.co_driver_id ? '2' : '1'),
-                      waste:   schedule.billing_waste   || schedule.final_waste || schedule.waste || '',
-                      amount:  schedule.billing_amount  ? String(schedule.billing_amount) : '',
-                      unit:    schedule.billing_unit    ? String(schedule.billing_unit)   : '',
-                      total:   schedule.billing_total   ? String(schedule.billing_total)  : '',
-                    })
-                    setShowBilling(true)
-                  }}
-                    style={{ background:schedule.billing_total?green:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
-                    {schedule.billing_total ? `✓ 청구 완료 (${schedule.billing_total}만원)` : '💰 청구서 작성'}
-                  </button>
-                </div>
+                </span>
               </div>
             )
           })()}
+
+          <div style={{ display:'flex', justifyContent:'flex-end', marginTop:8 }}>
+            <button onClick={()=>{
+              setBillingForm({
+                workers: schedule.billing_workers || (schedule.co_driver_id ? '2' : '1'),
+                waste:   schedule.billing_waste   || schedule.final_waste || schedule.waste || '',
+                amount:  schedule.billing_amount  ? String(schedule.billing_amount) : '',
+                unit:    schedule.billing_unit    ? String(schedule.billing_unit)   : '',
+                total:   schedule.billing_total   ? String(schedule.billing_total)  : '',
+              })
+              setShowBilling(true)
+            }}
+              style={{ background:schedule.billing_total?green:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+              {schedule.billing_total ? `✓ 청구 완료 (${schedule.billing_total}만원)` : '💰 청구서 작성'}
+            </button>
+          </div>
         </Card>
 
         {schedule.driver_note && (
