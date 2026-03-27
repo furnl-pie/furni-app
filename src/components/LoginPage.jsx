@@ -68,8 +68,8 @@ export default function LoginPage({ onLogin, users }) {
     <div style={{ minHeight:'100vh', background:'linear-gradient(135deg,#eef2ff 0%,#f8f9fc 50%,#ecfdf5 100%)', display:'flex', alignItems:'center', justifyContent:'center', padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:'#fff', borderRadius:20, padding:36, width:'100%', maxWidth:360, boxShadow:'0 8px 40px rgba(99,102,241,.12)', border:'1px solid #eaecf0' }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
-          <div style={{ width:64, height:64, borderRadius:18, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
-            <TruckIcon width={38} height={38}/>
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:14 }}>
+            <TruckIcon width={120} height={76}/>
           </div>
           <div style={{ fontSize:22, fontWeight:800, color:'#111827', letterSpacing:'-.5px' }}>동태관리</div>
           <div style={{ fontSize:13, color:'#9ca3af', marginTop:4 }}>FN퍼니 일정 관리</div>
