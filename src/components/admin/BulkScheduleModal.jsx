@@ -194,13 +194,8 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
   const applyFolder = () => {
     if (!folderRows.length) return
-    const sorted = [...folderRows].sort((a, b) => {
-      const da = (a.date || '') + (a.time || '')
-      const db = (b.date || '') + (b.time || '')
-      return da.localeCompare(db)
-    })
     const autoAssign = {}, autoCoAssign = {}
-    sorted.forEach(r => {
+    folderRows.forEach(r => {
       if (r.driver_hint) {
         const parts = r.driver_hint.split(/[,，]/)
         const main = findDriver(parts[0])
@@ -208,7 +203,7 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
         if (parts[1]) { const co = findDriver(parts[1]); if (co) autoCoAssign[r._id] = co.id }
       }
     })
-    setRows(sorted)
+    setRows(folderRows)
     setAssigns(autoAssign)
     setCoAssigns(autoCoAssign)
     setFolderMsg('')
@@ -360,6 +355,9 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
         if (!existing || !onUpdate) return
         const patch = {}
         MERGE_FIELDS.forEach(f => { if (!existing[f] && nr[f]) patch[f] = nr[f] })
+        if (nr.schedule_photos?.length && !(existing.schedule_photos?.length)) {
+          patch.schedule_photos = nr.schedule_photos
+        }
         if (Object.keys(patch).length) onUpdate(existing.id, patch)
       })
       if (newOnes.length) onAddMany(newOnes)
