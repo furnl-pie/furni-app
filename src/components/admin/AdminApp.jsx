@@ -25,6 +25,14 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
 
   const dragId = useRef(null)
 
+  // 모바일 기사 드롭다운 바깥 클릭 시 닫기
+  useEffect(() => {
+    if (!driverDropOpen) return
+    const handler = (e) => { if (!e.target.closest('[data-driver-drop]')) setDriverDropOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [driverDropOpen])
+
   // 청구/처리 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
   useEffect(() => {
     if (view !== 'billing' && view !== 'disposal' && view !== 'photos') return
@@ -108,6 +116,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   }
 
   const [filterDriver, setFD]     = useState(new Set())
+  const [driverDropOpen, setDriverDropOpen] = useState(false)
   const [filterStatus, setFStatus] = useState('') // '' | '대기' | '이동중' | '진행중' | '완료'
   const [filterDate, setFDate]    = useState(today)
   const [editingId, setEditingId] = useState(null)
@@ -218,18 +227,18 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             <div style={{ fontSize:10, color:'#9ca3af', fontWeight:500 }}>관리자</div>
           </div>
         </div>
-        <div style={{ display:'flex', flexWrap: isPC ? 'nowrap' : 'wrap', gap:4, justifyContent:'flex-end', maxWidth: isPC ? 'none' : 220 }}>
-          {[['📥 사진', ()=>setView('photos')], ['🚛 처리', ()=>setView('disposal')], ['💰 청구', ()=>setView('billing')], ['👤 기사', ()=>setDriverMgr(true)], ['?', ()=>setHelp(true)], ['⚙️', ()=>setAdminSettings(true)]].map(([label, fn]) => (
+        <div style={{ display:'flex', gap:4, justifyContent:'flex-end', alignItems:'center' }}>
+          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['👤','기사',()=>setDriverMgr(true)],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
             <button key={label} onClick={fn}
-              style={{ height:32, padding:'0 11px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
+              style={{ height:32, padding: isPC ? '0 11px' : '0 9px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize: isPC ? 12 : 15, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
               onMouseEnter={e=>{ e.currentTarget.style.background='#eef2ff'; e.currentTarget.style.color='#4f46e5'; e.currentTarget.style.borderColor='#a5b4fc' }}
               onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#6b7280'; e.currentTarget.style.borderColor='#eaecf0' }}>
-              {label}
+              {isPC ? `${icon} ${label}` : icon}
             </button>
           ))}
           <button onClick={onLogout}
-            style={{ height:32, padding:'0 11px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#9ca3af', fontSize:12, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
-            로그아웃
+            style={{ height:32, padding: isPC ? '0 11px' : '0 9px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#9ca3af', fontSize: isPC ? 12 : 15, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
+            {isPC ? '로그아웃' : '↩'}
           </button>
         </div>
       </div>
@@ -338,37 +347,78 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           </div>
 
           {/* 기사 필터 */}
-          <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
-            <span style={{ fontSize:11, fontWeight:700, color:muted, marginRight:2, whiteSpace:'nowrap' }}>기사</span>
-            <button
-              onClick={()=>setFD(new Set())}
-              style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.size===0?navy:border}`, background:filterDriver.size===0?navy:'#fff', color:filterDriver.size===0?'#fff':muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              전체
-            </button>
-            <button
-              onClick={()=>toggleDriverFilter('unassigned')}
-              style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.has('unassigned')?red:'#fecaca'}`, background:filterDriver.has('unassigned')?'#fef2f2':'#fff', color:filterDriver.has('unassigned')?red:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-              미배치
-            </button>
-            {drivers.map(d => {
-              const chip = driverChip(d.id, drivers)
-              const on = filterDriver.has(d.id)
-              return (
-                <button key={d.id}
-                  onClick={()=>toggleDriverFilter(d.id)}
-                  style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on?chip?.border:border}`, background:on?chip?.bg:'#fff', color:on?chip?.color:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:5 }}>
-                  {d.online && <span style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', display:'inline-block', flexShrink:0 }}/>}
-                  {d.name}
-                </button>
-              )
-            })}
-            {filterDriver.size > 0 && (
-              <button onClick={()=>setFD(new Set())}
-                style={{ height:32, padding:'0 10px', borderRadius:7, border:`1px solid ${border}`, background:'#f1f5f9', color:muted, fontSize:11, cursor:'pointer' }}>
-                ✕ 초기화
+          {isPC ? (
+            <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
+              <span style={{ fontSize:11, fontWeight:700, color:muted, marginRight:2, whiteSpace:'nowrap' }}>기사</span>
+              <button
+                onClick={()=>setFD(new Set())}
+                style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.size===0?navy:border}`, background:filterDriver.size===0?navy:'#fff', color:filterDriver.size===0?'#fff':muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                전체
               </button>
-            )}
-          </div>
+              <button
+                onClick={()=>toggleDriverFilter('unassigned')}
+                style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.has('unassigned')?red:'#fecaca'}`, background:filterDriver.has('unassigned')?'#fef2f2':'#fff', color:filterDriver.has('unassigned')?red:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                미배치
+              </button>
+              {drivers.map(d => {
+                const chip = driverChip(d.id, drivers)
+                const on = filterDriver.has(d.id)
+                return (
+                  <button key={d.id}
+                    onClick={()=>toggleDriverFilter(d.id)}
+                    style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on?chip?.border:border}`, background:on?chip?.bg:'#fff', color:on?chip?.color:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:5 }}>
+                    {d.online && <span style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', display:'inline-block', flexShrink:0 }}/>}
+                    {d.name}
+                  </button>
+                )
+              })}
+              {filterDriver.size > 0 && (
+                <button onClick={()=>setFD(new Set())}
+                  style={{ height:32, padding:'0 10px', borderRadius:7, border:`1px solid ${border}`, background:'#f1f5f9', color:muted, fontSize:11, cursor:'pointer' }}>
+                  ✕ 초기화
+                </button>
+              )}
+            </div>
+          ) : (
+            <div data-driver-drop style={{ position:'relative' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <span style={{ fontSize:11, fontWeight:700, color:muted, whiteSpace:'nowrap' }}>기사</span>
+                <button
+                  onClick={()=>setDriverDropOpen(v=>!v)}
+                  style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.size>0?'#6366f1':border}`, background:filterDriver.size>0?'#eef2ff':'#fff', color:filterDriver.size>0?'#4f46e5':muted, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+                  {filterDriver.size===0 ? '전체' : `${filterDriver.size}명 선택`}
+                  <span style={{ fontSize:10 }}>{driverDropOpen ? '▲' : '▼'}</span>
+                </button>
+                {filterDriver.size > 0 && (
+                  <button onClick={()=>{ setFD(new Set()); setDriverDropOpen(false) }}
+                    style={{ height:32, padding:'0 10px', borderRadius:7, border:`1px solid ${border}`, background:'#f1f5f9', color:muted, fontSize:11, cursor:'pointer' }}>
+                    ✕
+                  </button>
+                )}
+              </div>
+              {driverDropOpen && (
+                <div style={{ position:'absolute', top:38, left:0, background:'#fff', border:`1px solid #eaecf0`, borderRadius:10, boxShadow:'0 4px 20px rgba(0,0,0,.12)', zIndex:200, minWidth:160, padding:'6px 0' }}>
+                  {[{ id:'__all__', name:'전체' }, { id:'unassigned', name:'미배치' }, ...drivers].map(d => {
+                    const isAll = d.id === '__all__'
+                    const on = isAll ? filterDriver.size===0 : filterDriver.has(d.id)
+                    return (
+                      <div key={d.id}
+                        onClick={()=>{ isAll ? setFD(new Set()) : toggleDriverFilter(d.id) }}
+                        style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 14px', cursor:'pointer', background: on ? '#f5f3ff' : 'transparent' }}>
+                        <div style={{ width:16, height:16, borderRadius:4, border:`2px solid ${on?'#6366f1':'#d1d5db'}`, background:on?'#6366f1':'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                          {on && <span style={{ color:'#fff', fontSize:10, fontWeight:700, lineHeight:1 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize:13, color: on ? '#4f46e5' : '#374151', fontWeight: on ? 600 : 400 }}>
+                          {d.id==='unassigned' ? '⚠ 미배치' : d.name}
+                        </span>
+                        {d.online && <span style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', display:'inline-block', marginLeft:'auto' }}/>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </Card>
 
         {/* 카드 뷰 */}
