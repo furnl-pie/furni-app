@@ -63,11 +63,16 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
     const workers = s.billing_workers || '1'
     const waste   = s.billing_waste || s.waste || ''
 
+    const pwLines = [
+      s.door_pw ? `공동 : ${s.door_pw}` : '',
+      s.unit_pw ? `세대 : ${s.unit_pw}` : '',
+    ].filter(Boolean).join('\n')
+
     return `[FN퍼니 작업보고]
 작업날짜: ${s.date || ''}
 업체명: ${companyName}
 작업인원: ${workers}인
-현장주소: ${s.address || ''}
+현장주소: ${s.address || ''}${pwLines ? '\n' + pwLines : ''}
 작업시간: ${workTime}
 성상: 혼합
 폐기물양: ${waste}

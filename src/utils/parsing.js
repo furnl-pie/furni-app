@@ -6,6 +6,8 @@ export function parseKoreanTime(raw) {
   if (s.includes('오전중')) return '오전중'
   if (s.includes('오후중')) return '오후중'
   if (s.includes('당일중')) return '당일중'
+  // 시간 범위(~) 는 그대로 보존
+  if (s.includes('~')) return s
   if (/^\d{1,2}:\d{2}$/.test(s)) {
     const [h,m] = s.split(':').map(Number)
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
@@ -93,6 +95,20 @@ export function parseKakaoChat(text) {
       time = '오후중'
     } else if (/당일중/.test(dateLine)) {
       time = '당일중'
+    } else if (/~/.test(dateLine)) {
+      // 시간 범위(예: 오후2시~4시, 14:00~16:00) 그대로 보존
+      const rangeM = dateLine.match(/((?:오전|오후)?\s*\d+시(?:\s*\d+분)?\s*~\s*(?:오전|오후)?\s*\d+시(?:\s*\d+분)?|\d{1,2}:\d{2}\s*~\s*\d{1,2}:\d{2})/)
+      if (rangeM) time = rangeM[1].replace(/\s+/g, '')
+      else {
+        const timeM = dateLine.match(/(오전|오후)?\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/)
+        if (timeM) {
+          let h = parseInt(timeM[2])
+          const m = timeM[3] ? parseInt(timeM[3]) : 0
+          if (timeM[1] === '오후' && h < 12) h += 12
+          if (timeM[1] === '오전' && h === 12) h = 0
+          time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+        }
+      }
     } else {
       const timeM = dateLine.match(/(오전|오후)?\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/)
       if (timeM) {
@@ -107,10 +123,10 @@ export function parseKakaoChat(text) {
     const address = contentLines[2] || ''
     const rest = contentLines.slice(3)
 
-    const doorLine = rest.find(l => /^공동\s*[:：]/.test(l))
-    const unitLine = rest.find(l => /^세대\s*[:：]/.test(l))
-    const door_pw = doorLine ? doorLine.replace(/^공동\s*[:：]\s*/, '').trim() : ''
-    const unit_pw = unitLine ? unitLine.replace(/^세대\s*[:：]\s*/, '').trim() : ''
+    const doorLine = rest.find(l => /^공동\s*(?:비밀번호|비번|현관|pw|패스워드)?\s*[:：]/i.test(l))
+    const unitLine = rest.find(l => /^세대\s*(?:비밀번호|비번|현관|pw|패스워드)?\s*[:：]/i.test(l))
+    const door_pw = doorLine ? doorLine.replace(/^공동\s*(?:비밀번호|비번|현관|pw|패스워드)?\s*[:：]\s*/i, '').trim() : ''
+    const unit_pw = unitLine ? unitLine.replace(/^세대\s*(?:비밀번호|비번|현관|pw|패스워드)?\s*[:：]\s*/i, '').trim() : ''
 
     const filtered = rest.filter(l => l !== doorLine && l !== unitLine)
     const wasteIdx = filtered.findIndex(l => /\d+\/\d+차|[0-9.]+톤|[0-9]+차|이하|이상|물량/i.test(l))
