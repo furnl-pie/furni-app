@@ -25,14 +25,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
 
   const dragId = useRef(null)
 
-  // 모바일 기사 드롭다운 바깥 클릭 시 닫기
-  useEffect(() => {
-    if (!driverDropOpen) return
-    const handler = (e) => { if (!e.target.closest('[data-driver-drop]')) setDriverDropOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [driverDropOpen])
-
   // 청구/처리 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
   useEffect(() => {
     if (view !== 'billing' && view !== 'disposal' && view !== 'photos') return
@@ -117,6 +109,14 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
 
   const [filterDriver, setFD]     = useState(new Set())
   const [driverDropOpen, setDriverDropOpen] = useState(false)
+
+  // 모바일 기사 드롭다운 바깥 클릭 시 닫기
+  useEffect(() => {
+    if (!driverDropOpen) return
+    const handler = (e) => { if (!e.target.closest('[data-driver-drop]')) setDriverDropOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [driverDropOpen])
   const [filterStatus, setFStatus] = useState('') // '' | '대기' | '이동중' | '진행중' | '완료'
   const [filterDate, setFDate]    = useState(today)
   const [editingId, setEditingId] = useState(null)
