@@ -120,31 +120,32 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
         reader.readAsText(file, 'utf-8')
       })
 
-      // 루트 이미지 (모든 일정에 공유)
-      const rootPhotos = []
-      for (const imgFile of (groups['__root__']?.imgs || [])) {
-        try { rootPhotos.push(await resizeImage(imgFile)) } catch {}
-      }
+      // 루트 이미지 (모든 일정에 공유) - 병렬 처리
+      const rootImgFiles = groups['__root__']?.imgs || []
+      const rootPhotoResults = await Promise.all(rootImgFiles.map(f => resizeImage(f).catch(() => null)))
+      const rootPhotos = rootPhotoResults.filter(Boolean)
 
       let allRows = []
       let totalTxts = 0, totalImgs = rootPhotos.length
 
-      // 각 그룹(서브폴더) 처리
+      // 각 그룹(서브폴더) 처리 - txt/이미지 병렬 처리
       for (const [groupName, { txts, imgs }] of Object.entries(groups)) {
+        const [texts, imgResults] = await Promise.all([
+          Promise.all(txts.map(readText)),
+          groupName !== '__root__'
+            ? Promise.all(imgs.map(f => resizeImage(f).catch(() => null)))
+            : Promise.resolve([]),
+        ])
+
         const groupRows = []
-        for (const txtFile of txts) {
-          const text = await readText(txtFile)
+        for (const text of texts) {
           const parsed = parseKakaoChat(text)
           groupRows.push(...parsed)
           totalTxts++
         }
 
-        const groupPhotos = []
-        if (groupName !== '__root__') {
-          for (const imgFile of imgs) {
-            try { groupPhotos.push(await resizeImage(imgFile)); totalImgs++ } catch {}
-          }
-        }
+        const groupPhotos = imgResults.filter(Boolean)
+        totalImgs += groupPhotos.length
 
         allRows.push(...groupRows.map(r => ({ ...r, _groupPhotos: groupPhotos })))
       }
