@@ -90,7 +90,8 @@ async function srcToBlob(src, filename) {
 }
 
 // ── 기존 dirHandle에 폴더 계층 만들어 저장 (일괄 다운로드용) ────────
-export async function downloadPhotosToDir(rootHandle, photos, subFolders = [], prefix = '사진') {
+// txtFiles: [{ name: 'filename.txt', content: '...' }, ...] 형태로 전달하면 txt도 함께 저장
+export async function downloadPhotosToDir(rootHandle, photos, subFolders = [], prefix = '사진', txtFiles = []) {
   let dirHandle = rootHandle
   for (const name of subFolders) {
     const safeName = name.replace(/[/\\:*?"<>|]/g, '_').slice(0, 60)
@@ -103,6 +104,13 @@ export async function downloadPhotosToDir(rootHandle, photos, subFolders = [], p
     const writable = await fileHandle.createWritable()
     await writable.write(blob)
     await writable.close()
+  }
+  for (const { name, content } of txtFiles) {
+    const safeName = name.replace(/[/\\:*?"<>|]/g, '_').slice(0, 100)
+    const txtHandle = await dirHandle.getFileHandle(safeName, { create: true })
+    const txtWritable = await txtHandle.createWritable()
+    await txtWritable.write(new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' }))
+    await txtWritable.close()
   }
 }
 
