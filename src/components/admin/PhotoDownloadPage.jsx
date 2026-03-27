@@ -50,31 +50,35 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
     return (parts.join('_').slice(0, 80) || '청구서') + '.txt'
   }
 
-  // txt 파일 내용
+  // txt 파일 내용 (청구서 양식)
   const buildTxtContent = s => {
-    const driverName = getDriverName(s.driver_id)
-    const carNum     = getCarNum(s.driver_id)
-    const fmtWon = val => val ? (Math.round(val * 10000)).toLocaleString() + '원' : '-'
-    const lines = [
-      '[청구서]',
-      '',
-      `업체/담당자: ${s.cname || '-'}`,
-      s.cphone ? `연락처: ${s.cphone}` : null,
-      `주소: ${s.address || '-'}`,
-      '',
-      `날짜: ${s.billing_date || s.date || '-'}`,
-      `작업인원: ${s.billing_workers ? s.billing_workers + '인' : '-'}`,
-      `폐기물량: ${s.billing_waste || s.waste || '-'}`,
-      '',
-      `단가: ${s.billing_amount ? s.billing_amount + '만원' : '-'}`,
-      `상차비: ${s.billing_unit ? s.billing_unit + '만원' : '-'}`,
-      `청구금액(VAT포함): ${fmtWon(s.billing_total)}`,
-      '',
-      `담당기사: ${driverName}`,
-      carNum ? `차량번호: ${carNum}` : null,
-      s.memo ? `\n메모: ${s.memo}` : null,
-    ]
-    return lines.filter(l => l !== null).join('\n')
+    const toMin = t => { if (!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    const diff = toMin(s.end_time) - toMin(s.start_time)
+    const h = Math.floor(diff / 60), m = diff % 60
+    const duration = diff > 0 ? (h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`) : ''
+    const workTime = (s.start_time && s.end_time && duration)
+      ? `${s.start_time} ~ ${s.end_time} (${duration})`
+      : (s.start_time || '')
+    const companyName = (s.cname || '').replace(/\(.*?\)/g, '').trim()
+    const workers = s.billing_workers || '1'
+    const waste   = s.billing_waste || s.waste || ''
+
+    return `[FN퍼니 작업보고]
+작업날짜: ${s.date || ''}
+업체명: ${companyName}
+작업인원: ${workers}인
+현장주소: ${s.address || ''}
+작업시간: ${workTime}
+성상: 혼합
+폐기물양: ${waste}
+특이사항: ${s.driver_note || '없음'}
+
+<청구금액>
+${waste} > ${s.billing_amount || '__'}만원
+${workers}인 *${duration || '__'} > ${s.billing_unit || '__'}만원
+${s.billing_total || '__'}만원 (부가세 포함)
+*청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^
+기업 351-112230-01-015 주식회사 퍼니환경개발`
   }
 
   const downloadAll = async () => {

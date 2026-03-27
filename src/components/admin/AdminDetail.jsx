@@ -430,7 +430,16 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
                   </span>
                 </div>
                 <div style={{ display:'flex', justifyContent:'flex-end', marginTop:10 }}>
-                  <button onClick={()=>setShowBilling(true)}
+                  <button onClick={()=>{
+                    setBillingForm({
+                      workers: schedule.billing_workers || (schedule.co_driver_id ? '2' : '1'),
+                      waste:   schedule.billing_waste   || schedule.final_waste || schedule.waste || '',
+                      amount:  schedule.billing_amount  ? String(schedule.billing_amount) : '',
+                      unit:    schedule.billing_unit    ? String(schedule.billing_unit)   : '',
+                      total:   schedule.billing_total   ? String(schedule.billing_total)  : '',
+                    })
+                    setShowBilling(true)
+                  }}
                     style={{ background:schedule.billing_total?green:navy, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
                     {schedule.billing_total ? `✓ 청구 완료 (${schedule.billing_total}만원)` : '💰 청구서 작성'}
                   </button>
@@ -667,7 +676,7 @@ ${billingForm.total}만원 (부가세 포함)
             <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:440, maxHeight:'90vh', overflowY:'auto' }}>
 
               <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, background:'#fff', zIndex:1 }}>
-                <div style={{ fontSize:17, fontWeight:700, color:navy }}>💰 청구서 작성</div>
+                <div style={{ fontSize:17, fontWeight:700, color:navy }}>{schedule.billing_total ? '💰 청구서 수정' : '💰 청구서 작성'}</div>
                 <button onClick={()=>setShowBilling(false)} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
               </div>
 
