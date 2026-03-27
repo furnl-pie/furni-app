@@ -108,6 +108,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   }
 
   const [filterDriver, setFD]     = useState(new Set())
+  const [filterStatus, setFStatus] = useState('') // '' | '대기' | '이동중' | '진행중' | '완료'
   const [filterDate, setFDate]    = useState(today)
   const [editingId, setEditingId] = useState(null)
 
@@ -151,6 +152,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       if (s.driver_id && !filterDriver.has(s.driver_id) && !filterDriver.has('all')) return false
     }
     if (filterDate && s.date !== filterDate) return false
+    if (filterStatus && s.status !== filterStatus) return false
     return true
   })
 
@@ -353,7 +355,29 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             </div>
           </div>
 
-          <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center', borderTop:`1px solid ${border}`, paddingTop:10 }}>
+          {/* 상태 필터 */}
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center', borderTop:`1px solid ${border}`, paddingTop:10, marginBottom:6 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:muted, marginRight:2, whiteSpace:'nowrap' }}>상태</span>
+            {[
+              ['', '전체', muted, border, '#f8fafc'],
+              ['대기', '대기', muted, border, '#f1f5f9'],
+              ['이동중', '🚛 이동중', '#c2410c', '#fed7aa', '#fff7ed'],
+              ['진행중', '🔵 진행중', '#1d4ed8', '#bfdbfe', '#eff6ff'],
+              ['완료', '✓ 완료', '#15803d', '#bbf7d0', '#f0fdf4'],
+            ].map(([val, label, col, brd, bg]) => {
+              const on = filterStatus === val
+              return (
+                <button key={val} onClick={() => setFStatus(val)}
+                  style={{ height:30, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on ? brd : border}`, background: on ? bg : '#fff', color: on ? col : muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* 기사 필터 */}
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
+            <span style={{ fontSize:11, fontWeight:700, color:muted, marginRight:2, whiteSpace:'nowrap' }}>기사</span>
             <button
               onClick={()=>setFD(new Set())}
               style={{ height:32, padding:'0 12px', borderRadius:7, border:`1.5px solid ${filterDriver.size===0?navy:border}`, background:filterDriver.size===0?navy:'#fff', color:filterDriver.size===0?'#fff':muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
