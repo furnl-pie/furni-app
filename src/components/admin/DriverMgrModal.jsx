@@ -29,9 +29,9 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:480, maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
 
-        <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
-          <div style={{ fontSize:16, fontWeight:700, color:navy }}>👤 기사 계정 관리</div>
-          <button onClick={onClose} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
+        <div style={{ padding:'16px 20px', borderBottom:'1px solid #eaecf0', display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
+          <div style={{ fontSize:15, fontWeight:700, color:'#111827' }}>👤 기사 계정 관리</div>
+          <button onClick={onClose} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:'#9ca3af' }}>✕</button>
         </div>
 
         <div style={{ overflowY:'auto', flex:1, padding:20 }}>

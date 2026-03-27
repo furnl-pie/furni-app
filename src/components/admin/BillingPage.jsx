@@ -115,8 +115,9 @@ export default function BillingPage({ schedules, onUpdate, onBack }) {
   }
 
   const th = extra => ({
-    padding: '10px 12px', background: '#f8fafc', fontSize: 12, fontWeight: 700,
-    color: muted, borderBottom: `2px solid ${border}`, whiteSpace: 'nowrap',
+    padding: '8px 12px', background: '#f9fafb', fontSize: 11, fontWeight: 700,
+    color: '#9ca3af', borderBottom: `1px solid #f3f4f6`, whiteSpace: 'nowrap',
+    textTransform: 'uppercase', letterSpacing: '.5px',
     textAlign: 'center', ...extra,
   })
   const td = extra => ({
@@ -125,36 +126,36 @@ export default function BillingPage({ schedules, onUpdate, onBack }) {
   })
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Noto Sans KR', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#f8f9fc', fontFamily: "'Noto Sans KR', sans-serif" }}>
 
-      <div style={{ background: navy, color: '#fff', padding: '16px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <button onClick={onBack}
-            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 14, cursor: 'pointer' }}>
-            ← 뒤로
-          </button>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>💰 청구 내역</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-            style={{ padding: '7px 12px', borderRadius: 8, border: 'none', background: 'rgba(255,255,255,.15)', color: '#fff', WebkitTextFillColor: '#fff', fontSize: 16, colorScheme: 'dark' }} />
+      <div style={{ background: '#fff', borderBottom: '1px solid #eaecf0', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button onClick={onBack}
+              style={{ width: 34, height: 34, border: '1px solid #eaecf0', background: '#f9fafb', borderRadius: 8, cursor: 'pointer', fontSize: 16, color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>청구 내역</span>
+          </div>
           <button onClick={exportCSV}
-            style={{ background: green, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            style={{ height: 32, padding: '0 14px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             ⬇ 엑셀 저장
           </button>
+        </div>
+        <div style={{ padding: '0 20px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1.5px solid #eaecf0', background: '#f9fafb', color: '#111827', fontSize: 14, fontWeight: 600, outline: 'none' }} />
         </div>
       </div>
 
       <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-          <Card style={{ textAlign: 'center', padding: '12px 6px' }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: navy }}>{billed.length}</div>
-            <div style={{ fontSize: 13, color: muted }}>청구 건수</div>
+          <Card style={{ textAlign: 'center', padding: '12px 6px', borderTop: '3px solid #6366f1' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#6366f1', lineHeight: 1.1 }}>{billed.length}</div>
+            <div style={{ fontSize: 11, color: muted, marginTop: 3, fontWeight: 600, letterSpacing: '.3px' }}>청구 건수</div>
           </Card>
-          <Card style={{ textAlign: 'center', padding: '12px 6px' }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: green }}>{fmtAmount(totalAmount)}</div>
-            <div style={{ fontSize: 13, color: muted }}>합계</div>
+          <Card style={{ textAlign: 'center', padding: '12px 6px', borderTop: '3px solid #10b981' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#10b981', lineHeight: 1.1 }}>{fmtAmount(totalAmount)}</div>
+            <div style={{ fontSize: 11, color: muted, marginTop: 3, fontWeight: 600, letterSpacing: '.3px' }}>합계</div>
           </Card>
         </div>
 

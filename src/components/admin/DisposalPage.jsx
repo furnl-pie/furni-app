@@ -86,24 +86,22 @@ export default function DisposalPage({ onBack }) {
   const removePhoto = (i) => setF('photos', editForm.photos.filter((_, idx) => idx !== i))
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
-      <div style={{ background:navy, color:'#fff', padding:'12px 16px' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+    <div style={{ minHeight:'100vh', background:'#f8f9fc', fontFamily:"'Noto Sans KR', sans-serif" }}>
+      <div style={{ background:'#fff', borderBottom:'1px solid #eaecf0', height:54, display:'flex', alignItems:'center', padding:'0 20px', position:'sticky', top:0, zIndex:100 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <button onClick={onBack}
-            style={{ background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', padding:'0 4px', lineHeight:1 }}>
-            ←
-          </button>
-          <div style={{ fontSize:17, fontWeight:700 }}>처리 현황</div>
+            style={{ width:34, height:34, border:'1px solid #eaecf0', background:'#f9fafb', borderRadius:8, cursor:'pointer', fontSize:16, color:'#6b7280', display:'flex', alignItems:'center', justifyContent:'center' }}>←</button>
+          <span style={{ fontSize:15, fontWeight:700, color:'#111827' }}>처리 현황</span>
         </div>
       </div>
 
       <div style={{ padding:16, maxWidth: isPC ? 1200 : 600, margin:'0 auto' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
           <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}
-            style={{ padding:'8px 12px', borderRadius:8, border:`1px solid ${border}`, fontSize:14, background:'#fff', color:textC, outline:'none' }}/>
-          <span style={{ fontSize:13, color:muted }}>{filtered.length}건</span>
+            style={{ padding:'8px 12px', borderRadius:8, border:'1.5px solid #eaecf0', fontSize:14, background:'#fff', color:'#111827', outline:'none', fontWeight:600 }}/>
+          <span style={{ fontSize:12, color:'#9ca3af', fontWeight:600 }}>{filtered.length}건</span>
           {totalCost > 0 && (
-            <span style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:navy }}>
+            <span style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:'#6366f1' }}>
               합계 {totalCost.toLocaleString()}원
             </span>
           )}

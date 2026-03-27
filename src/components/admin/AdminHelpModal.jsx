@@ -3,14 +3,15 @@ import { navy, blue, green, amber, red, border, muted, textC } from '../../const
 
 const Section = ({ title, children }) => (
   <div style={{ marginBottom:24 }}>
-    <div style={{ fontSize:14, fontWeight:700, color:navy, borderBottom:`2px solid ${navy}`, paddingBottom:6, marginBottom:12 }}>
+    <div style={{ fontSize:13, fontWeight:700, color:'#111827', borderBottom:'2px solid #eaecf0', paddingBottom:6, marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+      <span style={{ display:'inline-block', width:3, height:14, background:'#6366f1', borderRadius:2 }}/>
       {title}
     </div>
     {children}
   </div>
 )
 
-const Step = ({ num, color = blue, children }) => (
+const Step = ({ num, color = '#6366f1', children }) => (
   <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:8 }}>
     <div style={{ width:22, height:22, borderRadius:'50%', background:color, color:'#fff', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
       {num}
@@ -44,13 +45,13 @@ export default function AdminHelpModal({ onClose }) {
         {/* 헤더 */}
         <div style={{ padding:'16px 20px 0', borderBottom:`1px solid ${border}`, flexShrink:0 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-            <div style={{ fontSize:16, fontWeight:700, color:navy }}>관리자 사용 설명서</div>
-            <button onClick={onClose} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
+            <div style={{ fontSize:15, fontWeight:700, color:'#111827' }}>관리자 사용 설명서</div>
+            <button onClick={onClose} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:'#9ca3af' }}>✕</button>
           </div>
           <div style={{ display:'flex', gap:0, overflowX:'auto' }}>
             {TABS.map((t, i) => (
               <button key={t} onClick={() => setTab(i)}
-                style={{ flex:'none', padding:'8px 14px', fontSize:12, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===i ? blue : 'transparent'}`, color: tab===i ? blue : muted, background:'none', cursor:'pointer', whiteSpace:'nowrap' }}>
+                style={{ flex:'none', padding:'8px 14px', fontSize:12, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===i ? '#6366f1' : 'transparent'}`, color: tab===i ? '#6366f1' : '#9ca3af', background:'none', cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
                 {t}
               </button>
             ))}

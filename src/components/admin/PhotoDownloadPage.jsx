@@ -76,109 +76,119 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
   const pct = progress ? Math.round((progress.cur / progress.total) * 100) : 0
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Noto Sans KR', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#f8f9fc', fontFamily: "'Noto Sans KR', sans-serif" }}>
 
       {/* 헤더 */}
-      <div style={{ background: navy, color: '#fff', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={onBack}
-          style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: 0, lineHeight: 1 }}>←</button>
-        <div style={{ flex: 1, fontSize: 16, fontWeight: 700 }}>📥 완료사진 일괄 다운로드</div>
+      <div style={{ background: '#fff', borderBottom: '1px solid #eaecf0', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onBack}
+            style={{ width: 34, height: 34, border: '1px solid #eaecf0', background: '#f9fafb', borderRadius: 8, cursor: 'pointer', fontSize: 16, color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>완료사진 다운로드</span>
+        </div>
       </div>
 
       <div style={{ padding: 20, maxWidth: isPC ? 1200 : 640, margin: '0 auto' }}>
 
-        {/* 날짜 필터 */}
-        <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${border}`, padding: '14px 16px', marginBottom: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: muted, marginBottom: 10 }}>기간 필터</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* 날짜 필터 + 다운로드 */}
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eaecf0', padding: '16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 10 }}>기간 필터</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <input type="date" value={from} onChange={e => setFrom(e.target.value)}
               style={{ ...iStyle, flex: 1, margin: 0, fontSize: 14 }}/>
-            <span style={{ color: muted, fontSize: 14 }}>~</span>
+            <span style={{ color: '#9ca3af', fontSize: 14, flexShrink: 0 }}>~</span>
             <input type="date" value={to} onChange={e => setTo(e.target.value)}
               style={{ ...iStyle, flex: 1, margin: 0, fontSize: 14 }}/>
           </div>
-        </div>
-
-        {/* 요약 + 전체 다운로드 */}
-        <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${border}`, padding: '14px 16px', marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: progress ? 12 : 0 }}>
-            <div>
-              <span style={{ fontSize: 18, fontWeight: 800, color: navy }}>{withPhotos.length}</span>
-              <span style={{ fontSize: 13, color: muted, marginLeft: 4 }}>건</span>
-              <span style={{ fontSize: 18, fontWeight: 800, color: navy, marginLeft: 14 }}>{totalPhotos}</span>
-              <span style={{ fontSize: 13, color: muted, marginLeft: 4 }}>장</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#6366f1', lineHeight: 1 }}>{withPhotos.length}</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, marginTop: 2 }}>건</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#10b981', lineHeight: 1 }}>{totalPhotos}</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, marginTop: 2 }}>장</div>
+              </div>
             </div>
             <button onClick={downloadAll} disabled={!!progress || withPhotos.length === 0}
               style={{
-                background: progress ? '#94a3b8' : done ? green : navy,
-                color: '#fff', border: 'none', borderRadius: 10,
-                padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: progress ? 'default' : 'pointer',
-                transition: 'background .2s'
+                background: progress ? '#9ca3af' : done ? '#10b981' : '#6366f1',
+                color: '#fff', border: 'none', borderRadius: 9,
+                padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: progress ? 'default' : 'pointer',
+                transition: 'background .2s', fontFamily: 'inherit'
               }}>
-              {done ? '✓ 완료!' : progress ? `다운로드 중...` : '⬇ 전체 다운로드'}
+              {done ? '✓ 완료!' : progress ? '다운로드 중...' : '⬇ 전체 다운로드'}
             </button>
           </div>
-
-          {/* 진행 바 */}
           {progress && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: muted, marginBottom: 5 }}>
-                <span style={{ maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {progress.name}
-                </span>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af', marginBottom: 5 }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>{progress.name}</span>
                 <span style={{ flexShrink: 0 }}>{progress.cur} / {progress.total}</span>
               </div>
-              <div style={{ height: 6, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: blue, borderRadius: 99, transition: 'width .3s' }}/>
+              <div style={{ height: 5, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: '#6366f1', borderRadius: 99, transition: 'width .3s' }}/>
               </div>
             </div>
           )}
         </div>
 
         {/* 폴더 구조 안내 */}
-        <div style={{ background: '#eff6ff', border: `1px solid #bfdbfe`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#1e40af', lineHeight: 1.8 }}>
+        <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderLeft: '3px solid #6366f1', borderRadius: 8, padding: '9px 14px', marginBottom: 12, fontSize: 12, color: '#4338ca', lineHeight: 1.8 }}>
           📁 저장 구조: <strong>선택폴더 / 기사이름 / 업체명_주소 / 사진_01.jpg</strong><br/>
-          <span style={{ color: '#64748b' }}>Chrome / Edge 데스크톱 전용 · 다른 환경에서는 개별 파일로 다운로드됩니다</span>
+          <span style={{ color: '#9ca3af' }}>Chrome / Edge 데스크톱 전용 · 다른 환경에서는 개별 파일로 다운로드됩니다</span>
         </div>
 
         {/* 일정 목록 */}
         {withPhotos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: muted, fontSize: 14 }}>
-            해당 기간에 사진이 있는 완료 건이 없습니다
+          <div style={{ textAlign: 'center', padding: '52px 0', color: '#9ca3af' }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
+            <div style={{ fontSize: 14 }}>해당 기간에 사진이 있는 완료 건이 없습니다</div>
           </div>
         ) : (
-          <div style={{ display: isPC ? 'grid' : 'flex', flexDirection: isPC ? undefined : 'column', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isPC ? 'repeat(3,1fr)' : '1fr', gap: 10 }}>
             {withPhotos.map(s => {
               const pics   = [...(s.work_photos || []), ...(s.photos || [])]
               const wpLen  = (s.work_photos || []).length
               const cpLen  = (s.photos || []).length
               const driver = getDriverName(s.driver_id)
               return (
-                <div key={s.id} style={{ background: '#fff', borderRadius: 10, border: `1px solid ${border}`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {/* 썸네일 */}
-                  <img src={pics[0]} alt="thumb"
-                    style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 7, flexShrink: 0, border: `1px solid ${border}` }}/>
-
-                  {/* 정보 */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: textC, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.address}
-                    </div>
-                    <div style={{ fontSize: 12, color: muted, marginTop: 2 }}>
-                      {s.date} · {driver}
-                      {s.cname && <span style={{ marginLeft: 6, color: '#64748b' }}>({s.cname})</span>}
-                    </div>
-                    <div style={{ fontSize: 11, marginTop: 3, display: 'flex', gap: 8 }}>
-                      {wpLen > 0 && <span style={{ background: '#fef3c7', color: amber, padding: '1px 7px', borderRadius: 8, fontWeight: 600 }}>시작 {wpLen}장</span>}
-                      {cpLen > 0 && <span style={{ background: '#dcfce7', color: green,  padding: '1px 7px', borderRadius: 8, fontWeight: 600 }}>완료 {cpLen}장</span>}
-                    </div>
+                <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #eaecf0', overflow: 'hidden' }}>
+                  {/* 썸네일 그리드 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, height: 100 }}>
+                    {pics.slice(0, 4).map((src, i) => (
+                      <div key={i} style={{ position: 'relative', overflow: 'hidden', background: '#f3f4f6' }}>
+                        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                        {i === 3 && pics.length > 4 && (
+                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                            +{pics.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {pics.length < 4 && Array.from({ length: 4 - pics.length }).map((_, i) => (
+                      <div key={`empty-${i}`} style={{ background: '#f3f4f6' }}/>
+                    ))}
                   </div>
-
-                  {/* 개별 다운로드 */}
-                  <button onClick={() => downloadOne(s)} disabled={!!progress}
-                    style={{ background: '#f1f5f9', border: `1px solid ${border}`, color: muted, borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
-                    ⬇
-                  </button>
+                  {/* 정보 */}
+                  <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                        {s.address}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>
+                        {s.date} · {driver}{s.cname ? ` (${s.cname})` : ''}
+                      </div>
+                      <div style={{ fontSize: 11, marginTop: 4, display: 'flex', gap: 5 }}>
+                        {wpLen > 0 && <span style={{ background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: 6, fontWeight: 600 }}>현장 {wpLen}장</span>}
+                        {cpLen > 0 && <span style={{ background: '#ecfdf5', color: '#065f46', padding: '1px 6px', borderRadius: 6, fontWeight: 600 }}>완료 {cpLen}장</span>}
+                      </div>
+                    </div>
+                    <button onClick={() => downloadOne(s)} disabled={!!progress}
+                      style={{ background: '#f9fafb', border: '1px solid #eaecf0', color: '#6b7280', borderRadius: 7, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      ⬇
+                    </button>
+                  </div>
                 </div>
               )
             })}
