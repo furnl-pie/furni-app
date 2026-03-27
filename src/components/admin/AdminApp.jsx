@@ -355,26 +355,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             </div>
           </div>
 
-          {/* 상태 필터 */}
-          <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center', borderTop:`1px solid ${border}`, paddingTop:10, marginBottom:6 }}>
-            <span style={{ fontSize:11, fontWeight:700, color:muted, marginRight:2, whiteSpace:'nowrap' }}>상태</span>
-            {[
-              ['', '전체', muted, border, '#f8fafc'],
-              ['대기', '대기', muted, border, '#f1f5f9'],
-              ['이동중', '🚛 이동중', '#c2410c', '#fed7aa', '#fff7ed'],
-              ['진행중', '🔵 진행중', '#1d4ed8', '#bfdbfe', '#eff6ff'],
-              ['완료', '✓ 완료', '#15803d', '#bbf7d0', '#f0fdf4'],
-            ].map(([val, label, col, brd, bg]) => {
-              const on = filterStatus === val
-              return (
-                <button key={val} onClick={() => setFStatus(val)}
-                  style={{ height:30, padding:'0 12px', borderRadius:7, border:`1.5px solid ${on ? brd : border}`, background: on ? bg : '#fff', color: on ? col : muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-
           {/* 기사 필터 */}
           <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
             <span style={{ fontSize:11, fontWeight:700, color:muted, marginRight:2, whiteSpace:'nowrap' }}>기사</span>
@@ -537,7 +517,20 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         </button>
                       </th>
                     )}
-                    {['기사','상태','현장담당자','날짜·시간','주소','폐기물량','시작','완료',''].map(h=>(
+                    <th style={{ padding:'6px 8px', background:'#f8fafc', whiteSpace:'nowrap' }}>기사</th>
+                    <th style={{ padding:'6px 8px', background:'#f8fafc', whiteSpace:'nowrap' }}>
+                      <select
+                        value={filterStatus}
+                        onChange={e => setFStatus(e.target.value)}
+                        style={{ padding:'4px 6px', borderRadius:7, border:`1.5px solid ${filterStatus ? amber : border}`, fontSize:12, fontWeight:600, color: filterStatus ? amber : muted, background: filterStatus ? '#fffbeb' : '#f8fafc', outline:'none', cursor:'pointer' }}>
+                        <option value="">상태 ▾</option>
+                        <option value="대기">대기</option>
+                        <option value="이동중">이동중</option>
+                        <option value="진행중">진행중</option>
+                        <option value="완료">완료</option>
+                      </select>
+                    </th>
+                    {['현장담당자','날짜·시간','주소','폐기물량','시작','완료',''].map(h=>(
                       <th key={h} style={{ padding:'10px 12px', textAlign:'center', fontWeight:600, color:muted, fontSize:15, whiteSpace:'nowrap', background:'#f8fafc' }}>{h}</th>
                     ))}
                   </tr>
