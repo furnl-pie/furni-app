@@ -11,17 +11,16 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
   const [to, setTo]             = useState(today)
   const [progress, setProgress] = useState(null)
   const [done, setDone]         = useState(false)
+  const [errors, setErrors]     = useState([])
 
   const getDriverName = id => users.find(u => u.id === id)?.name || '미배치'
   const getCarNum     = id => users.find(u => u.id === id)?.car_num || ''
 
-  // 완료 + 청구서 저장된 항목만, 사진 있는 것만
+  // 청구서 저장된 항목 (사진 없어도 txt 다운로드 가능)
   const withPhotos = useMemo(() => {
     return schedules
       .filter(s => {
         if (!s.billing_total) return false
-        const pics = [...(s.work_photos || []), ...(s.photos || [])]
-        if (!pics.length) return false
         if (from && s.date < from) return false
         if (to   && s.date > to)   return false
         return true
@@ -94,8 +93,10 @@ ${s.billing_total || '__'}만원 (부가세 포함)
     try { rootHandle = await window.showDirectoryPicker() } catch { return }
 
     setDone(false)
+    setErrors([])
     setProgress({ cur: 0, total: withPhotos.length, name: '' })
 
+    const errs = []
     for (let i = 0; i < withPhotos.length; i++) {
       const s    = withPhotos[i]
       const pics = [...(s.work_photos || []), ...(s.photos || [])]
@@ -106,11 +107,14 @@ ${s.billing_total || '__'}만원 (부가세 포함)
           { name: buildTxtName(s), content: buildTxtContent(s) }
         ])
       } catch (e) {
+        const msg = `[${folders[1]}] ${e.message || e}`
+        errs.push(msg)
         console.error('다운로드 실패:', folders, e)
       }
     }
 
     setProgress(null)
+    if (errs.length) setErrors(errs)
     setDone(true)
     setTimeout(() => setDone(false), 3000)
   }
@@ -180,10 +184,18 @@ ${s.billing_total || '__'}만원 (부가세 포함)
           )}
         </div>
 
+        {/* 에러 표시 */}
+        {errors.length > 0 && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', marginBottom: 6 }}>⚠️ 일부 항목 다운로드 실패</div>
+            {errors.map((e, i) => <div key={i} style={{ fontSize: 12, color: '#7f1d1d', lineHeight: 1.6 }}>{e}</div>)}
+          </div>
+        )}
+
         {/* 폴더 구조 안내 */}
         <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderLeft: '3px solid #6366f1', borderRadius: 8, padding: '9px 14px', marginBottom: 12, fontSize: 12, color: '#4338ca', lineHeight: 1.8 }}>
           📁 저장 구조: <strong>선택폴더 / 기사이름 / 업체명_주소 / 사진_01.jpg + 청구서.txt</strong><br/>
-          <span style={{ color: '#6366f1', fontWeight: 600 }}>청구서 저장 + 사진 있는 항목만 표시됩니다</span><br/>
+          <span style={{ color: '#6366f1', fontWeight: 600 }}>청구서 저장된 항목 표시 (사진 없어도 txt 다운 가능)</span><br/>
           <span style={{ color: '#9ca3af' }}>Chrome / Edge 데스크톱 전용 · 다른 환경에서는 개별 파일로 다운로드됩니다</span>
         </div>
 
@@ -204,21 +216,27 @@ ${s.billing_total || '__'}만원 (부가세 포함)
               return (
                 <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #eaecf0', overflow: 'hidden' }}>
                   {/* 썸네일 그리드 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, height: 100 }}>
-                    {pics.slice(0, 4).map((src, i) => (
-                      <div key={i} style={{ position: 'relative', overflow: 'hidden', background: '#f3f4f6' }}>
-                        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
-                        {i === 3 && pics.length > 4 && (
-                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14 }}>
-                            +{pics.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {pics.length < 4 && Array.from({ length: 4 - pics.length }).map((_, i) => (
-                      <div key={`empty-${i}`} style={{ background: '#f3f4f6' }}/>
-                    ))}
-                  </div>
+                  {pics.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, height: 100 }}>
+                      {pics.slice(0, 4).map((src, i) => (
+                        <div key={i} style={{ position: 'relative', overflow: 'hidden', background: '#f3f4f6' }}>
+                          <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                          {i === 3 && pics.length > 4 && (
+                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                              +{pics.length - 4}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {pics.length < 4 && Array.from({ length: 4 - pics.length }).map((_, i) => (
+                        <div key={`empty-${i}`} style={{ background: '#f3f4f6' }}/>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ height: 100, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>
+                      사진 없음
+                    </div>
+                  )}
                   {/* 정보 */}
                   <div style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>

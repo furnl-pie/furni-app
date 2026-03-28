@@ -92,9 +92,13 @@ async function srcToBlob(src, filename) {
 // ── 기존 dirHandle에 폴더 계층 만들어 저장 (일괄 다운로드용) ────────
 // txtFiles: [{ name: 'filename.txt', content: '...' }, ...] 형태로 전달하면 txt도 함께 저장
 export async function downloadPhotosToDir(rootHandle, photos, subFolders = [], prefix = '사진', txtFiles = []) {
+  // 폴더명: 특수문자 제거 + 끝 공백/점 제거 (Windows 제약)
+  const toSafeFolderName = (str, maxLen) =>
+    str.replace(/[/\\:*?"<>|]/g, '_').slice(0, maxLen).replace(/[\s.]+$/, '')
+
   let dirHandle = rootHandle
   for (const name of subFolders) {
-    const safeName = name.replace(/[/\\:*?"<>|]/g, '_').slice(0, 60)
+    const safeName = toSafeFolderName(name, 60)
     if (safeName) dirHandle = await dirHandle.getDirectoryHandle(safeName, { create: true })
   }
   for (let i = 0; i < photos.length; i++) {
@@ -110,11 +114,16 @@ export async function downloadPhotosToDir(rootHandle, photos, subFolders = [], p
     }
   }
   for (const { name, content } of txtFiles) {
-    const safeName = name.replace(/[/\\:*?"<>|]/g, '_').slice(0, 100)
-    const txtHandle = await dirHandle.getFileHandle(safeName, { create: true })
-    const txtWritable = await txtHandle.createWritable()
-    await txtWritable.write(new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' }))
-    await txtWritable.close()
+    const safeName = toSafeFolderName(name, 100)
+    try {
+      const txtHandle = await dirHandle.getFileHandle(safeName || '청구서.txt', { create: true })
+      const txtWritable = await txtHandle.createWritable()
+      await txtWritable.write(new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' }))
+      await txtWritable.close()
+    } catch (e) {
+      console.error('txt 저장 실패:', safeName, e)
+      throw new Error(`txt 저장 실패: ${safeName} — ${e.message}`)
+    }
   }
 }
 
