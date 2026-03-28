@@ -658,12 +658,17 @@ ${billingForm.total}만원 (부가세 포함)
         }
 
         const saveBilling = () => {
+          const total = parseFloat(billingForm.total)
+          if (!total || total <= 0) {
+            alert('청구금액(합계)을 입력해주세요.')
+            return
+          }
           onUpdate({
             billing_workers: billingForm.workers,
             billing_waste:   billingForm.waste,
             billing_amount:  parseFloat(billingForm.amount) || 0,
             billing_unit:    parseFloat(billingForm.unit)   || 0,
-            billing_total:   parseFloat(billingForm.total)  || 0,
+            billing_total:   total,
             billing_date:    getKSTToday(),
           })
           setBillSaved(true)
