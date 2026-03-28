@@ -99,11 +99,15 @@ export async function downloadPhotosToDir(rootHandle, photos, subFolders = [], p
   }
   for (let i = 0; i < photos.length; i++) {
     const filename = `${prefix}_${String(i + 1).padStart(2, '0')}.jpg`
-    const blob = await srcToBlob(photos[i], filename)
-    const fileHandle = await dirHandle.getFileHandle(filename, { create: true })
-    const writable = await fileHandle.createWritable()
-    await writable.write(blob)
-    await writable.close()
+    try {
+      const blob = await srcToBlob(photos[i], filename)
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true })
+      const writable = await fileHandle.createWritable()
+      await writable.write(blob)
+      await writable.close()
+    } catch (e) {
+      console.error('사진 저장 실패 (건너뜀):', filename, e)
+    }
   }
   for (const { name, content } of txtFiles) {
     const safeName = name.replace(/[/\\:*?"<>|]/g, '_').slice(0, 100)

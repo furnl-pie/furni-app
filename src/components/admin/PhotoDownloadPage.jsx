@@ -19,7 +19,6 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
   const withPhotos = useMemo(() => {
     return schedules
       .filter(s => {
-        if (s.status !== '완료') return false
         if (!s.billing_total) return false
         const pics = [...(s.work_photos || []), ...(s.photos || [])]
         if (!pics.length) return false
@@ -184,7 +183,7 @@ ${s.billing_total || '__'}만원 (부가세 포함)
         {/* 폴더 구조 안내 */}
         <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderLeft: '3px solid #6366f1', borderRadius: 8, padding: '9px 14px', marginBottom: 12, fontSize: 12, color: '#4338ca', lineHeight: 1.8 }}>
           📁 저장 구조: <strong>선택폴더 / 기사이름 / 업체명_주소 / 사진_01.jpg + 청구서.txt</strong><br/>
-          <span style={{ color: '#6366f1', fontWeight: 600 }}>완료 + 청구서 저장된 항목만 표시됩니다</span><br/>
+          <span style={{ color: '#6366f1', fontWeight: 600 }}>청구서 저장 + 사진 있는 항목만 표시됩니다</span><br/>
           <span style={{ color: '#9ca3af' }}>Chrome / Edge 데스크톱 전용 · 다른 환경에서는 개별 파일로 다운로드됩니다</span>
         </div>
 
