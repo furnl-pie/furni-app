@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import useWindowWidth from '../../utils/useWindowWidth'
 import { collection, onSnapshot, query, orderBy, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
@@ -24,6 +24,9 @@ export default function DisposalPage({ onBack }) {
   const [confirmDel, setConfirmDel] = useState(null)  // 삭제 확인 id
   const [lbPhotos,   setLbPhotos]   = useState(null)  // Lightbox: { photos, index }
   const [lbEditPhotos, setLbEditPhotos] = useState(null)
+  const [bulkModal,  setBulkModal]  = useState(false)
+  const [bulkInput,  setBulkInput]  = useState('')
+  const [bulkSaving, setBulkSaving] = useState(false)
 
   useEffect(() => {
     const q = query(collection(db, 'disposals'), orderBy('createdAt', 'desc'))
@@ -88,6 +91,69 @@ export default function DisposalPage({ onBack }) {
 
   const removePhoto = (i) => setF('photos', editForm.photos.filter((_, idx) => idx !== i))
 
+  // 처리비 일괄 입력 파싱 및 프리뷰
+  const bulkPreview = useMemo(() => {
+    if (!bulkInput.trim()) return []
+    // 라인별 파싱: "차량번호 금액" (금액은 만원 단위)
+    const pairs = bulkInput.trim().split('\n').map(line => {
+      const parts = line.trim().split(/\s+/)
+      if (parts.length < 2) return null
+      const carNum = parts[0]
+      const amount = parseFloat(parts[1])
+      if (!carNum || isNaN(amount) || amount <= 0) return null
+      return { carNum, amount }
+    }).filter(Boolean)
+
+    // 차량번호별로 입력 순서 유지
+    const inputByCarNum = {}
+    pairs.forEach(({ carNum, amount }) => {
+      if (!inputByCarNum[carNum]) inputByCarNum[carNum] = []
+      inputByCarNum[carNum].push(amount)
+    })
+
+    // 현재 날짜 filtered 레코드를 차량번호별 시간순 그룹화
+    const recsByCarNum = {}
+    filtered.forEach(r => {
+      const key = (r.car_number || '').trim()
+      if (!recsByCarNum[key]) recsByCarNum[key] = []
+      recsByCarNum[key].push(r)
+    })
+
+    const result = []
+    Object.entries(inputByCarNum).forEach(([carNum, amounts]) => {
+      const recs = recsByCarNum[carNum] || []
+      amounts.forEach((amount, i) => {
+        const rec = recs[i]
+        const newCost = String(amount * 10000)
+        result.push({
+          id:       rec?.id,
+          carNum,
+          time:     rec?.time || '',
+          site:     rec?.site || '',
+          oldCost:  rec?.cost || '',
+          newCost,
+          noMatch:  !rec,
+        })
+      })
+    })
+    return result
+  }, [bulkInput, filtered])
+
+  const applyBulkCost = async () => {
+    const toApply = bulkPreview.filter(p => !p.noMatch)
+    if (!toApply.length) return
+    setBulkSaving(true)
+    try {
+      await Promise.all(toApply.map(({ id, newCost }) =>
+        updateDoc(doc(db, 'disposals', id), { cost: newCost })
+      ))
+      setBulkModal(false)
+      setBulkInput('')
+    } finally {
+      setBulkSaving(false)
+    }
+  }
+
   return (
     <div style={{ minHeight:'100vh', background:'#f8f9fc', fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ background:'#fff', borderBottom:'1px solid #eaecf0', height:54, display:'flex', alignItems:'center', padding:'0 20px', position:'sticky', top:0, zIndex:100 }}>
@@ -103,8 +169,12 @@ export default function DisposalPage({ onBack }) {
           <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}
             style={{ padding:'8px 12px', borderRadius:8, border:'1.5px solid #eaecf0', fontSize:14, background:'#fff', color:'#111827', outline:'none', fontWeight:600 }}/>
           <span style={{ fontSize:12, color:'#9ca3af', fontWeight:600 }}>{filtered.length}건</span>
+          <button onClick={()=>setBulkModal(true)} disabled={filtered.length===0}
+            style={{ marginLeft:'auto', background:'#6366f1', color:'#fff', border:'none', borderRadius:8, padding:'7px 14px', fontSize:13, fontWeight:700, cursor: filtered.length===0 ? 'default' : 'pointer', opacity: filtered.length===0 ? .45 : 1, fontFamily:'inherit' }}>
+            💰 처리비 입력
+          </button>
           {totalCost > 0 && (
-            <span style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:'#6366f1' }}>
+            <span style={{ fontSize:13, fontWeight:700, color:'#6366f1', flexShrink:0 }}>
               합계 {totalCost.toLocaleString()}원
             </span>
           )}
@@ -246,6 +316,75 @@ export default function DisposalPage({ onBack }) {
 
       {lbPhotos && <Lightbox photos={lbPhotos.photos} index={lbPhotos.index} onClose={()=>setLbPhotos(null)}/>}
       {lbEditPhotos && <Lightbox photos={lbEditPhotos.photos} index={lbEditPhotos.index} onClose={()=>setLbEditPhotos(null)}/>}
+
+      {/* 처리비 일괄 입력 모달 */}
+      {bulkModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:16, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:14, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto' }}>
+            <div style={{ padding:'14px 18px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <div style={{ fontWeight:700, fontSize:15, color:navy }}>처리비 일괄 입력</div>
+                <div style={{ fontSize:12, color:muted, marginTop:2 }}>{filterDate} · 차량번호 시간순 매칭</div>
+              </div>
+              <button onClick={()=>{ setBulkModal(false); setBulkInput('') }} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:muted }}>✕</button>
+            </div>
+            <div style={{ padding:18 }}>
+              <div style={{ fontSize:12, color:muted, marginBottom:8, lineHeight:1.8 }}>
+                한 줄에 <strong>차량번호 금액</strong> 형식으로 입력하세요.<br/>
+                금액은 만원 단위 (예: <strong>5</strong> → 50,000원, <strong>14</strong> → 140,000원)<br/>
+                중복 차량번호는 시간순으로 순서대로 매칭됩니다.
+              </div>
+              <textarea
+                value={bulkInput}
+                onChange={e=>setBulkInput(e.target.value)}
+                placeholder={'예시:\n9381 14\n1234 5\n9381 9'}
+                style={{ width:'100%', minHeight:120, padding:'10px 12px', border:`1px solid ${border}`, borderRadius:8, fontSize:14, outline:'none', resize:'vertical', boxSizing:'border-box', fontFamily:'monospace', lineHeight:1.7 }}
+              />
+
+              {/* 프리뷰 */}
+              {bulkPreview.length > 0 && (
+                <div style={{ marginTop:14 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:textC, marginBottom:8 }}>적용 미리보기</div>
+                  <div style={{ border:`1px solid ${border}`, borderRadius:8, overflow:'hidden' }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                      <thead>
+                        <tr style={{ background:'#f8fafc' }}>
+                          <th style={{ padding:'7px 10px', textAlign:'left', color:muted, fontWeight:600, borderBottom:`1px solid ${border}` }}>차량번호</th>
+                          <th style={{ padding:'7px 10px', textAlign:'left', color:muted, fontWeight:600, borderBottom:`1px solid ${border}` }}>시간</th>
+                          <th style={{ padding:'7px 10px', textAlign:'left', color:muted, fontWeight:600, borderBottom:`1px solid ${border}` }}>처리장</th>
+                          <th style={{ padding:'7px 10px', textAlign:'right', color:muted, fontWeight:600, borderBottom:`1px solid ${border}` }}>금액</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bulkPreview.map((p, i) => (
+                          <tr key={i} style={{ background: p.noMatch ? '#fef2f2' : i%2===0 ? '#fff' : '#f9fafb' }}>
+                            <td style={{ padding:'7px 10px', fontWeight:600, color: p.noMatch ? red : navy }}>{p.carNum}</td>
+                            <td style={{ padding:'7px 10px', color: p.noMatch ? red : textC }}>{p.noMatch ? '매칭 없음' : (p.time || '—')}</td>
+                            <td style={{ padding:'7px 10px', color:muted, fontSize:12 }}>{p.site}</td>
+                            <td style={{ padding:'7px 10px', textAlign:'right', fontWeight:700, color: p.noMatch ? red : '#6366f1' }}>
+                              {p.noMatch ? '—' : `${parseInt(p.newCost).toLocaleString()}원`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {bulkPreview.some(p=>p.noMatch) && (
+                    <div style={{ fontSize:12, color:red, marginTop:6 }}>⚠ 빨간 행은 해당 날짜에 매칭되는 기록이 없어 건너뜁니다.</div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display:'flex', gap:8, marginTop:16 }}>
+                <Btn onClick={()=>{ setBulkModal(false); setBulkInput('') }} outline style={{ flex:1, padding:'10px 0' }}>취소</Btn>
+                <Btn onClick={applyBulkCost} disabled={bulkSaving || bulkPreview.filter(p=>!p.noMatch).length===0} style={{ flex:2, padding:'10px 0' }}>
+                  {bulkSaving ? '저장 중...' : `✓ ${bulkPreview.filter(p=>!p.noMatch).length}건 적용`}
+                </Btn>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 삭제 확인 모달 */}
       {confirmDel && (
