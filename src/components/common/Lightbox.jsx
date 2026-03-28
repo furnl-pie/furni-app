@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
+import useWindowWidth from '../../utils/useWindowWidth'
 import { downloadAllPhotos } from '../../utils/image'
 
 export default function Lightbox({ photos, index, onClose }) {
   const [cur, setCur] = useState(index)
   const total = photos.length
   const thumbRef = useRef(null)
+  const isPC = useWindowWidth() >= 1024
 
   const prev = e => { e.stopPropagation(); setCur(i => (i - 1 + total) % total) }
   const next = e => { e.stopPropagation(); setCur(i => (i + 1) % total) }
@@ -64,7 +66,14 @@ export default function Lightbox({ photos, index, onClose }) {
 
       {/* 메인 이미지 */}
       <img src={photos[cur]} alt={`사진${cur+1}`} onClick={e=>e.stopPropagation()}
-        style={{ maxWidth:'100%', maxHeight:'68vh', borderRadius:10, objectFit:'contain', boxShadow:'0 8px 40px rgba(0,0,0,.6)', flexShrink:0 }}/>
+        style={{
+          maxWidth: isPC ? '92vw' : '100%',
+          maxHeight: isPC ? '88vh' : '68vh',
+          borderRadius: 10,
+          objectFit: 'contain',
+          boxShadow: '0 8px 40px rgba(0,0,0,.6)',
+          flexShrink: 0,
+        }}/>
 
       {total > 1 && (
         <button onClick={next} style={{ position:'absolute', right:12, top:'45%', transform:'translateY(-50%)', background:'rgba(255,255,255,.18)', border:'none', color:'#fff', fontSize:26, width:46, height:46, borderRadius:'50%', cursor:'pointer' }}>›</button>
@@ -73,7 +82,7 @@ export default function Lightbox({ photos, index, onClose }) {
       {/* 썸네일 스트립 */}
       {total > 1 && (
         <div onClick={e=>e.stopPropagation()}
-          style={{ marginTop:12, width:'100%', maxWidth:520, flexShrink:0 }}>
+          style={{ marginTop:12, width:'100%', maxWidth: isPC ? 900 : 520, flexShrink:0 }}>
           <div ref={thumbRef}
             style={{ display:'flex', gap:6, overflowX:'auto', padding:'4px 2px', scrollbarWidth:'none' }}>
             {photos.map((p, i) => (
