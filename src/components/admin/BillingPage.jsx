@@ -72,41 +72,41 @@ export default function BillingPage({ schedules, onUpdate, onBack }) {
   const dateKeys = Object.keys(groupedByDate).sort()
 
   const exportCSV = () => {
-    const headers = ['날짜', '담당기사', '차량번호', '업체(담당자)', '폐기물량', '청구금액(원)', '주소']
+    const headers = ['날짜', '담당기사', '차량번호', '업체(담당자)', '폐기물량', '', '청구금액(원)', '주소']
+    const emptyRow = Array(8).fill('')
+    const fmtCar  = num => num ? `="${num}"` : ''  // leading-zero 보존용 Excel 수식
+    const makeRow = s => [
+      s.date || s.billing_date || '',
+      userName(s.driver_id),
+      fmtCar(carNum(s.driver_id)),
+      s.cname || '',
+      s.billing_waste || '',
+      '',
+      s.billing_total ? Math.round(s.billing_total * 10000) : 0,
+      `"${(s.address || '').replace(/"/g, '""')}"`,
+    ]
+
     let rows = []
     if (mode === 'today') {
-      rows = driverKeys.flatMap(key =>
-        groupedByDriver[key].map(s => [
-          s.date || s.billing_date || '',
-          userName(s.driver_id),
-          carNum(s.driver_id),
-          s.cname || '',
-          s.billing_waste || '',
-          s.billing_total ? Math.round(s.billing_total * 10000) : 0,
-          `"${(s.address || '').replace(/"/g, '""')}"`,
-        ])
-      )
+      driverKeys.forEach((key, i) => {
+        if (i > 0) { rows.push(emptyRow, emptyRow) }
+        groupedByDriver[key].forEach(s => rows.push(makeRow(s)))
+      })
     } else {
-      rows = dateKeys.flatMap(d => {
+      dateKeys.forEach(d => {
         const driverMap = groupedByDate[d]
         const sortedDrivers = Object.keys(driverMap).sort((a, b) => {
           const dA = drivers.find(x => x.id === a)
           const dB = drivers.find(x => x.id === b)
           return getDriverSortKey(dA || { name: a }) - getDriverSortKey(dB || { name: b })
         })
-        return sortedDrivers.flatMap(key =>
-          driverMap[key].map(s => [
-            s.date || s.billing_date || '',
-            userName(s.driver_id),
-            carNum(s.driver_id),
-            s.cname || '',
-            s.billing_waste || '',
-            s.billing_total ? Math.round(s.billing_total * 10000) : 0,
-            `"${(s.address || '').replace(/"/g, '""')}"`,
-          ])
-        )
+        sortedDrivers.forEach((key, i) => {
+          if (i > 0) { rows.push(emptyRow, emptyRow) }
+          driverMap[key].forEach(s => rows.push(makeRow(s)))
+        })
       })
     }
+
     const label = mode === 'today' ? today : `${fromDate}_${toDate}`
     const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n')
     const a = document.createElement('a')
@@ -222,10 +222,6 @@ export default function BillingPage({ schedules, onUpdate, onBack }) {
               style={{ width: 34, height: 34, border: '1px solid #eaecf0', background: '#f9fafb', borderRadius: 8, cursor: 'pointer', fontSize: 16, color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
             <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>청구 내역</span>
           </div>
-          <button onClick={exportCSV}
-            style={{ height: 32, padding: '0 14px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            ⬇ 엑셀 저장
-          </button>
         </div>
 
         {/* 모드 선택 + 날짜 필터 */}

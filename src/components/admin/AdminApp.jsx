@@ -154,6 +154,48 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     .filter(u => u.role === 'driver')
     .sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
 
+  const exportCSV = () => {
+    const carNum  = id => users.find(u => u.id === id)?.car_num || ''
+    const fmtCar  = num => num ? `="${num}"` : ''
+    const headers = ['날짜', '담당기사', '차량번호', '업체(담당자)', '폐기물량', '', '청구금액(원)', '주소']
+    const emptyRow = Array(8).fill('')
+    const makeRow  = s => [
+      s.date || s.billing_date || '',
+      userName(s.driver_id),
+      fmtCar(carNum(s.driver_id)),
+      s.cname || '',
+      s.billing_waste || '',
+      '',
+      s.billing_total ? Math.round(s.billing_total * 10000) : 0,
+      `"${(s.address || '').replace(/"/g, '""')}"`,
+    ]
+    const billed = schedules
+      .filter(s => s.billing_total && s.date === filterDate)
+    const groups = {}, driverOrder = []
+    billed.forEach(s => {
+      const key = s.driver_id || '__none__'
+      if (!groups[key]) { groups[key] = []; driverOrder.push(key) }
+      groups[key].push(s)
+    })
+    driverOrder.sort((a, b) => {
+      const dA = drivers.find(d => d.id === a)
+      const dB = drivers.find(d => d.id === b)
+      return getDriverSortKey(dA || { name: a }) - getDriverSortKey(dB || { name: b })
+    })
+    const rows = []
+    driverOrder.forEach((key, i) => {
+      if (i > 0) { rows.push(emptyRow, emptyRow) }
+      groups[key].forEach(s => rows.push(makeRow(s)))
+    })
+    if (!rows.length) { alert('해당 날짜에 청구 저장된 건이 없습니다.'); return }
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    a.download = `청구내역_${filterDate}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   const filtered = schedules.filter(s => {
     if (filterDriver.size > 0) {
       const unassignedSelected = filterDriver.has('unassigned')
@@ -228,7 +270,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           </div>
         </div>
         <div style={{ display:'flex', gap:4, justifyContent:'flex-end', alignItems:'center' }}>
-          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['👤','기사',()=>setDriverMgr(true)],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
+          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['⬇','엑셀',exportCSV],['👤','기사',()=>setDriverMgr(true)],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
             <button key={label} onClick={fn}
               style={{ height:32, padding: isPC ? '0 11px' : '0 9px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize: isPC ? 12 : 15, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
               onMouseEnter={e=>{ e.currentTarget.style.background='#eef2ff'; e.currentTarget.style.color='#4f46e5'; e.currentTarget.style.borderColor='#a5b4fc' }}
