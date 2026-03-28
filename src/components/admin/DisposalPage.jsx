@@ -3,6 +3,7 @@ import useWindowWidth from '../../utils/useWindowWidth'
 import { collection, onSnapshot, query, orderBy, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { Card, Btn } from '../common/ui'
+import Lightbox from '../common/Lightbox'
 import { navy, blue, red, border, muted, textC, today } from '../../constants/styles'
 
 const SITES = ['HK', '강서천일', '기타']
@@ -21,6 +22,8 @@ export default function DisposalPage({ onBack }) {
   const [editForm,   setEditForm]   = useState({})
   const [saving,     setSaving]     = useState(false)
   const [confirmDel, setConfirmDel] = useState(null)  // 삭제 확인 id
+  const [lbPhotos,   setLbPhotos]   = useState(null)  // Lightbox: { photos, index }
+  const [lbEditPhotos, setLbEditPhotos] = useState(null)
 
   useEffect(() => {
     const q = query(collection(db, 'disposals'), orderBy('createdAt', 'desc'))
@@ -147,7 +150,7 @@ export default function DisposalPage({ onBack }) {
               {r.photos?.length > 0 && (
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {r.photos.map((p, i) => (
-                    <img key={i} src={p} alt="" onClick={()=>window.open(p,'_blank')}
+                    <img key={i} src={p} alt="" onClick={()=>setLbPhotos({ photos: r.photos, index: i })}
                       style={{ width:72, height:72, objectFit:'cover', borderRadius:8, border:`1px solid ${border}`, cursor:'pointer' }}/>
                   ))}
                 </div>
@@ -219,7 +222,7 @@ export default function DisposalPage({ onBack }) {
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                     {editForm.photos.map((p,i)=>(
                       <div key={i} style={{ position:'relative' }}>
-                        <img src={p} alt="" onClick={()=>window.open(p,'_blank')}
+                        <img src={p} alt="" onClick={()=>setLbEditPhotos({ photos: editForm.photos, index: i })}
                           style={{ width:72, height:72, objectFit:'cover', borderRadius:8, border:`1px solid ${border}`, cursor:'pointer' }}/>
                         <button onClick={()=>removePhoto(i)}
                           style={{ position:'absolute', top:-6, right:-6, background:red, color:'#fff', border:'none', borderRadius:'50%', width:18, height:18, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
@@ -240,6 +243,9 @@ export default function DisposalPage({ onBack }) {
           </div>
         </div>
       )}
+
+      {lbPhotos && <Lightbox photos={lbPhotos.photos} index={lbPhotos.index} onClose={()=>setLbPhotos(null)}/>}
+      {lbEditPhotos && <Lightbox photos={lbEditPhotos.photos} index={lbEditPhotos.index} onClose={()=>setLbEditPhotos(null)}/>}
 
       {/* 삭제 확인 모달 */}
       {confirmDel && (
