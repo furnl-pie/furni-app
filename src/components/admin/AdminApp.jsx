@@ -168,13 +168,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
         .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
     } catch (e) { console.error('처리비 fetch 실패', e) }
 
-    // 처리비 기사명별 그룹
-    const disposalByDriver = {}
-    disposals.forEach(d => {
-      const name = (d.driver_name || '').trim()
-      if (!disposalByDriver[name]) disposalByDriver[name] = []
-      disposalByDriver[name].push(d)
-    })
+    // 처리비: 시간 오름차순 정렬만
 
     // 청구 데이터 그룹
     const billed = schedules.filter(s => s.billing_total && s.date === filterDate)
@@ -224,19 +218,22 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     const emptyBilling  = Array(9).fill('')
     const emptyDisposal = Array(6).fill('')
 
-    const rows = []
+    // 청구 행 목록 생성 (기사별 그룹 + 2행 공백)
+    const billingRows = []
     driverOrder.forEach((key, i) => {
-      if (i > 0) { rows.push(emptyRow, emptyRow) }
-      const billingGroup  = groups[key]
-      const driverName    = userName(key === '__none__' ? null : key)
-      const disposalGroup = disposalByDriver[driverName] || []
-      const len = Math.max(billingGroup.length, disposalGroup.length)
-      for (let j = 0; j < len; j++) {
-        const b = billingGroup[j]  ? makeBillingCols(billingGroup[j])  : emptyBilling
-        const d = disposalGroup[j] ? makeDisposalCols(disposalGroup[j]) : emptyDisposal
-        rows.push([...b, ...d])
-      }
+      if (i > 0) { billingRows.push(emptyBilling, emptyBilling) }
+      groups[key].forEach(s => billingRows.push(makeBillingCols(s)))
     })
+
+    // 처리비 행 목록 (시간순 flat list)
+    const disposalRows = disposals.map(makeDisposalCols)
+
+    // 두 목록을 행 인덱스별로 합치기
+    const len = Math.max(billingRows.length, disposalRows.length)
+    const rows = []
+    for (let i = 0; i < len; i++) {
+      rows.push([...(billingRows[i] || emptyBilling), ...(disposalRows[i] || emptyDisposal)])
+    }
 
     const csv = '\uFEFF' + [headerRow1, headerRow2, ...rows].map(r => r.join(',')).join('\n')
     const a = document.createElement('a')
