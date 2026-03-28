@@ -91,15 +91,25 @@ export default function DisposalPage({ onBack }) {
 
   const removePhoto = (i) => setF('photos', editForm.photos.filter((_, idx) => idx !== i))
 
+  const fmtCost = cost => {
+    const n = parseInt((cost || '').replace(/[^0-9]/g, ''))
+    return isNaN(n) ? (cost || '') : n.toLocaleString() + '원'
+  }
+
   // 처리비 일괄 입력 파싱 및 프리뷰
   const bulkPreview = useMemo(() => {
     if (!bulkInput.trim()) return []
-    // 라인별 파싱: "차량번호 금액" (금액은 만원 단위)
-    const pairs = bulkInput.trim().split('\n').map(line => {
-      const parts = line.trim().split(/\s+/)
+    // 라인별 파싱: "[...] [...] 차량번호 금액" 또는 "차량번호 금액" 모두 지원
+    const pairs = bulkInput.trim().split(/\r?\n/).map(line => {
+      // [HK 최정욱 대리] [오전 8:43] 등 대괄호 블록 전부 제거
+      const cleaned = line.replace(/\[.*?\]/g, '').trim()
+      if (!cleaned) return null
+      const parts = cleaned.split(/\s+/).filter(Boolean)
       if (parts.length < 2) return null
-      const carNum = parts[0]
-      const amount = parseFloat(parts[1])
+      // 마지막 토큰=금액, 끝에서 두번째 토큰=차량번호 (남은 앞쪽 텍스트 무시)
+      const amountStr = parts[parts.length - 1]
+      const carNum    = parts[parts.length - 2]
+      const amount    = parseFloat(amountStr)
       if (!carNum || isNaN(amount) || amount <= 0) return null
       return { carNum, amount }
     }).filter(Boolean)
@@ -209,7 +219,7 @@ export default function DisposalPage({ onBack }) {
                 </div>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:4, fontSize:13, color:textC, marginBottom: r.memo||r.photos?.length ? 8 : 0 }}>
-                {r.cost       && <div><span style={{ color:muted }}>처리비용: </span>{r.cost}</div>}
+                {r.cost       && <div><span style={{ color:muted }}>처리비용: </span>{fmtCost(r.cost)}</div>}
                 {r.load       && <div><span style={{ color:muted }}>적재량: </span>{r.load}</div>}
                 {r.car_number && <div><span style={{ color:muted }}>차량번호: </span>{r.car_number}</div>}
                 {r.quality    && <div><span style={{ color:muted }}>성상: </span>{r.quality}</div>}
@@ -330,15 +340,15 @@ export default function DisposalPage({ onBack }) {
             </div>
             <div style={{ padding:18 }}>
               <div style={{ fontSize:12, color:muted, marginBottom:8, lineHeight:1.8 }}>
-                한 줄에 <strong>차량번호 금액</strong> 형식으로 입력하세요.<br/>
+                카카오톡 메시지 그대로 붙여넣거나 <strong>차량번호 금액</strong>만 입력 가능<br/>
                 금액은 만원 단위 (예: <strong>5</strong> → 50,000원, <strong>14</strong> → 140,000원)<br/>
                 중복 차량번호는 시간순으로 순서대로 매칭됩니다.
               </div>
               <textarea
                 value={bulkInput}
                 onChange={e=>setBulkInput(e.target.value)}
-                placeholder={'예시:\n9381 14\n1234 5\n9381 9'}
-                style={{ width:'100%', minHeight:120, padding:'10px 12px', border:`1px solid ${border}`, borderRadius:8, fontSize:14, outline:'none', resize:'vertical', boxSizing:'border-box', fontFamily:'monospace', lineHeight:1.7 }}
+                placeholder={'카카오톡 그대로 붙여넣기:\n[HK 최정욱 대리] [오전 8:43] 9147 17\n[HK 최정욱 대리] [오전 10:32] 9147 7\n\n또는 간단하게:\n9381 14\n1234 5'}
+                style={{ width:'100%', minHeight:140, padding:'10px 12px', border:`1px solid ${border}`, borderRadius:8, fontSize:13, outline:'none', resize:'vertical', boxSizing:'border-box', fontFamily:'monospace', lineHeight:1.7 }}
               />
 
               {/* 프리뷰 */}
