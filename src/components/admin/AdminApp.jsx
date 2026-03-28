@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
+import { getDocs, query as fsQuery, collection, where } from 'firebase/firestore'
+import { db } from '../../lib/firebase'
 import AdminDetail from './AdminDetail'
 import BillingPage from './BillingPage'
 import DisposalPage from './DisposalPage'
@@ -154,23 +156,28 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     .filter(u => u.role === 'driver')
     .sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
 
-  const exportCSV = () => {
-    const carNum  = id => users.find(u => u.id === id)?.car_num || ''
-    const fmtCar  = num => num ? `="${num}"` : ''
-    const headers = ['날짜', '담당기사', '차량번호', '업체(담당자)', '폐기물량', '', '청구금액(원)', '주소']
-    const emptyRow = Array(8).fill('')
-    const makeRow  = s => [
-      s.date || s.billing_date || '',
-      userName(s.driver_id),
-      fmtCar(carNum(s.driver_id)),
-      s.cname || '',
-      s.billing_waste || '',
-      '',
-      s.billing_total ? Math.round(s.billing_total * 10000) : 0,
-      `"${(s.address || '').replace(/"/g, '""')}"`,
-    ]
-    const billed = schedules
-      .filter(s => s.billing_total && s.date === filterDate)
+  const exportCSV = async () => {
+    const carNum = id => users.find(u => u.id === id)?.car_num || ''
+    const fmtCar = num => num ? `="${num}"` : ''
+
+    // 처리비 데이터 fetch (같은 날짜)
+    let disposals = []
+    try {
+      const snap = await getDocs(fsQuery(collection(db, 'disposals'), where('date', '==', filterDate)))
+      disposals = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+        .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+    } catch (e) { console.error('처리비 fetch 실패', e) }
+
+    // 처리비 기사명별 그룹
+    const disposalByDriver = {}
+    disposals.forEach(d => {
+      const name = (d.driver_name || '').trim()
+      if (!disposalByDriver[name]) disposalByDriver[name] = []
+      disposalByDriver[name].push(d)
+    })
+
+    // 청구 데이터 그룹
+    const billed = schedules.filter(s => s.billing_total && s.date === filterDate)
     const groups = {}, driverOrder = []
     billed.forEach(s => {
       const key = s.driver_id || '__none__'
@@ -182,13 +189,56 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       const dB = drivers.find(d => d.id === b)
       return getDriverSortKey(dA || { name: a }) - getDriverSortKey(dB || { name: b })
     })
+
+    if (!billed.length && !disposals.length) {
+      alert('해당 날짜에 청구 저장된 건이 없습니다.')
+      return
+    }
+
+    // 헤더 2행: 섹션명(1행) + 컬럼명(2행)
+    // 컬럼: 날짜|담당기사|차량번호|업체|폐기물량|(빈)|청구금액|주소|(빈)|기사|차량번호|금액|(빈)|(빈)|처리장
+    const headerRow1 = ['날짜','담당기사','차량번호','업체(담당자)','폐기물량','','청구금액(원)','주소','','처리비','','','','','']
+    const headerRow2 = ['','','','','','','','','','기사','차량번호','금액','','','처리장']
+    const COLS = 15
+    const emptyRow = Array(COLS).fill('')
+
+    const makeBillingCols = s => [
+      s.date || s.billing_date || '',
+      userName(s.driver_id),
+      fmtCar(carNum(s.driver_id)),
+      s.cname || '',
+      s.billing_waste || '',
+      '',
+      s.billing_total ? Math.round(s.billing_total * 10000) : 0,
+      `"${(s.address || '').replace(/"/g, '""')}"`,
+      '', // spacer
+    ]
+    const makeDisposalCols = d => [
+      d.driver_name || '',
+      fmtCar(d.car_number || ''),
+      d.cost || '',
+      '',
+      '',
+      d.site || '',
+    ]
+    const emptyBilling  = Array(9).fill('')
+    const emptyDisposal = Array(6).fill('')
+
     const rows = []
     driverOrder.forEach((key, i) => {
       if (i > 0) { rows.push(emptyRow, emptyRow) }
-      groups[key].forEach(s => rows.push(makeRow(s)))
+      const billingGroup  = groups[key]
+      const driverName    = userName(key === '__none__' ? null : key)
+      const disposalGroup = disposalByDriver[driverName] || []
+      const len = Math.max(billingGroup.length, disposalGroup.length)
+      for (let j = 0; j < len; j++) {
+        const b = billingGroup[j]  ? makeBillingCols(billingGroup[j])  : emptyBilling
+        const d = disposalGroup[j] ? makeDisposalCols(disposalGroup[j]) : emptyDisposal
+        rows.push([...b, ...d])
+      }
     })
-    if (!rows.length) { alert('해당 날짜에 청구 저장된 건이 없습니다.'); return }
-    const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n')
+
+    const csv = '\uFEFF' + [headerRow1, headerRow2, ...rows].map(r => r.join(',')).join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
     a.download = `청구내역_${filterDate}.csv`
