@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { db } from '../lib/firebase'
 import {
-  collection, doc,
+  collection, doc, query, where,
   setDoc, updateDoc, deleteDoc,
   onSnapshot, writeBatch,
   serverTimestamp,
@@ -59,7 +59,11 @@ export function useAppData() {
           setUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })))
         }, err => setError(err.message))
 
-        unsubSchedules = onSnapshot(collection(db, 'schedules'), snap => {
+        const cutoff = new Date()
+        cutoff.setDate(cutoff.getDate() - 7)
+        const cutoffStr = cutoff.toISOString().slice(0, 10)
+
+        unsubSchedules = onSnapshot(query(collection(db, 'schedules'), where('date', '>=', cutoffStr)), snap => {
           setSchedules(snap.docs.map(d => ({ ...d.data(), id: d.id })))
           setLoading(false)
         }, err => { setError(err.message); setLoading(false) })

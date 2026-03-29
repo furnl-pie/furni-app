@@ -1,7 +1,7 @@
 // src/lib/firebase.js
 // firebase.google.com → 프로젝트 → 프로젝트 설정 → 내 앱 → SDK 설정에서 값 복사
 import { initializeApp } from 'firebase/app'
-import { getFirestore }  from 'firebase/firestore'
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
 import { getMessaging }  from 'firebase/messaging'
 
 const firebaseConfig = {
@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
+enableIndexedDbPersistence(db).catch(() => {})
 
 let messaging = null
 try {
