@@ -303,11 +303,38 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       cell.font = { bold: true }
     })
 
+    // 이미지 기사명 기반 엑셀 배경색 (이름에 키워드 포함 여부로 매핑)
+    const DRIVER_COLOR_MAP = [
+      { keys: ['성민'],       argb: 'FFC8D8EC' }, // 박성민  - 연파랑
+      { keys: ['상규'],       argb: 'FFFADDD0' }, // 상규    - 연살구
+      { keys: ['권호'],       argb: 'FFAABFD8' }, // 최권호  - 중파랑
+      { keys: ['남선','남상'], argb: 'FFD5E8CE' }, // 김남선  - 연초록
+      { keys: ['유현'],       argb: 'FFE8D5EC' }, // 석유현  - 연보라
+      { keys: ['변규'],       argb: 'FFCCE5F0' }, // 변규    - 연하늘
+      { keys: ['기연'],       argb: 'FFFFF2CC' }, // 기연    - 연노랑
+      { keys: ['효진','정환'], argb: 'FFFAD0E0' }, // 정효진  - 연분홍
+      { keys: ['동수'],       argb: 'FFCCEEDC' }, // 이동수  - 연민트
+      { keys: ['정길'],       argb: 'FFCDD9E8' }, // 정길    - 연스틸블루
+      { keys: ['태선','태섭'], argb: 'FFFADDD0' }, // 한태섭  - 연주황(살구)
+      { keys: ['기언','최인'], argb: 'FFD8CEED' }, // 최기언  - 연라벤더
+      { keys: ['최은'],       argb: 'FFCCE5D0' }, // 최은    - 연세이지
+      { keys: ['홍진'],       argb: 'FFFFE8CC' }, // 홍진    - 연앰버
+      { keys: ['선우'],       argb: 'FFCCE5F5' }, // 이선우  - 연스카이
+      { keys: ['일석'],       argb: 'FFF0CCE5' }, // 김일석  - 연모브
+      { keys: ['승민','종태','정완','희순','호진','상구','병근','송환'], argb: 'FFCCE8F0' }, // 기타 - 연틸
+    ]
+    const getDriverArgb = name => {
+      if (!name || name === '미배치') return 'FFFFF1F2'
+      const match = DRIVER_COLOR_MAP.find(m => m.keys.some(k => name.includes(k)))
+      return match ? match.argb : 'FFFFFFFF'
+    }
+
     // 데이터 행 추가
     groups.forEach((g, gi) => {
       if (gi > 0) { ws.addRow([]); ws.addRow([]) }
+      const driverName = g.did !== '__unassigned__' ? (drivers.find(d => d.id === g.did)?.name || '') : '미배치'
+      const bgArgb = getDriverArgb(driverName)
       g.items.forEach(s => {
-        const driverName = s.driver_id ? (drivers.find(d => d.id === s.driver_id)?.name || '') : '미배치'
         const row = ws.addRow([
           fmtDate(s.date),
           s.cname || '',
@@ -321,7 +348,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           driverName,
           s.status || '',
         ])
-        row.eachCell({ includeEmpty: true }, cell => { cell.alignment = centerStyle })
+        row.eachCell({ includeEmpty: true }, cell => {
+          cell.alignment = centerStyle
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } }
+        })
       })
     })
 
