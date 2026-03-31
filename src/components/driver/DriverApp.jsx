@@ -98,12 +98,14 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
     if (view === 'detail') {
       window.history.pushState({ detail: true }, '')
       window.scrollTo(0, 0)
-      const handler = () => {
-        setView('list')
-        requestAnimationFrame(() => window.scrollTo(0, scrollYRef.current))
-      }
+      const handler = () => setView('list')
       window.addEventListener('popstate', handler)
       return () => window.removeEventListener('popstate', handler)
+    }
+    if (view === 'list') {
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => window.scrollTo(0, scrollYRef.current))
+      )
     }
   }, [view])
 
@@ -251,7 +253,7 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
           <DriverDetail
             schedule={selected}
             onUpdate={patch => onUpdate(selected.id, patch)}
-            onBack={()=>{ setView('list'); requestAnimationFrame(()=>window.scrollTo(0, scrollYRef.current)) }}
+            onBack={()=>setView('list')}
           />
         </div>
       )}
