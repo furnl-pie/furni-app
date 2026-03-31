@@ -156,11 +156,12 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
         return
       }
 
-      // 루트 이미지를 모든 일정에 추가
+      // 루트 이미지를 모든 일정에 추가 + 시간 오름차순 정렬
+      const toMin = t => { if (!t) return 9999; const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0) }
       const finalRows = allRows.map(r => ({
         ...r,
         _photos: [...(r._groupPhotos || []), ...rootPhotos],
-      }))
+      })).sort((a, b) => toMin(a.time) - toMin(b.time))
 
       setFolderRows(finalRows)
       setFolderStats({ schedules: finalRows.length, txts: totalTxts, imgs: totalImgs, shared: rootPhotos.length })
