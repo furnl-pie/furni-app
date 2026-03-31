@@ -105,7 +105,13 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       delete newS._copyDate; delete newS._copyDriver
       delete newS._copyTime; delete newS._copyWaste
       delete newS._mode; delete newS._id
-      onAddMany([newS])
+      // 중복 체크 (date + address)
+      const existing = schedules.find(s => s.date === newData.date && s.address === copyModal.address)
+      if (existing) {
+        onUpdate(existing.id, newS)
+      } else {
+        onAddMany([newS])
+      }
     }
     setCopyModal(null)
   }
