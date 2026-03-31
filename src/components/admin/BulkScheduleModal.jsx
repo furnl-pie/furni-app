@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Btn } from '../common/ui'
 import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow } from '../../utils/parsing'
-import { navy, blue, green, amber, red, border, muted, textC, DRIVER_COLORS } from '../../constants/styles'
+import { navy, blue, green, amber, red, border, muted, textC, driverChip } from '../../constants/styles'
 import { resizeImage } from '../../utils/image'
 
 export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, onUpdate, onClose }) {
@@ -373,7 +373,7 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
   }
 
   const driverMap = {}
-  drivers.forEach((d,i) => { driverMap[d.id] = { ...DRIVER_COLORS[i % DRIVER_COLORS.length], name:d.name } })
+  drivers.forEach(d => { driverMap[d.id] = { ...(driverChip(d.id, drivers) || {}), name:d.name } })
 
   const assignedCount = rows.filter(r=>assigns[r._id]).length
   const colOptions = parsed?.headers.map((h,i)=>({ label:`[${i+1}열] ${h}`, value:i })) || []
