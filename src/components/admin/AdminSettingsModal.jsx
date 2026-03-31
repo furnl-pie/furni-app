@@ -9,15 +9,25 @@ export default function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
   const [pwForm, setPwForm]           = useState({ current:'', next:'', confirm:'' })
   const [err,    setErr]              = useState('')
   const [ok,     setOk]               = useState('')
+  const [globalEnabled, setGlobal]    = useState(true)
   const [overdueEnabled, setOverdue]  = useState(true)
 
   useEffect(() => {
     const ref = doc(db, 'settings', 'notifications')
     const unsub = onSnapshot(ref, snap => {
-      if (snap.exists()) setOverdue(snap.data().overdueEnabled !== false)
+      if (snap.exists()) {
+        const data = snap.data()
+        setGlobal(data.globalEnabled !== false)
+        setOverdue(data.overdueEnabled !== false)
+      }
     })
     return unsub
   }, [])
+
+  const toggleGlobal = async (val) => {
+    setGlobal(val)
+    await setDoc(doc(db, 'settings', 'notifications'), { globalEnabled: val }, { merge: true })
+  }
 
   const toggleOverdue = async (val) => {
     setOverdue(val)
@@ -56,7 +66,17 @@ export default function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
         </div>
         <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}` }}>
           <div style={{ fontSize:14, fontWeight:700, color:textC, marginBottom:12 }}>알림 설정</div>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:textC }}>🔔 전체 알림</div>
+              <div style={{ fontSize:11, color:muted, marginTop:2 }}>모든 푸시 알림 켜기/끄기</div>
+            </div>
+            <div onClick={()=>toggleGlobal(!globalEnabled)}
+              style={{ width:44, height:24, borderRadius:12, background:globalEnabled?green:'#cbd5e1', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0 }}>
+              <div style={{ position:'absolute', top:3, left:globalEnabled?23:3, width:18, height:18, borderRadius:'50%', background:'#fff', boxShadow:'0 1px 3px rgba(0,0,0,.3)', transition:'left .2s' }}/>
+            </div>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', opacity:globalEnabled?1:.4, pointerEvents:globalEnabled?'auto':'none' }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:textC }}>⏰ 30분 미출발 알림</div>
               <div style={{ fontSize:11, color:muted, marginTop:2 }}>배정 시간 초과 시 관리자에게 알림</div>

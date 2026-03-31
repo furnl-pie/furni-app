@@ -39,6 +39,10 @@ exports.onScheduleChange = region('us-central1')
       }).catch(e => logger.error('FCM multicast 실패:', e))
     }
 
+    // 전체 알림 비활성화 시 스킵
+    const notifSettings = await db.collection('settings').doc('notifications').get()
+    if (notifSettings.exists && notifSettings.data().globalEnabled === false) return
+
     // 일정 삭제 또는 기사 배정 취소 → 기사에게 알림
     if (!after || (!after.driver_id && before?.driver_id)) {
       const place = before?.cname || before?.address || ''
@@ -103,9 +107,12 @@ exports.checkOverdue = pubsub
     const db  = getFirestore()
     const msg = getMessaging()
 
-    // 알림 설정 확인 (관리자가 비활성화하면 스킵)
+    // 알림 설정 확인 (전체 알림 또는 미출발 알림 비활성화 시 스킵)
     const settingsDoc = await db.collection('settings').doc('notifications').get()
-    if (settingsDoc.exists && settingsDoc.data().overdueEnabled === false) return
+    if (settingsDoc.exists) {
+      const s = settingsDoc.data()
+      if (s.globalEnabled === false || s.overdueEnabled === false) return
+    }
 
     // 현재 KST 시각
     const now     = new Date(Date.now() + 9 * 60 * 60 * 1000)
