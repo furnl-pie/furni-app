@@ -45,11 +45,8 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
   const openLb = (src, idx) => { setLbSource(src); setLightbox(idx) }
 
   const buildSms = (etaVal) => {
-    const addr = schedule.address || ''
-    // 동/호수 제거: "101동 308호" 같은 패턴 앞까지만
-    const shortAddr = addr.replace(/\s*\d+동\s*\d+호.*$/, '').replace(/\s*\d+호.*$/, '').trim()
-    const location = [schedule.cname, shortAddr].filter(Boolean).join(' - ')
-    return `안녕하세요, 퍼니환경입니다.\n\n${location}\n🕐 도착 예정: ${etaVal} 입니다`
+    const location = [schedule.cname, schedule.address].filter(Boolean).join(' - ')
+    return `안녕하세요. 퍼니환경입니다.\n\n${location}\n${etaVal} 도착 예정입니다.`
   }
 
   // 날짜 "2026-03-20" → "3월20일 (금)"
