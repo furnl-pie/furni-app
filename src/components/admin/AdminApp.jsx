@@ -303,29 +303,28 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       cell.font = { bold: true }
     })
 
-    // 이미지 기사명 기반 엑셀 배경색 (이름에 키워드 포함 여부로 매핑)
-    const DRIVER_COLOR_MAP = [
-      { keys: ['성민'],       argb: 'FFC8D8EC' }, // 박성민  - 연파랑
-      { keys: ['상규'],       argb: 'FFFADDD0' }, // 상규    - 연살구
-      { keys: ['권호'],       argb: 'FFAABFD8' }, // 최권호  - 중파랑
-      { keys: ['남선','남상'], argb: 'FFD5E8CE' }, // 김남선  - 연초록
-      { keys: ['유현'],       argb: 'FFE8D5EC' }, // 석유현  - 연보라
-      { keys: ['변규'],       argb: 'FFCCE5F0' }, // 변규    - 연하늘
-      { keys: ['기연'],       argb: 'FFFFF2CC' }, // 기연    - 연노랑
-      { keys: ['효진','정환'], argb: 'FFFAD0E0' }, // 정효진  - 연분홍
-      { keys: ['동수'],       argb: 'FFCCEEDC' }, // 이동수  - 연민트
-      { keys: ['정길'],       argb: 'FFCDD9E8' }, // 정길    - 연스틸블루
-      { keys: ['태선','태섭'], argb: 'FFFADDD0' }, // 한태섭  - 연주황(살구)
-      { keys: ['기언','최인'], argb: 'FFD8CEED' }, // 최기언  - 연라벤더
-      { keys: ['최은'],       argb: 'FFCCE5D0' }, // 최은    - 연세이지
-      { keys: ['홍진'],       argb: 'FFFFE8CC' }, // 홍진    - 연앰버
-      { keys: ['선우'],       argb: 'FFCCE5F5' }, // 이선우  - 연스카이
-      { keys: ['일석'],       argb: 'FFF0CCE5' }, // 김일석  - 연모브
-      { keys: ['승민','종태','정완','희순','호진','상구','병근','송환'], argb: 'FFCCE8F0' }, // 기타 - 연틸
+    // 기사 이름 기반 엑셀 배경색 (styles.js와 동일 매핑, ARGB 형식)
+    const EXCEL_COLOR_MAP = [
+      { keys: ['승환'],        argb: 'FFFFFF00' },
+      { keys: ['희순'],        argb: 'FF92CDDC' },
+      { keys: ['성민'],        argb: 'FF31869B' },
+      { keys: ['선우'],        argb: 'FFFFC000' },
+      { keys: ['호진'],        argb: 'FFDA9694' },
+      { keys: ['효진'],        argb: 'FF76933C' },
+      { keys: ['태섭'],        argb: 'FF00B050' },
+      { keys: ['정길'],        argb: 'FFFDE9D9' },
+      { keys: ['동수'],        argb: 'FFB1A0C7' },
+      { keys: ['정완'],        argb: 'FF92D050' },
+      { keys: ['기언'],        argb: 'FF0070C0' },
+      { keys: ['병근'],        argb: 'FF95B3D7' },
+      { keys: ['유현'],        argb: 'FFFFCCCC' },
+      { keys: ['남선'],        argb: 'FFE26B0A' },
+      { keys: ['권호'],        argb: 'FFBFBFBF' },
+      { keys: ['상구'],        argb: 'FF00FF99' },
     ]
     const getDriverArgb = name => {
       if (!name || name === '미배치') return 'FFFFF1F2'
-      const match = DRIVER_COLOR_MAP.find(m => m.keys.some(k => name.includes(k)))
+      const match = EXCEL_COLOR_MAP.find(m => m.keys.some(k => name.includes(k)))
       return match ? match.argb : 'FFFFFFFF'
     }
 

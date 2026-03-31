@@ -39,7 +39,7 @@ export const STATUS_CFG = {
   '이동중':  { color: '#c2410c', bg: '#fff7ed', border: '#fed7aa',      label: '🚚 이동중' },
   '진행중':  { color: '#4338ca', bg: '#eef2ff', border: '#c7d2fe',      label: '● 진행중' },
   '완료':    { color: '#065f46', bg: '#ecfdf5', border: '#a7f3d0',      label: '✓ 완료' },
-  '청구완료': { color: '#0369a1', bg: '#e0f2fe', border: '#7dd3fc',     label: '💰 청구완료' },
+  '청구완료': { color: '#0369a1', bg: '#e0f2fe', border: '#7dd3fc',     label: '💰 청구' },
 }
 
 export const iStyle = {
@@ -49,41 +49,43 @@ export const iStyle = {
   colorScheme:'light', appearance:'none', WebkitAppearance:'none',
 }
 
-// ── 기사별 색상 칩 (30가지 고유 색상) ─────────────────────────────
-export const DRIVER_COLORS = [
-  { bg:'#dbeafe', color:'#1e3a8a', border:'#93c5fd' }, // 딥블루
-  { bg:'#dcfce7', color:'#14532d', border:'#4ade80' }, // 딥그린
-  { bg:'#fde68a', color:'#78350f', border:'#f59e0b' }, // 딥앰버
-  { bg:'#e9d5ff', color:'#4c1d95', border:'#a855f7' }, // 딥퍼플
-  { bg:'#fecdd3', color:'#881337', border:'#f43f5e' }, // 딥로즈
-  { bg:'#a5f3fc', color:'#164e63', border:'#06b6d4' }, // 딥시안
-  { bg:'#fed7aa', color:'#7c2d12', border:'#f97316' }, // 딥오렌지
-  { bg:'#99f6e4', color:'#134e4a', border:'#14b8a6' }, // 딥틸
-  { bg:'#c7d2fe', color:'#312e81', border:'#6366f1' }, // 딥인디고
-  { bg:'#d9f99d', color:'#365314', border:'#84cc16' }, // 딥라임
-  { bg:'#fca5a5', color:'#7f1d1d', border:'#ef4444' }, // 딥레드
-  { bg:'#fbcfe8', color:'#831843', border:'#ec4899' }, // 딥핑크
-  { bg:'#7dd3fc', color:'#0c4a6e', border:'#0ea5e9' }, // 딥스카이
-  { bg:'#6ee7b7', color:'#064e3b', border:'#10b981' }, // 딥에메랄드
-  { bg:'#ddd6fe', color:'#2e1065', border:'#8b5cf6' }, // 딥바이올렛
-  { bg:'#fde047', color:'#713f12', border:'#eab308' }, // 딥옐로우
-  { bg:'#f9a8d4', color:'#500724', border:'#db2777' }, // 딥퓨시아
-  { bg:'#94a3b8', color:'#0f172a', border:'#475569' }, // 딥슬레이트
-  { bg:'#fdba74', color:'#431407', border:'#ea580c' }, // 딥브라운
-  { bg:'#86efac', color:'#052e16', border:'#22c55e' }, // 딥민트
-  { bg:'#bfdbfe', color:'#1e3a8a', border:'#3b82f6' }, // 미드블루
-  { bg:'#bbf7d0', color:'#14532d', border:'#16a34a' }, // 미드그린
-  { bg:'#fef08a', color:'#854d0e', border:'#ca8a04' }, // 미드옐로우
-  { bg:'#f0abfc', color:'#4a044e', border:'#d946ef' }, // 미드매젠타
-  { bg:'#fda4af', color:'#4c0519', border:'#e11d48' }, // 미드크림슨
-  { bg:'#67e8f9', color:'#083344', border:'#0891b2' }, // 미드아쿠아
-  { bg:'#6ee7b7', color:'#022c22', border:'#059669' }, // 미드세이지
-  { bg:'#c4b5fd', color:'#1e0a4a', border:'#7c3aed' }, // 미드라벤더
-  { bg:'#fbbf24', color:'#451a03', border:'#d97706' }, // 미드골드
-  { bg:'#86d9fa', color:'#0a2540', border:'#0284c7' }, // 미드코발트
+// ── 기사별 지정 색상 (이름 키워드 기반) ───────────────────────────
+const DRIVER_NAME_COLORS = [
+  { keys: ['승환'], hex: '#FFFF00' },
+  { keys: ['희순'], hex: '#92CDDC' },
+  { keys: ['성민'], hex: '#31869B' },
+  { keys: ['선우'], hex: '#FFC000' },
+  { keys: ['호진'], hex: '#DA9694' },
+  { keys: ['효진'], hex: '#76933C' },
+  { keys: ['태섭'], hex: '#00B050' },
+  { keys: ['정길'], hex: '#FDE9D9' },
+  { keys: ['동수'], hex: '#B1A0C7' },
+  { keys: ['정완'], hex: '#92D050' },
+  { keys: ['기언'], hex: '#0070C0' },
+  { keys: ['병근'], hex: '#95B3D7' },
+  { keys: ['유현'], hex: '#FFCCCC' },
+  { keys: ['남선'], hex: '#E26B0A' },
+  { keys: ['권호'], hex: '#BFBFBF' },
+  { keys: ['상구'], hex: '#00FF99' },
 ]
 
+function chipFromHex(hex) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const color = lum > 0.5 ? '#1e293b' : '#ffffff'
+  return { bg: hex, color, border: hex }
+}
+
 export function driverChip(driverId, drivers) {
+  const driver = drivers.find(d => d.id === driverId)
+  if (!driver) return null
+  const name = driver.name || ''
+  const match = DRIVER_NAME_COLORS.find(m => m.keys.some(k => name.includes(k)))
+  if (match) return chipFromHex(match.hex)
+  // 매핑 없는 기사는 인덱스 기반 fallback
   const idx = drivers.findIndex(d => d.id === driverId)
-  return idx >= 0 ? DRIVER_COLORS[idx % DRIVER_COLORS.length] : null
+  const FALLBACK = ['#cbd5e1','#d1fae5','#fef3c7','#ede9fe','#fee2e2','#e0f2fe']
+  return chipFromHex(FALLBACK[idx % FALLBACK.length])
 }
