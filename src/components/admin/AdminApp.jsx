@@ -262,7 +262,8 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
 
   const filtered = baseFiltered.filter(s => {
     if (filterStatus === '대기')    return s.status === '대기' && !s.billing_total
-    if (filterStatus === '작업중')  return s.status === '진행중' || s.status === '이동중'
+    if (filterStatus === '이동중')  return s.status === '이동중'
+    if (filterStatus === '작업중')  return s.status === '진행중'
     if (filterStatus === '작업완료') return s.status === '완료' && !s.billing_total
     if (filterStatus === '청구완료') return !!s.billing_total
     return true
@@ -383,7 +384,8 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const stats = {
     total:    baseFiltered.length,
     waiting:  baseFiltered.filter(s=>s.status==='대기' && !s.billing_total).length,
-    working:  baseFiltered.filter(s=>s.status==='진행중'||s.status==='이동중').length,
+    moving:   baseFiltered.filter(s=>s.status==='이동중').length,
+    working:  baseFiltered.filter(s=>s.status==='진행중').length,
     workDone: baseFiltered.filter(s=>s.status==='완료' && !s.billing_total).length,
     billed:   baseFiltered.filter(s=>!!s.billing_total).length,
   }
@@ -440,10 +442,11 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       </div>
 
       <div style={{ padding:20, maxWidth:1060, margin:'0 auto' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10, marginBottom:16 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, marginBottom:16 }}>
           {[
             ['전체',    stats.total,    '#6366f1', ''],
             ['대기',    stats.waiting,  '#94a3b8', '대기'],
+            ['이동중',  stats.moving,   '#3b82f6', '이동중'],
             ['작업중',  stats.working,  '#f59e0b', '작업중'],
             ['작업완료',stats.workDone, '#10b981', '작업완료'],
             ['청구완료',stats.billed,   '#0ea5e9', '청구완료'],

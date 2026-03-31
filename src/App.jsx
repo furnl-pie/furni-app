@@ -9,10 +9,12 @@ import AdminApp from './components/admin/AdminApp'
 import DriverApp from './components/driver/DriverApp'
 import TruckIcon from './components/common/TruckIcon'
 import { navy, border, muted, textC } from './constants/styles'
+import { VERSION, CHANGELOG } from './constants/version'
 
 export default function App() {
   const [user, setUser] = useState(null)
   const [showLogoutConfirm, setLogoutConfirm] = useState(false)
+  const [showUpdate, setShowUpdate] = useState(false)
   const {
     users, schedules, loading, error,
     addSchedules, updateSchedule, deleteSchedules,
@@ -36,6 +38,13 @@ export default function App() {
 
   // FCM 토큰 등록만 수행 (포그라운드 토스트 없음 - 시스템 알림으로 통일)
   useFCM(user, null)
+
+  // 로그인 후 새 버전이면 업데이트 팝업 표시
+  useEffect(() => {
+    if (!user) return
+    const seen = localStorage.getItem('app_version_seen')
+    if (seen !== VERSION) setShowUpdate(true)
+  }, [user])
 
   // 접속 상태 추적
   useEffect(() => {
@@ -114,6 +123,23 @@ export default function App() {
             onLogout={logoutHandler}
           />
       }
+
+      {showUpdate && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:340, padding:28 }}>
+            <div style={{ fontSize:20, marginBottom:4 }}>🆕</div>
+            <div style={{ fontSize:16, fontWeight:700, color:textC, marginBottom:2 }}>업데이트 안내</div>
+            <div style={{ fontSize:12, color:muted, marginBottom:16 }}>v{VERSION}</div>
+            <ul style={{ margin:0, padding:'0 0 0 18px', fontSize:13, color:textC, lineHeight:2 }}>
+              {CHANGELOG.map((item, i) => <li key={i}>{item}</li>)}
+            </ul>
+            <button onClick={() => { localStorage.setItem('app_version_seen', VERSION); setShowUpdate(false) }}
+              style={{ marginTop:20, width:'100%', padding:'11px 0', borderRadius:8, border:'none', background:navy, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
 
       {showLogoutConfirm && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
