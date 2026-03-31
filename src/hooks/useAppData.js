@@ -8,6 +8,7 @@ import {
   onSnapshot, writeBatch,
   serverTimestamp,
 } from 'firebase/firestore'
+import { hashPw } from '../utils/auth'
 
 const CLOUD  = import.meta.env.VITE_CLOUDINARY_CLOUD
 const PRESET = import.meta.env.VITE_CLOUDINARY_PRESET
@@ -81,10 +82,15 @@ export function useAppData() {
     return () => { unsubUsers?.(); unsubSchedules?.() }
   }, [])
 
-  // ── 로그인 ────────────────────────────────────────────────────
-  const login = useCallback((id, pw) => {
-    const user = users.find(u => u.id === id && u.pw === pw)
+  // ── 로그인 (SHA-256 해싱 + 평문→해시 자동 마이그레이션) ─────────
+  const login = useCallback(async (id, pw) => {
+    const hashed = await hashPw(pw)
+    const user = users.find(u => u.id === id && (u.pw === hashed || u.pw === pw))
     if (!user) return { error: '아이디 또는 비밀번호가 올바르지 않습니다' }
+    // 평문으로 일치한 경우 → 해시로 업그레이드 (백그라운드)
+    if (user.pw === pw && user.pw !== hashed) {
+      updateDoc(doc(db, 'users', user.id), { pw: hashed }).catch(() => {})
+    }
     return { user }
   }, [users])
 
@@ -189,7 +195,8 @@ export function useAppData() {
   const addDriver = useCallback(async (d) => {
     if (users.some(u => u.id === d.id)) return { error: '이미 사용 중인 아이디입니다' }
     try {
-      await setDoc(doc(db, 'users', d.id), { role: 'driver', ...d })
+      const pw = await hashPw(d.pw)
+      await setDoc(doc(db, 'users', d.id), { role: 'driver', ...d, pw })
       return {}
     } catch (e) {
       console.error('기사 추가 실패:', e)
@@ -199,7 +206,9 @@ export function useAppData() {
 
   // ── 기사 수정 ─────────────────────────────────────────────────
   const updateDriver = useCallback(async (id, patch) => {
-    await updateDoc(doc(db, 'users', id), patch)
+    const finalPatch = { ...patch }
+    if (patch.pw) finalPatch.pw = await hashPw(patch.pw)
+    await updateDoc(doc(db, 'users', id), finalPatch)
   }, [])
 
   // ── 기사 삭제 ─────────────────────────────────────────────────

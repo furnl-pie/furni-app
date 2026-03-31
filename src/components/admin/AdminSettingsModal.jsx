@@ -3,6 +3,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { Btn } from '../common/ui'
 import { navy, blue, muted, green, red, border, textC, iStyle } from '../../constants/styles'
+import { hashPw } from '../../utils/auth'
 
 export default function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
   const [pwForm, setPwForm]           = useState({ current:'', next:'', confirm:'' })
@@ -23,12 +24,13 @@ export default function AdminSettingsModal({ user, onUpdateDriver, onClose }) {
     await setDoc(doc(db, 'settings', 'notifications'), { overdueEnabled: val }, { merge: true })
   }
 
-  const changePw = () => {
+  const changePw = async () => {
     setErr(''); setOk('')
-    if (pwForm.current !== user.pw) return setErr('현재 비밀번호가 올바르지 않습니다')
+    const currentHashed = await hashPw(pwForm.current)
+    if (user.pw !== currentHashed && user.pw !== pwForm.current) return setErr('현재 비밀번호가 올바르지 않습니다')
     if (pwForm.next.length < 4)     return setErr('새 비밀번호는 4자 이상 입력하세요')
     if (pwForm.next !== pwForm.confirm) return setErr('새 비밀번호가 일치하지 않습니다')
-    onUpdateDriver(user.id, { pw: pwForm.next })
+    await onUpdateDriver(user.id, { pw: pwForm.next })
     setOk('비밀번호가 변경되었습니다!')
     setPwForm({ current:'', next:'', confirm:'' })
     setTimeout(() => setOk(''), 2000)

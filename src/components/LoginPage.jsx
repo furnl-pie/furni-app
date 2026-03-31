@@ -16,15 +16,14 @@ export default function LoginPage({ onLogin, users }) {
       const savedId = localStorage.getItem('saved_id') || ''
       const savedPw = localStorage.getItem('saved_pw') || ''
       if (savedId && savedPw) {
-        const u = users.find(u => u.id === savedId && u.pw === savedPw)
-        if (u) onLogin(u)
+        onLogin(savedId, savedPw).catch(() => {})
       }
     }
   }, [users])
 
-  const go = () => {
-    const u = users.find(u => u.id === id && u.pw === pw)
-    if (!u) return setErr('아이디 또는 비밀번호가 올바르지 않습니다')
+  const go = async () => {
+    const result = await onLogin(id, pw)
+    if (result.error) return setErr(result.error)
 
     if (saveId)    { localStorage.setItem('saved_id', id); localStorage.setItem('save_id','1') }
     else           { localStorage.removeItem('saved_id');   localStorage.setItem('save_id','0') }
@@ -32,7 +31,6 @@ export default function LoginPage({ onLogin, users }) {
     else           { localStorage.removeItem('saved_pw');   localStorage.setItem('save_pw','0') }
     if (autoLogin) { localStorage.setItem('auto_login','1') }
     else           { localStorage.setItem('auto_login','0') }
-    onLogin(u)
   }
 
   const toggleSaveId = () => {

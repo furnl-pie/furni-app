@@ -6,6 +6,7 @@ import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, border, muted, textC, iStyle, today } from '../../constants/styles'
 import { userName } from '../../utils/users'
+import { hashPw } from '../../utils/auth'
 
 export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [view, setView]        = useState('list')
@@ -122,7 +123,8 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
 
   const changePw = async () => {
     setPwErr('')
-    if (pwForm.current !== user.pw) { setPwErr('현재 비밀번호가 틀렸습니다'); return }
+    const currentHashed = await hashPw(pwForm.current)
+    if (user.pw !== currentHashed && user.pw !== pwForm.current) { setPwErr('현재 비밀번호가 틀렸습니다'); return }
     if (pwForm.next.length < 4)     { setPwErr('새 비밀번호는 4자 이상 입력하세요'); return }
     if (pwForm.next !== pwForm.confirm) { setPwErr('새 비밀번호가 일치하지 않습니다'); return }
     await onUpdateDriver(user.id, { pw: pwForm.next })

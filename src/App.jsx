@@ -79,7 +79,11 @@ export default function App() {
     </div>
   )
 
-  if (!user) return <LoginPage onLogin={u=>setUser(u)} users={users}/>
+  if (!user) return <LoginPage onLogin={async (id, pw) => {
+    const result = await login(id, pw)
+    if (result.user) setUser(result.user)
+    return result
+  }} users={users}/>
 
   const logoutHandler = () => {
     localStorage.setItem('auto_login', '0')

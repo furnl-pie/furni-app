@@ -20,8 +20,13 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
     onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw, car_number:form.car_number, role:'driver', driverOrder: Date.now() })
     setForm({ loginId:'', name:'', phone:'', pw:'', car_number:'' }); setAdding(false)
   }
-  const startEdit = d => { setEditId(d.id); setEditForm({ loginId:d.id, name:d.name, phone:d.phone, pw:d.pw, car_number:(d.car_number||d.car_num||'').slice(-4) }) }
-  const submitEdit = () => { onUpdate(editId, { name:editForm.name, phone:editForm.phone, pw:editForm.pw, car_number:editForm.car_number }); setEditId(null) }
+  const startEdit = d => { setEditId(d.id); setEditForm({ loginId:d.id, name:d.name, phone:d.phone, pw:'', car_number:(d.car_number||d.car_num||'').slice(-4) }) }
+  const submitEdit = () => {
+    const patch = { name:editForm.name, phone:editForm.phone, car_number:editForm.car_number }
+    if (editForm.pw) patch.pw = editForm.pw  // 빈값이면 비밀번호 변경 안함
+    onUpdate(editId, patch)
+    setEditId(null)
+  }
 
   const scheduleCount = id => schedules.filter(s=>s.driver_id===id).length
 
@@ -57,7 +62,7 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                       <div>
                         <div style={{ fontSize:11, color:muted, marginBottom:4 }}>비밀번호</div>
-                        <input value={editForm.pw} onChange={e=>setEF('pw',e.target.value)} style={{ ...iStyle, fontSize:13 }}/>
+                        <input type="password" value={editForm.pw} onChange={e=>setEF('pw',e.target.value)} placeholder="변경 시에만 입력" style={{ ...iStyle, fontSize:13 }}/>
                       </div>
                       <div>
                         <div style={{ fontSize:11, color:muted, marginBottom:4 }}>차량번호</div>
