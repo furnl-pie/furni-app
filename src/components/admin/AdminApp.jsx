@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { getDocs, query as fsQuery, collection, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import AdminDetail from './AdminDetail'
@@ -271,16 +271,17 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     })
   }
 
-  const exportScheduleExcel = () => {
+  const exportScheduleExcel = async () => {
     const fmtDate = d => {
       if (!d) return ''
       const m = String(d).match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/)
       return m ? `${m[2]}.${m[3]}` : d
     }
 
-    const header = ['날짜','업체명','주소','진입시간','전화번호','폐기물양','비고','공동','세대','담당자','진행상황']
+    const headers = ['날짜','업체명','주소','진입시간','전화번호','폐기물양','비고','공동','세대','담당자','진행상황']
+    const colWidths = [8, 16, 28, 8, 14, 12, 18, 8, 8, 8, 8]
 
-    // 기사별 그룹화 (sorted 순서 유지)
+    // 기사별 그룹화
     const groups = []
     let lastDid = '__none__'
     sorted.forEach(s => {
@@ -289,12 +290,25 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       groups[groups.length - 1].items.push(s)
     })
 
-    const aoa = [header]
+    const wb = new ExcelJS.Workbook()
+    const ws = wb.addWorksheet('일정')
+
+    ws.columns = headers.map((h, i) => ({ header: h, key: String(i), width: colWidths[i] }))
+
+    const centerStyle = { horizontal: 'center', vertical: 'middle' }
+
+    // 헤더 스타일
+    ws.getRow(1).eachCell(cell => {
+      cell.alignment = centerStyle
+      cell.font = { bold: true }
+    })
+
+    // 데이터 행 추가
     groups.forEach((g, gi) => {
-      if (gi > 0) { aoa.push(Array(header.length).fill('')); aoa.push(Array(header.length).fill('')) }
+      if (gi > 0) { ws.addRow([]); ws.addRow([]) }
       g.items.forEach(s => {
         const driverName = s.driver_id ? (drivers.find(d => d.id === s.driver_id)?.name || '') : '미배치'
-        aoa.push([
+        const row = ws.addRow([
           fmtDate(s.date),
           s.cname || '',
           s.address || '',
@@ -307,36 +321,17 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           driverName,
           s.status || '',
         ])
+        row.eachCell({ includeEmpty: true }, cell => { cell.alignment = centerStyle })
       })
     })
 
-    const ws = XLSX.utils.aoa_to_sheet(aoa)
-
-    // 전체 셀 가운데 정렬
-    Object.keys(ws).forEach(addr => {
-      if (addr.startsWith('!')) return
-      const cell = ws[addr]
-      cell.s = { alignment: { horizontal: 'center', vertical: 'center', wrapText: false } }
-    })
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 8 },  // 날짜
-      { wch: 16 }, // 업체명
-      { wch: 28 }, // 주소
-      { wch: 8 },  // 진입시간
-      { wch: 14 }, // 전화번호
-      { wch: 12 }, // 폐기물양
-      { wch: 18 }, // 비고
-      { wch: 8 },  // 공동
-      { wch: 8 },  // 세대
-      { wch: 8 },  // 담당자
-      { wch: 8 },  // 진행상황
-    ]
-
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '일정')
-    XLSX.writeFile(wb, `일정_${filterDate || 'all'}.xlsx`, { cellStyles: true })
+    const buf = await wb.xlsx.writeBuffer()
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `일정_${filterDate || 'all'}.xlsx`
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   const driverOrder = id => { const i=drivers.findIndex(d=>d.id===id); return i>=0?i:999 }
