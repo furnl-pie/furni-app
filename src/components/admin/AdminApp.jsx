@@ -255,10 +255,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   })
 
   const filtered = baseFiltered.filter(s => {
-    if (filterStatus === 'unassigned') return !s.driver_id
+    if (filterStatus === '대기')    return s.status === '대기' && !s.billing_total
+    if (filterStatus === '작업중')  return s.status === '진행중' || s.status === '이동중'
     if (filterStatus === '작업완료') return s.status === '완료' && !s.billing_total
     if (filterStatus === '청구완료') return !!s.billing_total
-    if (filterStatus) return s.status === filterStatus
     return true
   })
 
@@ -375,11 +375,11 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   })
 
   const stats = {
-    total:      baseFiltered.length,
-    unassigned: baseFiltered.filter(s=>!s.driver_id).length,
-    ing:        baseFiltered.filter(s=>s.status==='진행중').length,
-    workDone:   baseFiltered.filter(s=>s.status==='완료' && !s.billing_total).length,
-    billed:     baseFiltered.filter(s=>!!s.billing_total).length,
+    total:    baseFiltered.length,
+    waiting:  baseFiltered.filter(s=>s.status==='대기' && !s.billing_total).length,
+    working:  baseFiltered.filter(s=>s.status==='진행중'||s.status==='이동중').length,
+    workDone: baseFiltered.filter(s=>s.status==='완료' && !s.billing_total).length,
+    billed:   baseFiltered.filter(s=>!!s.billing_total).length,
   }
 
   const selected = schedules.find(s=>s.id===selectedId)
@@ -436,27 +436,27 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       <div style={{ padding:20, maxWidth:1060, margin:'0 auto' }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10, marginBottom:16 }}>
           {[
-            ['전체',    stats.total,      '#6366f1', ''],
-            ['미배치',  stats.unassigned, '#f43f5e', 'unassigned'],
-            ['진행중',  stats.ing,        '#f59e0b', '진행중'],
-            ['작업완료',stats.workDone,   '#10b981', '작업완료'],
-            ['청구완료',stats.billed,     '#0ea5e9', '청구완료'],
+            ['전체',    stats.total,    '#6366f1', ''],
+            ['대기',    stats.waiting,  '#94a3b8', '대기'],
+            ['작업중',  stats.working,  '#f59e0b', '작업중'],
+            ['작업완료',stats.workDone, '#10b981', '작업완료'],
+            ['청구완료',stats.billed,   '#0ea5e9', '청구완료'],
           ].map(([l,v,c,fs])=>{
             const active = fs === '' ? filterStatus === '' : filterStatus === fs
             return (
               <Card key={l} onClick={()=>setFStatus(active ? '' : fs)}
                 style={{ textAlign:'center', padding:'10px 6px', borderTop:`3px solid ${c}`, cursor:'pointer', background: active ? c+'18' : '#fff', transition:'background .15s' }}>
-                <div style={{ fontSize:24, fontWeight:800, color:c, lineHeight:1.1 }}>{v}</div>
-                <div style={{ fontSize:10, color: active ? c : muted, marginTop:3, fontWeight:700, letterSpacing:'.3px' }}>{l}</div>
+                <div style={{ fontSize:26, fontWeight:800, color:c, lineHeight:1.1 }}>{v}</div>
+                <div style={{ fontSize:12, color: active ? c : muted, marginTop:3, fontWeight:700, letterSpacing:'.3px' }}>{l}</div>
               </Card>
             )
           })}
         </div>
 
-        {stats.unassigned>0 && (
+        {baseFiltered.some(s=>!s.driver_id) && (
           <div style={{ background:'#fff1f2', border:'1px solid #fecdd3', borderLeft:'3px solid #f43f5e', borderRadius:8, padding:'9px 14px', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
             <span>⚠️</span>
-            <span style={{ fontSize:12, fontWeight:700, color:'#be123c' }}>기사 미배치 {stats.unassigned}건</span>
+            <span style={{ fontSize:12, fontWeight:700, color:'#be123c' }}>기사 미배치 {baseFiltered.filter(s=>!s.driver_id).length}건</span>
             <span style={{ fontSize:12, color:'#e11d48' }}>— ✏️ 버튼으로 바로 배치하세요</span>
           </div>
         )}
