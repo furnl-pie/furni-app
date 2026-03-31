@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
+import * as XLSX from 'xlsx'
 import { getDocs, query as fsQuery, collection, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import AdminDetail from './AdminDetail'
@@ -270,6 +271,74 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     })
   }
 
+  const exportScheduleExcel = () => {
+    const fmtDate = d => {
+      if (!d) return ''
+      const m = String(d).match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/)
+      return m ? `${m[2]}.${m[3]}` : d
+    }
+
+    const header = ['날짜','업체명','주소','진입시간','전화번호','폐기물양','비고','공동','세대','담당자','진행상황']
+
+    // 기사별 그룹화 (sorted 순서 유지)
+    const groups = []
+    let lastDid = '__none__'
+    sorted.forEach(s => {
+      const did = s.driver_id || '__unassigned__'
+      if (did !== lastDid) { groups.push({ did, items: [] }); lastDid = did }
+      groups[groups.length - 1].items.push(s)
+    })
+
+    const aoa = [header]
+    groups.forEach((g, gi) => {
+      if (gi > 0) { aoa.push(Array(header.length).fill('')); aoa.push(Array(header.length).fill('')) }
+      g.items.forEach(s => {
+        const driverName = s.driver_id ? (drivers.find(d => d.id === s.driver_id)?.name || '') : '미배치'
+        aoa.push([
+          fmtDate(s.date),
+          s.cname || '',
+          s.address || '',
+          s.time || '',
+          s.cphone || '',
+          s.waste || '',
+          s.memo || '',
+          s.door_pw || '',
+          s.unit_pw || '',
+          driverName,
+          s.status || '',
+        ])
+      })
+    })
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa)
+
+    // 전체 셀 가운데 정렬
+    Object.keys(ws).forEach(addr => {
+      if (addr.startsWith('!')) return
+      const cell = ws[addr]
+      cell.s = { alignment: { horizontal: 'center', vertical: 'center', wrapText: false } }
+    })
+
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      { wch: 8 },  // 날짜
+      { wch: 16 }, // 업체명
+      { wch: 28 }, // 주소
+      { wch: 8 },  // 진입시간
+      { wch: 14 }, // 전화번호
+      { wch: 12 }, // 폐기물양
+      { wch: 18 }, // 비고
+      { wch: 8 },  // 공동
+      { wch: 8 },  // 세대
+      { wch: 8 },  // 담당자
+      { wch: 8 },  // 진행상황
+    ]
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '일정')
+    XLSX.writeFile(wb, `일정_${filterDate || 'all'}.xlsx`, { cellStyles: true })
+  }
+
   const driverOrder = id => { const i=drivers.findIndex(d=>d.id===id); return i>=0?i:999 }
   const sorted = [...filtered].sort((a,b)=>{
     const dd = driverOrder(a.driver_id) - driverOrder(b.driver_id)
@@ -347,7 +416,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             ['미배치',  stats.unassigned, '#f43f5e', 'unassigned'],
             ['진행중',  stats.ing,        '#f59e0b', '진행중'],
             ['작업완료',stats.workDone,   '#10b981', '작업완료'],
-            ['청구',    stats.billed,     '#0ea5e9', '청구완료'],
+            ['청구완료',stats.billed,     '#0ea5e9', '청구완료'],
           ].map(([l,v,c,fs])=>{
             const active = fs === '' ? filterStatus === '' : filterStatus === fs
             return (
@@ -376,10 +445,17 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             <div style={{ width:1, height:32, background:border }}/>
 
             {!assignMode && !deleteMode && (
-              <button onClick={()=>setModal(true)}
-                style={{ height:38, padding:'0 14px', background:navy, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                + 일정 등록
-              </button>
+              <div style={{ display:'flex', gap:6 }}>
+                <button onClick={()=>setModal(true)}
+                  style={{ height:38, padding:'0 14px', background:navy, color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  + 일정 등록
+                </button>
+                <button onClick={exportScheduleExcel}
+                  title="일정 엑셀 다운로드"
+                  style={{ height:38, padding:'0 12px', background:'#f1f5f9', color:'#374151', border:`1px solid ${border}`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  ⬇ 다운
+                </button>
+              </div>
             )}
 
             {!deleteMode && (
@@ -441,14 +517,12 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                 }
               </span>
               <div style={{ display:'flex', gap:3, background:'#f1f5f9', borderRadius:8, padding:3 }}>
-                <button onClick={()=>setListView('table')}
-                  style={{ padding:'4px 10px', borderRadius:6, border:'none', fontSize:12, fontWeight:600, cursor:'pointer', background:listView==='table'?'#fff':'transparent', color:listView==='table'?navy:muted, boxShadow:listView==='table'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>
-                  ≡ 표
-                </button>
-                <button onClick={()=>setListView('card')}
-                  style={{ padding:'4px 10px', borderRadius:6, border:'none', fontSize:12, fontWeight:600, cursor:'pointer', background:listView==='card'?'#fff':'transparent', color:listView==='card'?navy:muted, boxShadow:listView==='card'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>
-                  ⊞ 카드
-                </button>
+                {[['table','≡ 표'],['card','▦ 카드']].map(([v,l])=>(
+                  <button key={v} onClick={()=>setListView(v)}
+                    style={{ padding:'4px 10px', borderRadius:6, border:'none', fontSize:12, fontWeight:600, cursor:'pointer', background:listView===v?'#fff':'transparent', color:listView===v?navy:muted, boxShadow:listView===v?'0 1px 3px rgba(0,0,0,.1)':'none', whiteSpace:'nowrap' }}>
+                    {l}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
