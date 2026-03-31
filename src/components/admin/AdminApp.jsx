@@ -347,7 +347,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             ['미배치',  stats.unassigned, '#f43f5e', 'unassigned'],
             ['진행중',  stats.ing,        '#f59e0b', '진행중'],
             ['작업완료',stats.workDone,   '#10b981', '작업완료'],
-            ['청구완료',stats.billed,     '#0ea5e9', '청구완료'],
+            ['청구',    stats.billed,     '#0ea5e9', '청구완료'],
           ].map(([l,v,c,fs])=>{
             const active = fs === '' ? filterStatus === '' : filterStatus === fs
             return (
