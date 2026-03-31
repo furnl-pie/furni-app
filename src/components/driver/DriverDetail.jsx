@@ -47,6 +47,59 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
   const [editCoStart,  setEditCoStart]  = useState('')
   const [editCoEnd,    setEditCoEnd]    = useState('')
 
+  const CoDriverSection = () => {
+    const allUsers = getUsers().filter(u => u.role === 'driver' && u.id !== schedule.driver_id)
+    const coDriver = schedule.co_driver_id ? getUsers().find(u => u.id === schedule.co_driver_id) : null
+    const sameTime = schedule.co_start_time === schedule.start_time && schedule.co_end_time === schedule.end_time
+    return (
+      <div style={{ border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:14, background:'#fafbfc' }}>
+        <div style={{ fontSize:13, fontWeight:700, color:textC, marginBottom:8 }}>👥 보조기사</div>
+        {showCoEdit ? (
+          <>
+            <select value={editCoId} onChange={e=>setEditCoId(e.target.value)} style={{ ...iStyle, marginBottom:8 }}>
+              <option value="">— 선택 —</option>
+              {allUsers.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+            <div style={{ fontSize:12, color:muted, marginBottom:4 }}>작업 시간 (시작 ~ 종료)</div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+              <input type="time" value={editCoStart} onChange={e=>setEditCoStart(e.target.value)} style={{ ...iStyle, flex:1 }}/>
+              <span style={{ color:muted }}>~</span>
+              <input type="time" value={editCoEnd} onChange={e=>setEditCoEnd(e.target.value)} style={{ ...iStyle, flex:1 }}/>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <Btn onClick={()=>{ onUpdate({ co_driver_id: editCoId||null, co_start_time: editCoStart||null, co_end_time: editCoEnd||null }); setShowCoEdit(false) }} style={{ flex:1 }}>저장</Btn>
+              <Btn outline color={muted} onClick={()=>setShowCoEdit(false)} style={{ flex:1 }}>취소</Btn>
+            </div>
+          </>
+        ) : (
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <div>
+              {coDriver ? (
+                <>
+                  <span style={{ fontWeight:700, color:textC, fontSize:14 }}>{coDriver.name}</span>
+                  {schedule.co_start_time && (
+                    <div style={{ fontSize:12, color:blue, marginTop:3 }}>
+                      {schedule.co_start_time} ~ {schedule.co_end_time}
+                      <span style={{ marginLeft:6, background:sameTime?'#dcfce7':'#dbeafe', color:sameTime?green:blue, borderRadius:8, padding:'1px 7px', fontSize:11, fontWeight:600 }}>
+                        {sameTime ? '2인 동일시간' : '시간 다름'}
+                      </span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <span style={{ fontSize:13, color:muted }}>없음</span>
+              )}
+            </div>
+            <button onClick={()=>{ setEditCoId(schedule.co_driver_id||''); setEditCoStart(schedule.co_start_time||schedule.start_time||''); setEditCoEnd(schedule.co_end_time||schedule.end_time||''); setShowCoEdit(true) }}
+              style={{ border:`1px solid ${border}`, borderRadius:7, padding:'5px 11px', fontSize:12, color:muted, cursor:'pointer', background:'none', whiteSpace:'nowrap' }}>
+              {coDriver ? '수정' : '+ 추가'}
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const openLb = (src, idx) => { setLbSource(src); setLightbox(idx) }
 
   const buildSms = (etaVal) => {
@@ -518,6 +571,8 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                     placeholder={"현장 특이사항을 기록하세요.\n예) 진입로 협소, 담당자 부재 등"}
                     rows={3} style={{ ...iStyle, resize:'vertical', lineHeight:1.7, fontSize:13 }}/>
                 </div>
+                {/* 보조기사 섹션 (진행중) */}
+                {CoDriverSection()}
                 <Btn onClick={handleDone} color={red} style={{ width:'100%', padding:14, fontSize:16, borderRadius:12 }}>✓ 업무 완료 보고</Btn>
                 <div style={{ fontSize:11, color:muted, textAlign:'center', marginTop:6 }}>완료 시 관리자 화면에 즉시 반영됩니다</div>
               </>
@@ -545,67 +600,8 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                     <div style={{ fontSize:15, color:amber, fontWeight:700, marginTop:6 }}>📦 최종 물량: {schedule.final_waste}</div>
                   )}
                 </div>
-                {/* 보조기사 섹션 */}
-                {(() => {
-                  const allUsers = getUsers().filter(u => u.role === 'driver' && u.id !== schedule.driver_id)
-                  const coDriver = schedule.co_driver_id ? getUsers().find(u => u.id === schedule.co_driver_id) : null
-                  const sameTime = schedule.co_start_time === schedule.start_time && schedule.co_end_time === schedule.end_time
-                  return (
-                    <div style={{ border:`1px solid ${border}`, borderRadius:10, padding:'12px 14px', marginBottom:10, background:'#fafbfc' }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:textC, marginBottom:8 }}>👥 보조기사</div>
-                      {showCoEdit ? (
-                        <>
-                          <select value={editCoId} onChange={e=>setEditCoId(e.target.value)}
-                            style={{ ...iStyle, marginBottom:8 }}>
-                            <option value="">— 선택 —</option>
-                            {allUsers.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
-                          </select>
-                          <div style={{ fontSize:12, color:muted, marginBottom:4 }}>작업 시간 (시작 ~ 종료)</div>
-                          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-                            <input type="time" value={editCoStart} onChange={e=>setEditCoStart(e.target.value)} style={{ ...iStyle, flex:1 }}/>
-                            <span style={{ color:muted }}>~</span>
-                            <input type="time" value={editCoEnd} onChange={e=>setEditCoEnd(e.target.value)} style={{ ...iStyle, flex:1 }}/>
-                          </div>
-                          <div style={{ display:'flex', gap:8 }}>
-                            <Btn onClick={()=>{
-                              onUpdate({ co_driver_id: editCoId||null, co_start_time: editCoStart||null, co_end_time: editCoEnd||null })
-                              setShowCoEdit(false)
-                            }} style={{ flex:1 }}>저장</Btn>
-                            <Btn outline color={muted} onClick={()=>setShowCoEdit(false)} style={{ flex:1 }}>취소</Btn>
-                          </div>
-                        </>
-                      ) : (
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                          <div>
-                            {coDriver ? (
-                              <>
-                                <span style={{ fontWeight:700, color:textC, fontSize:14 }}>{coDriver.name}</span>
-                                {schedule.co_start_time && (
-                                  <div style={{ fontSize:12, color:blue, marginTop:3 }}>
-                                    {schedule.co_start_time} ~ {schedule.co_end_time}
-                                    <span style={{ marginLeft:6, background: sameTime?'#dcfce7':'#dbeafe', color: sameTime?green:blue, borderRadius:8, padding:'1px 7px', fontSize:11, fontWeight:600 }}>
-                                      {sameTime ? '2인 동일시간' : '시간 다름'}
-                                    </span>
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <span style={{ fontSize:13, color:muted }}>없음</span>
-                            )}
-                          </div>
-                          <button onClick={()=>{
-                            setEditCoId(schedule.co_driver_id||'')
-                            setEditCoStart(schedule.co_start_time || schedule.start_time || '')
-                            setEditCoEnd(schedule.co_end_time || schedule.end_time || '')
-                            setShowCoEdit(true)
-                          }} style={{ border:`1px solid ${border}`, borderRadius:7, padding:'5px 11px', fontSize:12, color:muted, cursor:'pointer', background:'none', whiteSpace:'nowrap' }}>
-                            {coDriver ? '수정' : '+ 추가'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })()}
+                {/* 보조기사 섹션 (완료 후) */}
+                {!editingDone && CoDriverSection()}
 
                 {!editingDone && (
                   <div style={{ display:'flex', gap:10, marginBottom:10, justifyContent:'center' }}>
