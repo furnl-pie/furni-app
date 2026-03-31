@@ -12,9 +12,10 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   const [tab, setTab]          = useState('schedule') // 'schedule' | 'disposal'
   const [showHelp, setHelp]    = useState(false)
   const [selectedId, setSelId] = useState(null)
+  const scrollYRef = useRef(0)
   const [filterDate, setFD]    = useState(today)
   const [showSettings, setSettings] = useState(false)
-  const [carNum, setCarNum]    = useState(user.car_number || '')
+  const [carNum, setCarNum]    = useState((user.car_number || '').slice(-4))
   const [carOk, setCarOk]      = useState(false)
   const [pwForm, setPwForm]    = useState({ current:'', next:'', confirm:'' })
   const [pwErr, setPwErr]      = useState('')
@@ -96,7 +97,10 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   useEffect(() => {
     if (view === 'detail') {
       window.history.pushState({ detail: true }, '')
-      const handler = () => setView('list')
+      const handler = () => {
+        setView('list')
+        setTimeout(() => window.scrollTo(0, scrollYRef.current), 0)
+      }
       window.addEventListener('popstate', handler)
       return () => window.removeEventListener('popstate', handler)
     }
@@ -215,7 +219,7 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
           const lc = s.status==='완료' ? '#10b981' : s.status==='진행중' ? '#6366f1' : s.status==='이동중' ? '#f59e0b' : '#d1d5db'
           return (
             <div key={s.id}
-              onClick={()=>{ setSelId(s.id); setView('detail') }}
+              onClick={()=>{ scrollYRef.current = window.scrollY; setSelId(s.id); setView('detail') }}
               style={{ background:'#fff', borderRadius:12, border:'1px solid #eaecf0', borderLeft:`4px solid ${lc}`, padding:'14px 16px', marginBottom:10, cursor:'pointer', transition:'box-shadow .1s' }}
               onMouseEnter={e=>e.currentTarget.style.boxShadow='0 2px 10px rgba(0,0,0,.08)'}
               onMouseLeave={e=>e.currentTarget.style.boxShadow='none'}
@@ -266,8 +270,8 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
               <div style={{ marginBottom:24 }}>
                 <div style={{ fontSize:13, fontWeight:700, color:navy, marginBottom:10 }}>🚛 차량번호</div>
                 <div style={{ display:'flex', gap:8 }}>
-                  <input value={carNum} onChange={e=>setCarNum(e.target.value)}
-                    placeholder="예: 12가3456"
+                  <input value={carNum} onChange={e=>setCarNum(e.target.value.slice(-4))}
+                    placeholder="뒤 4자리" maxLength={4}
                     style={{ ...iStyle, flex:1, fontSize:14 }}/>
                   <Btn onClick={saveCar} style={{ padding:'0 18px', fontSize:13 }}>저장</Btn>
                 </div>
