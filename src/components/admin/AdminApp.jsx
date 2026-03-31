@@ -243,17 +243,21 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     URL.revokeObjectURL(a.href)
   }
 
-  const filtered = schedules.filter(s => {
+  const baseFiltered = schedules.filter(s => {
     if (filterDriver.size > 0) {
       const unassignedSelected = filterDriver.has('unassigned')
       if (!s.driver_id && !unassignedSelected) return false
       if (s.driver_id && !filterDriver.has(s.driver_id) && !filterDriver.has('all')) return false
     }
     if (filterDate && s.date !== filterDate) return false
-    if (filterStatus === 'unassigned') { if (s.driver_id) return false }
-    else if (filterStatus === '작업완료') { if (s.status !== '완료' || s.billing_total) return false }
-    else if (filterStatus === '청구완료') { if (!s.billing_total) return false }
-    else if (filterStatus) { if (s.status !== filterStatus) return false }
+    return true
+  })
+
+  const filtered = baseFiltered.filter(s => {
+    if (filterStatus === 'unassigned') return !s.driver_id
+    if (filterStatus === '작업완료') return s.status === '완료' && !s.billing_total
+    if (filterStatus === '청구완료') return !!s.billing_total
+    if (filterStatus) return s.status === filterStatus
     return true
   })
 
@@ -278,11 +282,11 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   })
 
   const stats = {
-    total:      filtered.length,
-    unassigned: filtered.filter(s=>!s.driver_id).length,
-    ing:        filtered.filter(s=>s.status==='진행중').length,
-    workDone:   filtered.filter(s=>s.status==='완료' && !s.billing_total).length,
-    billed:     filtered.filter(s=>!!s.billing_total).length,
+    total:      baseFiltered.length,
+    unassigned: baseFiltered.filter(s=>!s.driver_id).length,
+    ing:        baseFiltered.filter(s=>s.status==='진행중').length,
+    workDone:   baseFiltered.filter(s=>s.status==='완료' && !s.billing_total).length,
+    billed:     baseFiltered.filter(s=>!!s.billing_total).length,
   }
 
   const selected = schedules.find(s=>s.id===selectedId)
@@ -345,7 +349,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             ['작업완료',stats.workDone,   '#10b981', '작업완료'],
             ['청구완료',stats.billed,     '#0ea5e9', '청구완료'],
           ].map(([l,v,c,fs])=>{
-            const active = filterStatus === fs
+            const active = fs === '' ? filterStatus === '' : filterStatus === fs
             return (
               <Card key={l} onClick={()=>setFStatus(active ? '' : fs)}
                 style={{ textAlign:'center', padding:'10px 6px', borderTop:`3px solid ${c}`, cursor:'pointer', background: active ? c+'18' : '#fff', transition:'background .15s' }}>

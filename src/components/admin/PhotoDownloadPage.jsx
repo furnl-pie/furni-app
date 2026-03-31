@@ -44,9 +44,11 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
       groups.push({ driverId: key === '__none__' ? null : key, items })
     })
     groups.sort((a, b) => {
-      const idxA = users.findIndex(u => u.id === a.driverId)
-      const idxB = users.findIndex(u => u.id === b.driverId)
-      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB)
+      const uA = users.find(u => u.id === a.driverId)
+      const uB = users.find(u => u.id === b.driverId)
+      const oA = uA?.driverOrder ?? (uA ? 99999 : 999999)
+      const oB = uB?.driverOrder ?? (uB ? 99999 : 999999)
+      return oA - oB
     })
     return groups
   }, [withPhotos, users])
