@@ -355,10 +355,8 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
         const existing = schedules.find(s => s.date === nr.date && s.address === nr.address)
         if (!existing || !onUpdate) return
         const patch = {}
-        MERGE_FIELDS.forEach(f => { if (!existing[f] && nr[f]) patch[f] = nr[f] })
-        if (nr.schedule_photos?.length && !(existing.schedule_photos?.length)) {
-          patch.schedule_photos = nr.schedule_photos
-        }
+        MERGE_FIELDS.forEach(f => { if (nr[f] !== undefined && nr[f] !== null && nr[f] !== '') patch[f] = nr[f] })
+        if (nr.schedule_photos?.length) patch.schedule_photos = nr.schedule_photos
         if (Object.keys(patch).length) onUpdate(existing.id, patch)
       })
       if (newOnes.length) onAddMany(newOnes)
@@ -394,7 +392,7 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 <button onClick={()=>handleDupeAction('merge')}
                   style={{ padding:'12px 16px', background:blue, color:'#fff', border:'none', borderRadius:9, fontSize:13, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
-                  📋 빈 항목만 채워 기존 일정 업데이트{dupeConflict.newOnes.length>0?` + 신규 ${dupeConflict.newOnes.length}건 등록`:''}
+                  📋 중복 {dupeConflict.dupes.length}건 덮어쓰기{dupeConflict.newOnes.length>0?` + 신규 ${dupeConflict.newOnes.length}건 등록`:''}
                 </button>
                 {dupeConflict.newOnes.length > 0 && (
                   <button onClick={()=>handleDupeAction('skip')}
