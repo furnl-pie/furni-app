@@ -446,8 +446,8 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           {[
             ['전체',    stats.total,    '#6366f1', ''],
             ['대기',    stats.waiting,  '#94a3b8', '대기'],
-            ['이동중',  stats.moving,   '#3b82f6', '이동중'],
-            ['작업중',  stats.working,  '#f59e0b', '작업중'],
+            ['이동중',  stats.moving,   '#c2410c', '이동중'],
+            ['작업중',  stats.working,  '#4338ca', '작업중'],
             ['작업완료',stats.workDone, '#10b981', '작업완료'],
             ['청구완료',stats.billed,   '#0ea5e9', '청구완료'],
           ].map(([l,v,c,fs])=>{
