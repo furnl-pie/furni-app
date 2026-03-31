@@ -97,13 +97,13 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   useEffect(() => {
     if (view === 'detail') {
       window.history.pushState({ detail: true }, '')
-      const handler = () => setView('list')
+      window.scrollTo(0, 0)
+      const handler = () => {
+        setView('list')
+        requestAnimationFrame(() => window.scrollTo(0, scrollYRef.current))
+      }
       window.addEventListener('popstate', handler)
       return () => window.removeEventListener('popstate', handler)
-    } else if (view === 'list' && scrollYRef.current > 0) {
-      requestAnimationFrame(() => {
-        window.scrollTo(0, scrollYRef.current)
-      })
     }
   }, [view])
 
@@ -128,16 +128,6 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
     if (typeof Notification === 'undefined') return
     const perm = await Notification.requestPermission()
     setNotifPerm(perm)
-  }
-
-  if (view === 'detail' && selected) {
-    return (
-      <DriverDetail
-        schedule={selected}
-        onUpdate={patch => onUpdate(selected.id, patch)}
-        onBack={()=>setView('list')}
-      />
-    )
   }
 
   const cnt = st => mine.filter(s=>s.status===st).length
@@ -255,6 +245,16 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
       )}
 
       {showHelp && <HelpModal onClose={()=>setHelp(false)}/>}
+
+      {view === 'detail' && selected && (
+        <div style={{ position:'fixed', inset:0, zIndex:1000, overflowY:'auto', background:'#f8f9fc' }}>
+          <DriverDetail
+            schedule={selected}
+            onUpdate={patch => onUpdate(selected.id, patch)}
+            onBack={()=>{ setView('list'); requestAnimationFrame(()=>window.scrollTo(0, scrollYRef.current)) }}
+          />
+        </div>
+      )}
 
       {showSettings && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:2000, fontFamily:"'Noto Sans KR', sans-serif" }}>
