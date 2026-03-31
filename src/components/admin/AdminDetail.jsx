@@ -28,6 +28,7 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
     waste:   schedule.billing_waste   || schedule.final_waste || schedule.waste || '',
     amount:  schedule.billing_amount  ? String(schedule.billing_amount) : '',
     unit:    schedule.billing_unit    ? String(schedule.billing_unit)   : '',
+    unit2:   schedule.billing_unit2   ? String(schedule.billing_unit2)  : '',
     total:   schedule.billing_total   ? String(schedule.billing_total)  : '',
   })
   const [billCopied, setBillCopied] = useState(false)
@@ -36,9 +37,10 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
   const billUnitRef = useRef()
   const setBF = (k,v) => setBillingForm(p => {
     const next = {...p, [k]:v}
-    const a = parseFloat(next.amount) || 0
-    const u = parseFloat(next.unit)   || 0
-    next.total = (a + u) > 0 ? String(Math.round((a + u) * 1.1 * 10) / 10) : ''
+    const a  = parseFloat(next.amount) || 0
+    const u  = parseFloat(next.unit)   || 0
+    const u2 = parseFloat(next.unit2)  || 0
+    next.total = (a + u + u2) > 0 ? String(Math.round((a + u + u2) * 1.1 * 10) / 10) : ''
     return next
   })
 
@@ -622,6 +624,8 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
       {/* 청구서 작성 모달 */}
       {showBilling && (() => {
         const toMin = t => { if(!t) return 0; const [h,m] = t.split(':').map(Number); return h*60+m }
+        const fmtDiff = (s, e) => { const d = toMin(e) - toMin(s); if(d<=0) return ''; const hh=Math.floor(d/60), mm=d%60; return hh>0?(mm>0?`${hh}시간 ${mm}분`:`${hh}시간`):`${mm}분` }
+
         const diff = toMin(schedule.end_time) - toMin(schedule.start_time)
         const h = Math.floor(diff/60), m = diff%60
         const duration = diff > 0 ? (h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`) : ''
@@ -629,11 +633,21 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
           ? `${schedule.start_time} ~ ${schedule.end_time} (${duration})`
           : duration
 
+        // 보조기사 시간 계산
+        const hasCoDriver = !!schedule.co_driver_id && !!schedule.co_start_time && !!schedule.co_end_time
+        const sameTime = hasCoDriver && schedule.co_start_time === schedule.start_time && schedule.co_end_time === schedule.end_time
+        const diffTime = hasCoDriver && !sameTime
+        const coDuration = hasCoDriver ? fmtDiff(schedule.co_start_time, schedule.co_end_time) : ''
+        const coDriverName = hasCoDriver ? users.find(u=>u.id===schedule.co_driver_id)?.name || '' : ''
+
         const companyName = (schedule.cname || '').replace(/\(.*?\)/g, '').trim()
         const wasteAmt = billingForm.waste
 
-        const buildText = () =>
-`[FN퍼니 작업보고]
+        const buildText = () => {
+          const unitLine = diffTime
+            ? `1인 *${duration} > ${billingForm.unit}만원\n1인 *${coDuration} > ${billingForm.unit2}만원`
+            : `${billingForm.workers}인 *${duration} > ${billingForm.unit}만원`
+          return `[FN퍼니 작업보고]
 작업날짜: ${schedule.date}
 업체명: ${companyName}
 작업인원: ${billingForm.workers}인
@@ -645,10 +659,11 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
 <청구금액>
 ${wasteAmt} > ${billingForm.amount}만원
-${billingForm.workers}인 *${duration} > ${billingForm.unit}만원
+${unitLine}
 ${billingForm.total}만원 (부가세 포함)
 *청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^
 기업 351-112230-01-015 주식회사 퍼니환경개발`
+        }
 
         const copy = () => {
           navigator.clipboard.writeText(buildText()).then(() => {
@@ -668,6 +683,7 @@ ${billingForm.total}만원 (부가세 포함)
             billing_waste:   billingForm.waste,
             billing_amount:  parseFloat(billingForm.amount) || 0,
             billing_unit:    parseFloat(billingForm.unit)   || 0,
+            billing_unit2:   parseFloat(billingForm.unit2)  || 0,
             billing_total:   total,
             billing_date:    getKSTToday(),
           })
@@ -729,16 +745,43 @@ ${billingForm.total}만원 (부가세 포함)
                     </div>
                   </div>
 
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>
-                      {billingForm.workers}인 금액
+                  {diffTime ? (
+                    // 보조기사 시간이 다를 때: 1인씩 따로 입력
+                    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                      <div style={{ fontSize:13, fontWeight:600, color:blue, background:'#eff6ff', borderRadius:7, padding:'6px 10px' }}>
+                        ⏱ 메인: {schedule.start_time}~{schedule.end_time} ({duration}) &nbsp;|&nbsp; 보조({coDriverName}): {schedule.co_start_time}~{schedule.co_end_time} ({coDuration})
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:600, color:muted, marginBottom:4 }}>1인 금액 ({duration})</div>
+                          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                            <input ref={billUnitRef} type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
+                              placeholder="금액" style={{ ...iStyle, fontSize:14, fontWeight:700, textAlign:'right', flex:1 }}/>
+                            <span style={{ fontSize:13, color:muted }}>만원</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:600, color:muted, marginBottom:4 }}>1인 금액 ({coDuration})</div>
+                          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                            <input type="number" value={billingForm.unit2} onChange={e=>setBF('unit2',e.target.value)}
+                              placeholder="금액" style={{ ...iStyle, fontSize:14, fontWeight:700, textAlign:'right', flex:1 }}/>
+                            <span style={{ fontSize:13, color:muted }}>만원</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <input ref={billUnitRef} type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
-                        placeholder="금액 입력" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right', flex:1 }}/>
-                      <span style={{ fontSize:16, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>
+                        {billingForm.workers}인 금액{sameTime && <span style={{ fontWeight:400, fontSize:12, color:green, marginLeft:6 }}>2인 동일시간 ({duration})</span>}
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <input ref={billUnitRef} type="number" value={billingForm.unit} onChange={e=>setBF('unit',e.target.value)}
+                          placeholder="금액 입력" style={{ ...iStyle, fontSize:15, fontWeight:700, textAlign:'right', flex:1 }}/>
+                        <span style={{ fontSize:16, color:muted, whiteSpace:'nowrap' }}>만원</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>합계 (부가세 포함)
@@ -756,7 +799,12 @@ ${billingForm.total}만원 (부가세 포함)
                 <div style={{ background:'#eff6ff', border:`1px solid #bfdbfe`, borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:14, fontFamily:'monospace', lineHeight:2 }}>
                   <div style={{ fontSize:14, fontWeight:700, color:navy, marginBottom:2 }}>&lt;청구금액&gt;</div>
                   <div style={{ color:textC }}>{wasteAmt || '__'} &gt; {billingForm.amount||'__'}만원</div>
-                  <div style={{ color:textC }}>{billingForm.workers}인 *{duration||'__'} &gt; {billingForm.unit||'__'}만원</div>
+                  {diffTime ? (<>
+                    <div style={{ color:textC }}>1인 *{duration||'__'} &gt; {billingForm.unit||'__'}만원</div>
+                    <div style={{ color:textC }}>1인 *{coDuration||'__'} &gt; {billingForm.unit2||'__'}만원</div>
+                  </>) : (
+                    <div style={{ color:textC }}>{billingForm.workers}인 *{duration||'__'} &gt; {billingForm.unit||'__'}만원</div>
+                  )}
                   <div style={{ color:textC, fontWeight:700 }}>{billingForm.total||'__'}만원 (부가세 포함)</div>
                   <div style={{ color:muted, fontSize:13, marginTop:4, lineHeight:1.7 }}>*청구내역이나 업무관련 의견 편하게 말씀해주세요 적극 재검토 하겠습니다^^</div>
                   <div style={{ color:navy, fontSize:13, fontWeight:600 }}>기업 351-112230-01-015 주식회사 퍼니환경개발</div>
