@@ -475,7 +475,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8, display:'flex', justifyContent:'space-between' }}>
-                    <span>완료 사진 <span style={{ color:photos.length>0?green:muted }}>({photos.length}장)</span></span>
+                    <span>완료사진 <span style={{ fontWeight:400, fontSize:11 }}>(작업 후 사진 첨부)</span> <span style={{ color:photos.length>0?green:muted }}>({photos.length}장)</span></span>
                     <span style={{ fontSize:11 }}>여러 장 가능</span>
                   </div>
                   {photos.length > 0 ? (
@@ -783,7 +783,7 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
             </div>
 
             <div style={{ marginBottom:22 }}>
-              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:8 }}>현장 사진 (선택)</div>
+              <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:4 }}>현장사진 <span style={{ fontSize:12, fontWeight:400 }}>(작업 전 사진 첨부)</span></div>
               {sitePhotos.length > 0 ? (
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
                   {sitePhotos.map((src,i)=>(
