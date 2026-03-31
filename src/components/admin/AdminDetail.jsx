@@ -693,7 +693,7 @@ ${billingForm.total}만원 (부가세 포함)
 
         return (
           <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:3000, padding:20, fontFamily:"'Noto Sans KR', sans-serif" }}>
-            <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:440, maxHeight:'90vh', overflowY:'auto' }}>
+            <div lang="ko" style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:440, maxHeight:'90vh', overflowY:'auto' }}>
 
               <div style={{ padding:'16px 20px', borderBottom:`1px solid ${border}`, display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, background:'#fff', zIndex:1 }}>
                 <div style={{ fontSize:17, fontWeight:700, color:navy }}>{schedule.billing_total ? '💰 청구서 수정' : '💰 청구서 작성'}</div>
@@ -731,7 +731,7 @@ ${billingForm.total}만원 (부가세 포함)
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                     <div>
                       <div style={{ fontSize:14, fontWeight:600, color:muted, marginBottom:6 }}>폐기물 양</div>
-                      <input value={billingForm.waste} onChange={e=>setBillingForm(p=>({...p, waste:e.target.value}))}
+                      <input lang="ko" value={billingForm.waste} onChange={e=>setBillingForm(p=>({...p, waste:e.target.value}))}
                         placeholder="예) 1톤" style={{ ...iStyle, fontSize:15, fontWeight:700, width:'100%' }}/>
                     </div>
                     <div>
