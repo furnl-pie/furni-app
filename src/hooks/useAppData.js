@@ -72,6 +72,9 @@ export function useAppData() {
           setLoading(false)
         }, err => { console.error('schedules 스냅샷 오류:', err); setError('데이터를 불러오지 못했습니다.'); setLoading(false) })
 
+        // 네트워크 불안정 시 무한로딩 방지 (8초 후 강제 해제)
+        setTimeout(() => setLoading(false), 8000)
+
       } catch (e) {
         setError(e.message)
         setLoading(false)
