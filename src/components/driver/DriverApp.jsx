@@ -95,6 +95,10 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   }, [schedules])
 
   useEffect(() => {
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+  }, [])
+
+  useEffect(() => {
     if (view === 'detail') {
       window.history.pushState({ detail: true }, '')
       window.scrollTo(0, 0)
@@ -103,8 +107,9 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
       return () => window.removeEventListener('popstate', handler)
     }
     if (view === 'list') {
+      const y = scrollYRef.current
       requestAnimationFrame(() =>
-        requestAnimationFrame(() => window.scrollTo(0, scrollYRef.current))
+        requestAnimationFrame(() => window.scrollTo(0, y))
       )
     }
   }, [view])
