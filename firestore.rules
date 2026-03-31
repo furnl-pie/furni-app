@@ -5,10 +5,8 @@ service cloud.firestore {
     // ── users 컬렉션 ──────────────────────────────────────────────
     match /users/{userId} {
       allow read: if true;
-      // 신규 생성 시에만 필수 필드 검증, 수정은 자유롭게 허용
       allow create: if isValidUser(request.resource.data);
       allow update: if true;
-      // admin 계정은 삭제 금지
       allow delete: if resource.data.role != 'admin';
     }
 
@@ -20,8 +18,18 @@ service cloud.firestore {
       allow delete: if true;
     }
 
+    // ── disposals 컬렉션 (처리비 기록) ───────────────────────────
+    match /disposals/{docId} {
+      allow read, write: if true;
+    }
+
     // ── settings 컬렉션 (알림 설정 등) ───────────────────────────
     match /settings/{docId} {
+      allow read, write: if true;
+    }
+
+    // ── fcm_tokens 컬렉션 (푸시 알림 토큰) ───────────────────────
+    match /fcm_tokens/{docId} {
       allow read, write: if true;
     }
 
