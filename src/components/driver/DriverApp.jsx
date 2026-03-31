@@ -97,12 +97,13 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   useEffect(() => {
     if (view === 'detail') {
       window.history.pushState({ detail: true }, '')
-      const handler = () => {
-        setView('list')
-        setTimeout(() => window.scrollTo(0, scrollYRef.current), 0)
-      }
+      const handler = () => setView('list')
       window.addEventListener('popstate', handler)
       return () => window.removeEventListener('popstate', handler)
+    } else if (view === 'list' && scrollYRef.current > 0) {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollYRef.current)
+      })
     }
   }, [view])
 
