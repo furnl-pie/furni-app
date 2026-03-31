@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import useWindowWidth from '../../utils/useWindowWidth'
 import { downloadPhotosToDir, downloadAllPhotos } from '../../utils/image'
-import { navy, blue, green, amber, red, border, muted, textC, iStyle } from '../../constants/styles'
+import { navy, blue, green, amber, red, border, muted, textC, iStyle, getDriverSortKey } from '../../constants/styles'
 
 export default function PhotoDownloadPage({ schedules, users, onBack }) {
   const isPC = useWindowWidth() >= 1024
@@ -38,17 +38,15 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
       if (!map.has(key)) map.set(key, [])
       map.get(key).push(s)
     })
-    // 기사별 정렬: users의 driverOrder 기준, 각 그룹 내 날짜 오름차순
     const groups = []
     map.forEach((items, key) => {
       groups.push({ driverId: key === '__none__' ? null : key, items })
     })
+    // 기사 등록 순서: getDriverSortKey 기준
     groups.sort((a, b) => {
       const uA = users.find(u => u.id === a.driverId)
       const uB = users.find(u => u.id === b.driverId)
-      const oA = uA?.driverOrder ?? (uA ? 99999 : 999999)
-      const oB = uB?.driverOrder ?? (uB ? 99999 : 999999)
-      return oA - oB
+      return getDriverSortKey(uA || { name: '' }) - getDriverSortKey(uB || { name: '' })
     })
     return groups
   }, [withPhotos, users])
@@ -228,17 +226,12 @@ ${s.billing_total || '__'}만원 (부가세 포함)
             <div style={{ fontSize: 14 }}>해당 기간에 완료+청구서 저장된 건이 없습니다</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {groupedByDriver.map(g => (
-              <div key={g.driverId || '__none__'}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#eef2ff', borderRadius: 10, marginBottom: 10, border: '1px solid #c7d2fe' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#4f46e5' }}>
-                    {g.driverId ? `▸ ${getDriverName(g.driverId)}` : '▸ 미배치'}
-                  </span>
-                  <span style={{ fontSize: 13, color: '#6366f1', opacity: .7 }}>{g.items.length}건</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isPC ? 'repeat(3,1fr)' : '1fr', gap: 8 }}>
-                  {g.items.map(s => {
+          <div style={{ display: 'grid', gridTemplateColumns: isPC ? 'repeat(3,1fr)' : '1fr', gap: 8 }}>
+            {groupedByDriver.map((g, gi) => [
+              gi > 0 && (
+                <div key={`sep-${g.driverId}`} style={{ gridColumn: '1 / -1', borderTop: '2px solid #e2e8f0', margin: '4px 0' }}/>
+              ),
+              ...g.items.map(s => {
                     const pics  = [...(s.work_photos || []), ...(s.photos || [])]
                     const wpLen = (s.work_photos || []).length
                     const cpLen = (s.photos || []).length
@@ -269,16 +262,16 @@ ${s.billing_total || '__'}만원 (부가세 포함)
                         <div style={{ padding: '8px 10px' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 5 }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                              <div style={{ fontSize: 15, fontWeight: 800, color: '#4f46e5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                                {getDriverName(s.driver_id)}
+                              </div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
                                 {s.cname || '업체명 없음'}
                               </div>
-                              <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                              <div style={{ fontSize: 12, fontWeight: 500, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
                                 {s.address}
                               </div>
-                              <div style={{ fontSize: 11, color: '#6b7280', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                <span style={{ fontWeight: 600, color: '#4f46e5' }}>{getDriverName(s.driver_id)}</span>
-                                <span>{s.date}</span>
-                              </div>
+                              <div style={{ fontSize: 11, color: '#9ca3af' }}>{s.date}</div>
                             </div>
                             <button onClick={() => downloadOne(s)} disabled={!!progress}
                               style={{ background: '#f9fafb', border: '1px solid #eaecf0', color: '#6b7280', borderRadius: 7, padding: '5px 8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
@@ -293,10 +286,8 @@ ${s.billing_total || '__'}만원 (부가세 포함)
                         </div>
                       </div>
                     )
-                  })}
-                </div>
-              </div>
-            ))}
+              })
+            ])}
           </div>
         )}
       </div>
