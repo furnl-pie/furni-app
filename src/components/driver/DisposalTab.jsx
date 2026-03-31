@@ -35,7 +35,7 @@ const emptyForm = (user) => ({
   time:        roundedNow(),
   cost:        '',
   load:        '',
-  car_number:  user?.car_number || '',
+  car_number:  (user?.car_number || '').slice(-4),
   quality:     '혼합',
   memo:        '',
   photos:      [],
@@ -77,7 +77,7 @@ export default function DisposalTab({ user }) {
       time:        r.time || '',
       cost:        r.cost || '',
       load:        r.load || '',
-      car_number:  r.car_number || '',
+      car_number:  (r.car_number || '').slice(-4),
       quality:     r.quality || '혼합',
       memo:        r.memo || '',
       photos:      r.photos || [],
@@ -196,7 +196,7 @@ export default function DisposalTab({ user }) {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
           <div>
             <div style={{ fontSize:11, color:muted, marginBottom:4 }}>차량번호</div>
-            <input value={form.car_number} onChange={e=>set('car_number',e.target.value)} placeholder="예: 12가3456" style={{ ...iStyle, fontSize:13 }}/>
+            <input value={form.car_number} onChange={e=>set('car_number',e.target.value.slice(-4))} placeholder="뒤 4자리" maxLength={4} style={{ ...iStyle, fontSize:13 }}/>
           </div>
           <div>
             <div style={{ fontSize:11, color:muted, marginBottom:4 }}>성상</div>

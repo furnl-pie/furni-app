@@ -54,7 +54,7 @@ export default function DisposalPage({ onBack }) {
       time:        r.time        || '',
       cost:        r.cost        || '',
       load:        r.load        || '',
-      car_number:  r.car_number  || '',
+      car_number:  (r.car_number || '').slice(-4),
       quality:     r.quality     || '혼합',
       memo:        r.memo        || '',
       photos:      r.photos      || [],
@@ -99,17 +99,13 @@ export default function DisposalPage({ onBack }) {
   // 처리비 일괄 입력 파싱 및 프리뷰
   const bulkPreview = useMemo(() => {
     if (!bulkInput.trim()) return []
-    // 라인별 파싱: "[...] [...] 차량번호 금액" 또는 "차량번호 금액" 모두 지원
+    // 라인별 파싱: 줄 끝 "차량번호(숫자) 금액(숫자)" 패턴 직접 추출
+    // → 앞쪽에 [HK 최정욱 대리] [오전 8:43] 같은 텍스트가 있어도 무관
     const pairs = bulkInput.trim().split(/\r?\n/).map(line => {
-      // [HK 최정욱 대리] [오전 8:43] 등 대괄호 블록 전부 제거
-      const cleaned = line.replace(/\[.*?\]/g, '').trim()
-      if (!cleaned) return null
-      const parts = cleaned.split(/\s+/).filter(Boolean)
-      if (parts.length < 2) return null
-      // 마지막 토큰=금액, 끝에서 두번째 토큰=차량번호 (남은 앞쪽 텍스트 무시)
-      const amountStr = parts[parts.length - 1]
-      const carNum    = parts[parts.length - 2]
-      const amount    = parseFloat(amountStr)
+      const m = line.match(/(\S+)\s+(\d+(?:\.\d+)?)\s*$/)
+      if (!m) return null
+      const carNum = m[1].replace(/[[\]]/g, '').trim()  // 혹시 붙은 대괄호 제거
+      const amount = parseFloat(m[2])
       if (!carNum || isNaN(amount) || amount <= 0) return null
       return { carNum, amount }
     }).filter(Boolean)
@@ -221,7 +217,7 @@ export default function DisposalPage({ onBack }) {
               <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:4, fontSize:13, color:textC, marginBottom: r.memo||r.photos?.length ? 8 : 0 }}>
                 {r.cost       && <div><span style={{ color:muted }}>처리비용: </span>{fmtCost(r.cost)}</div>}
                 {r.load       && <div><span style={{ color:muted }}>적재량: </span>{r.load}</div>}
-                {r.car_number && <div><span style={{ color:muted }}>차량번호: </span>{r.car_number}</div>}
+                {r.car_number && <div><span style={{ color:muted }}>차량번호: </span>{(r.car_number).slice(-4)}</div>}
                 {r.quality    && <div><span style={{ color:muted }}>성상: </span>{r.quality}</div>}
               </div>
               {r.memo && (
@@ -283,7 +279,7 @@ export default function DisposalPage({ onBack }) {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
                   <div style={{ fontSize:11, color:muted, marginBottom:4 }}>차량번호</div>
-                  <input value={editForm.car_number} onChange={e=>setF('car_number',e.target.value)} placeholder="12가3456" style={iStyle}/>
+                  <input value={editForm.car_number} onChange={e=>setF('car_number',e.target.value.slice(-4))} placeholder="뒤 4자리" maxLength={4} style={iStyle}/>
                 </div>
                 <div>
                   <div style={{ fontSize:11, color:muted, marginBottom:4 }}>성상</div>
