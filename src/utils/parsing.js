@@ -145,6 +145,16 @@ export function parseKakaoChat(text) {
   return results
 }
 
+// ── 시간 → 분 변환 (정렬용) ───────────────────────────────────────
+// 첫타임(0) < 오전숫자(홀수×2+1) < 오전중(1440) < 오후숫자 < 오후중(2160) < 당일중(2162) < 막타임(2164) < 없음(9999)
+const TIME_TEXT_ORDER = { '첫타임': 0, '오전중': 1440, '오후중': 2160, '당일중': 2162, '막타임': 2164 }
+export function timeToMin(t) {
+  if (!t) return 9999
+  if (TIME_TEXT_ORDER[t] != null) return TIME_TEXT_ORDER[t]
+  const [h, m] = String(t).split(':').map(Number)
+  return isNaN(h) ? 9999 : (h * 60 + (m || 0)) * 2 + 1
+}
+
 export const newRow = () => {
   const now = new Date()
   const hh = String(now.getHours()).padStart(2,'0')

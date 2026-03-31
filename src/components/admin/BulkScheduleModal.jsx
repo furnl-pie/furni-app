@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Btn } from '../common/ui'
-import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow } from '../../utils/parsing'
+import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow, timeToMin } from '../../utils/parsing'
 import { navy, blue, green, amber, red, border, muted, textC, driverChip } from '../../constants/styles'
 import { resizeImage } from '../../utils/image'
 
@@ -157,14 +157,10 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
       }
 
       // 루트 이미지를 모든 일정에 추가 + 시간 오름차순 정렬
-      // 숫자시간×2+1(홀수), 텍스트시간은 짝수로 사이에 삽입
-      // 첫타임(0) < 오전숫자(1~1439홀) < 오전중(1440) < 오후숫자(1441~2159홀) < 오후중(2160) < 당일중(2162) < 막타임(2164) < 없음(9999)
-      const TEXT_TIME = { '첫타임': 0, '오전중': 1440, '오후중': 2160, '당일중': 2162, '막타임': 2164 }
-      const toMin = t => { if (!t) return 9999; if (TEXT_TIME[t] != null) return TEXT_TIME[t]; const [h, m] = String(t).split(':').map(Number); return isNaN(h) ? 9999 : (h * 60 + (m || 0)) * 2 + 1 }
       const finalRows = allRows.map(r => ({
         ...r,
         _photos: [...(r._groupPhotos || []), ...rootPhotos],
-      })).sort((a, b) => toMin(a.time) - toMin(b.time))
+      })).sort((a, b) => timeToMin(a.time) - timeToMin(b.time))
 
       setFolderRows(finalRows)
       setFolderStats({ schedules: finalRows.length, txts: totalTxts, imgs: totalImgs, shared: rootPhotos.length })

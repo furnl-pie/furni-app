@@ -62,8 +62,11 @@ export function useAppData() {
         const cutoff = new Date()
         cutoff.setDate(cutoff.getDate() - 7)
         const cutoffStr = cutoff.toISOString().slice(0, 10)
+        const upper = new Date()
+        upper.setDate(upper.getDate() + 30)
+        const upperStr = upper.toISOString().slice(0, 10)
 
-        unsubSchedules = onSnapshot(query(collection(db, 'schedules'), where('date', '>=', cutoffStr)), snap => {
+        unsubSchedules = onSnapshot(query(collection(db, 'schedules'), where('date', '>=', cutoffStr), where('date', '<=', upperStr)), snap => {
           setSchedules(snap.docs.map(d => ({ ...d.data(), id: d.id })))
           setLoading(false)
         }, err => { setError(err.message); setLoading(false) })

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, Fragment } from 'react'
+import { useState, useRef, useEffect, useMemo, Fragment } from 'react'
 import ExcelJS from 'exceljs'
 import { getDocs, query as fsQuery, collection, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
@@ -12,8 +12,9 @@ import AdminHelpModal from './AdminHelpModal'
 import PhotoDownloadPage from './PhotoDownloadPage'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
-import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, today, getDriverSortKey } from '../../constants/styles'
+import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, hexToArgb, DRIVER_NAME_COLORS, today, getDriverSortKey } from '../../constants/styles'
 import { userName } from '../../utils/users'
+import { timeToMin } from '../../utils/parsing'
 import useWindowWidth from '../../utils/useWindowWidth'
 
 export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAddDriver, onUpdateDriver, onDeleteDriver, onLogout }) {
@@ -36,13 +37,11 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     window.addEventListener('popstate', handler)
     return () => window.removeEventListener('popstate', handler)
   }, [view])
-  const dragOverId = useRef(null)
   const [dragOverRowId, setDragOverRowId] = useState(null)
 
   const handleDragStart = (id) => { dragId.current = id }
   const handleDragOver  = (e, id) => {
     e.preventDefault()
-    dragOverId.current = id
     setDragOverRowId(id)
   }
   const handleDragLeaveRow = () => setDragOverRowId(null)
@@ -50,7 +49,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     e.preventDefault()
     setDragOverRowId(null)
     const from = dragId.current
-    const to   = dragOverId.current
+    const to   = dragOverRowId
     if (!from || !to || from === to) return
     const fromS = sorted.find(s=>s.id===from)
     const toS   = sorted.find(s=>s.id===to)
@@ -70,7 +69,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       newGroup.forEach((s, i) => { if ((s.order ?? -1) !== i) onUpdate(s.id, { order: i }) })
     }
     dragId.current = null
-    dragOverId.current = null
   }
 
   const [copyModal, setCopyModal] = useState(null)
@@ -250,7 +248,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     URL.revokeObjectURL(a.href)
   }
 
-  const baseFiltered = schedules.filter(s => {
+  const baseFiltered = useMemo(() => schedules.filter(s => {
     if (filterDriver.size > 0) {
       const unassignedSelected = filterDriver.has('unassigned')
       if (!s.driver_id && !unassignedSelected) return false
@@ -258,16 +256,16 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     }
     if (filterDate && s.date !== filterDate) return false
     return true
-  })
+  }), [schedules, filterDriver, filterDate])
 
-  const filtered = baseFiltered.filter(s => {
+  const filtered = useMemo(() => baseFiltered.filter(s => {
     if (filterStatus === '대기')    return s.status === '대기' && !s.billing_total
     if (filterStatus === '이동중')  return s.status === '이동중'
     if (filterStatus === '작업중')  return s.status === '진행중'
     if (filterStatus === '작업완료') return s.status === '완료' && !s.billing_total
     if (filterStatus === '청구완료') return !!s.billing_total
     return true
-  })
+  }), [baseFiltered, filterStatus])
 
   const toggleDriverFilter = (val) => {
     setFD(prev => {
@@ -310,29 +308,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       cell.font = { bold: true }
     })
 
-    // 기사 이름 기반 엑셀 배경색 (styles.js와 동일 매핑, ARGB 형식)
-    const EXCEL_COLOR_MAP = [
-      { keys: ['승환'],        argb: 'FFFFFF00' },
-      { keys: ['희순'],        argb: 'FF92CDDC' },
-      { keys: ['성민'],        argb: 'FF31869B' },
-      { keys: ['선우'],        argb: 'FFFFC000' },
-      { keys: ['호진'],        argb: 'FFDA9694' },
-      { keys: ['효진'],        argb: 'FF76933C' },
-      { keys: ['태섭'],        argb: 'FF00B050' },
-      { keys: ['정길'],        argb: 'FFFDE9D9' },
-      { keys: ['동수'],        argb: 'FFB1A0C7' },
-      { keys: ['정완'],        argb: 'FF92D050' },
-      { keys: ['기언'],        argb: 'FF0070C0' },
-      { keys: ['병근'],        argb: 'FF95B3D7' },
-      { keys: ['유현'],        argb: 'FFFFCCCC' },
-      { keys: ['남선'],        argb: 'FFE26B0A' },
-      { keys: ['권호'],        argb: 'FFBFBFBF' },
-      { keys: ['상구'],        argb: 'FF00FF99' },
-    ]
     const getDriverArgb = name => {
       if (!name || name === '미배치') return 'FFFFF1F2'
-      const match = EXCEL_COLOR_MAP.find(m => m.keys.some(k => name.includes(k)))
-      return match ? match.argb : 'FFFFFFFF'
+      const match = DRIVER_NAME_COLORS.find(m => m.keys.some(k => name.includes(k)))
+      return match ? hexToArgb(match.hex) : 'FFFFFFFF'
     }
 
     // 데이터 행 추가
@@ -371,9 +350,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   }
 
   const driverOrder = id => { const i=drivers.findIndex(d=>d.id===id); return i>=0?i:999 }
-  const TEXT_TIME_ORDER = { '첫타임': 0, '오전중': 1440, '오후중': 2160, '당일중': 2162, '막타임': 2164 }
-  const timeToMin = t => { if (!t) return 9999; if (TEXT_TIME_ORDER[t] != null) return TEXT_TIME_ORDER[t]; const [h,m] = String(t).split(':').map(Number); return isNaN(h) ? 9999 : (h*60+(m||0))*2+1 }
-
   const applyTimeSort = () => {
     const byDriver = {}
     filtered.forEach(s => {
@@ -387,7 +363,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     })
   }
 
-  const sorted = [...filtered].sort((a,b)=>{
+  const sorted = useMemo(() => [...filtered].sort((a,b)=>{
     const dd = driverOrder(a.driver_id) - driverOrder(b.driver_id)
     if (dd!==0) return dd
     const dateA = a.date||'', dateB = b.date||''
@@ -395,7 +371,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     const oA = a.order ?? 9999, oB = b.order ?? 9999
     if (oA !== oB) return oA - oB
     return (a.time||'').localeCompare(b.time||'')
-  })
+  }), [filtered])
 
   const stats = {
     total:    baseFiltered.length,

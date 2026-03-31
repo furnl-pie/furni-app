@@ -59,12 +59,6 @@ export default function App() {
     }
   }, [user?.id])
 
-  const doLogout = () => {
-    localStorage.setItem('auto_login', '0')
-    setUser(null)
-    setLogoutConfirm(false)
-  }
-
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9', fontFamily:"'Noto Sans KR', sans-serif" }}>
       <div style={{ textAlign:'center' }}>
@@ -90,6 +84,7 @@ export default function App() {
   const logoutHandler = () => {
     localStorage.setItem('auto_login', '0')
     setUser(null)
+    setLogoutConfirm(false)
   }
 
   return (
@@ -152,7 +147,7 @@ export default function App() {
                 style={{ flex:1, padding:'11px 0', borderRadius:8, border:`1px solid ${border}`, background:'#f8fafc', color:muted, fontSize:14, fontWeight:600, cursor:'pointer' }}>
                 취소
               </button>
-              <button onClick={doLogout}
+              <button onClick={logoutHandler}
                 style={{ flex:2, padding:'11px 0', borderRadius:8, border:'none', background:navy, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>
                 로그아웃
               </button>
