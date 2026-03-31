@@ -31,6 +31,26 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
       })
   }, [schedules, from, to])
 
+  const groupedByDriver = useMemo(() => {
+    const map = new Map()
+    withPhotos.forEach(s => {
+      const key = s.driver_id || '__none__'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key).push(s)
+    })
+    // 기사별 정렬: users의 driverOrder 기준, 각 그룹 내 날짜 오름차순
+    const groups = []
+    map.forEach((items, key) => {
+      groups.push({ driverId: key === '__none__' ? null : key, items })
+    })
+    groups.sort((a, b) => {
+      const idxA = users.findIndex(u => u.id === a.driverId)
+      const idxB = users.findIndex(u => u.id === b.driverId)
+      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB)
+    })
+    return groups
+  }, [withPhotos, users])
+
   const totalPhotos = withPhotos.reduce(
     (acc, s) => acc + (s.work_photos || []).length + (s.photos || []).length, 0
   )
@@ -206,62 +226,75 @@ ${s.billing_total || '__'}만원 (부가세 포함)
             <div style={{ fontSize: 14 }}>해당 기간에 완료+청구서 저장된 건이 없습니다</div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: isPC ? 'repeat(3,1fr)' : '1fr', gap: 10 }}>
-            {withPhotos.map(s => {
-              const pics   = [...(s.work_photos || []), ...(s.photos || [])]
-              const wpLen  = (s.work_photos || []).length
-              const cpLen  = (s.photos || []).length
-              const driver = getDriverName(s.driver_id)
-              const fmtWon = val => val ? (Math.round(val * 10000)).toLocaleString() + '원' : null
-              return (
-                <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #eaecf0', overflow: 'hidden' }}>
-                  {/* 썸네일 그리드 */}
-                  {pics.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, height: 100 }}>
-                      {pics.slice(0, 4).map((src, i) => (
-                        <div key={i} style={{ position: 'relative', overflow: 'hidden', background: '#f3f4f6' }}>
-                          <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
-                          {i === 3 && pics.length > 4 && (
-                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14 }}>
-                              +{pics.length - 4}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {groupedByDriver.map(g => (
+              <div key={g.driverId || '__none__'}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#eef2ff', borderRadius: 10, marginBottom: 10, border: '1px solid #c7d2fe' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#4f46e5' }}>
+                    {g.driverId ? `▸ ${getDriverName(g.driverId)}` : '▸ 미배치'}
+                  </span>
+                  <span style={{ fontSize: 13, color: '#6366f1', opacity: .7 }}>{g.items.length}건</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: isPC ? 'repeat(3,1fr)' : '1fr', gap: 8 }}>
+                  {g.items.map(s => {
+                    const pics  = [...(s.work_photos || []), ...(s.photos || [])]
+                    const wpLen = (s.work_photos || []).length
+                    const cpLen = (s.photos || []).length
+                    const fmtWon = val => val ? (Math.round(val * 10000)).toLocaleString() + '원' : null
+                    return (
+                      <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #eaecf0', overflow: 'hidden' }}>
+                        {/* 썸네일 */}
+                        {pics.length > 0 ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, height: 64 }}>
+                            {pics.slice(0, 4).map((src, i) => (
+                              <div key={i} style={{ position: 'relative', overflow: 'hidden', background: '#f3f4f6' }}>
+                                <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                                {i === 3 && pics.length > 4 && (
+                                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12 }}>
+                                    +{pics.length - 4}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {pics.length < 4 && Array.from({ length: 4 - pics.length }).map((_, i) => (
+                              <div key={`e-${i}`} style={{ background: '#f3f4f6' }}/>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ height: 40, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 11 }}>사진 없음</div>
+                        )}
+                        {/* 정보 */}
+                        <div style={{ padding: '8px 10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 5 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                                {s.cname || '업체명 없음'}
+                              </div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                                {s.address}
+                              </div>
+                              <div style={{ fontSize: 11, color: '#6b7280', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 600, color: '#4f46e5' }}>{getDriverName(s.driver_id)}</span>
+                                <span>{s.date}</span>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                      {pics.length < 4 && Array.from({ length: 4 - pics.length }).map((_, i) => (
-                        <div key={`empty-${i}`} style={{ background: '#f3f4f6' }}/>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ height: 100, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>
-                      사진 없음
-                    </div>
-                  )}
-                  {/* 정보 */}
-                  <div style={{ padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {s.address}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
-                          {s.date} · {driver}{s.cname ? ` (${s.cname})` : ''}
+                            <button onClick={() => downloadOne(s)} disabled={!!progress}
+                              style={{ background: '#f9fafb', border: '1px solid #eaecf0', color: '#6b7280', borderRadius: 7, padding: '5px 8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                              ⬇
+                            </button>
+                          </div>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {wpLen > 0 && <span style={{ background: '#fef3c7', color: '#d97706', padding: '1px 5px', borderRadius: 5, fontSize: 10, fontWeight: 600 }}>현장 {wpLen}장</span>}
+                            {cpLen > 0 && <span style={{ background: '#ecfdf5', color: '#065f46', padding: '1px 5px', borderRadius: 5, fontSize: 10, fontWeight: 600 }}>완료 {cpLen}장</span>}
+                            {fmtWon(s.billing_total) && <span style={{ background: '#eef2ff', color: '#4f46e5', padding: '1px 5px', borderRadius: 5, fontSize: 10, fontWeight: 600 }}>💰 {fmtWon(s.billing_total)}</span>}
+                          </div>
                         </div>
                       </div>
-                      <button onClick={() => downloadOne(s)} disabled={!!progress}
-                        style={{ background: '#f9fafb', border: '1px solid #eaecf0', color: '#6b7280', borderRadius: 7, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
-                        ⬇
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                      {wpLen > 0 && <span style={{ background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>현장 {wpLen}장</span>}
-                      {cpLen > 0 && <span style={{ background: '#ecfdf5', color: '#065f46', padding: '1px 6px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>완료 {cpLen}장</span>}
-                      {fmtWon(s.billing_total) && <span style={{ background: '#eef2ff', color: '#4f46e5', padding: '1px 6px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>💰 {fmtWon(s.billing_total)}</span>}
-                    </div>
-                  </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -250,7 +250,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       if (s.driver_id && !filterDriver.has(s.driver_id) && !filterDriver.has('all')) return false
     }
     if (filterDate && s.date !== filterDate) return false
-    if (filterStatus && s.status !== filterStatus) return false
+    if (filterStatus === 'unassigned') { if (s.driver_id) return false }
+    else if (filterStatus === '작업완료') { if (s.status !== '완료' || s.billing_total) return false }
+    else if (filterStatus === '청구완료') { if (!s.billing_total) return false }
+    else if (filterStatus) { if (s.status !== filterStatus) return false }
     return true
   })
 
@@ -278,7 +281,8 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     total:      filtered.length,
     unassigned: filtered.filter(s=>!s.driver_id).length,
     ing:        filtered.filter(s=>s.status==='진행중').length,
-    done:       filtered.filter(s=>s.status==='완료').length,
+    workDone:   filtered.filter(s=>s.status==='완료' && !s.billing_total).length,
+    billed:     filtered.filter(s=>!!s.billing_total).length,
   }
 
   const selected = schedules.find(s=>s.id===selectedId)
@@ -333,13 +337,23 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       </div>
 
       <div style={{ padding:20, maxWidth:1060, margin:'0 auto' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-          {[['전체',stats.total,'#6366f1'],['미배치',stats.unassigned,'#f43f5e'],['진행중',stats.ing,'#f59e0b'],['완료',stats.done,'#10b981']].map(([l,v,c])=>(
-            <Card key={l} style={{ textAlign:'center', padding:'12px 8px', borderTop:`3px solid ${c}` }}>
-              <div style={{ fontSize:28, fontWeight:800, color:c, lineHeight:1.1 }}>{v}</div>
-              <div style={{ fontSize:11, color:muted, marginTop:3, fontWeight:600, letterSpacing:'.3px' }}>{l}</div>
-            </Card>
-          ))}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10, marginBottom:16 }}>
+          {[
+            ['전체',    stats.total,      '#6366f1', ''],
+            ['미배치',  stats.unassigned, '#f43f5e', 'unassigned'],
+            ['진행중',  stats.ing,        '#f59e0b', '진행중'],
+            ['작업완료',stats.workDone,   '#10b981', '작업완료'],
+            ['청구완료',stats.billed,     '#0ea5e9', '청구완료'],
+          ].map(([l,v,c,fs])=>{
+            const active = filterStatus === fs
+            return (
+              <Card key={l} onClick={()=>setFStatus(active ? '' : fs)}
+                style={{ textAlign:'center', padding:'10px 6px', borderTop:`3px solid ${c}`, cursor:'pointer', background: active ? c+'18' : '#fff', transition:'background .15s' }}>
+                <div style={{ fontSize:24, fontWeight:800, color:c, lineHeight:1.1 }}>{v}</div>
+                <div style={{ fontSize:10, color: active ? c : muted, marginTop:3, fontWeight:700, letterSpacing:'.3px' }}>{l}</div>
+              </Card>
+            )
+          })}
         </div>
 
         {stats.unassigned>0 && (
@@ -639,18 +653,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                       </th>
                     )}
                     <th style={{ padding:'8px 10px', background:'#f9fafb', whiteSpace:'nowrap', fontSize:11, fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.5px' }}>기사</th>
-                    <th style={{ padding:'8px 10px', background:'#f9fafb', whiteSpace:'nowrap' }}>
-                      <select
-                        value={filterStatus}
-                        onChange={e => setFStatus(e.target.value)}
-                        style={{ padding:'3px 6px', borderRadius:7, border:`1.5px solid ${filterStatus ? amber : '#eaecf0'}`, fontSize:11, fontWeight:700, color: filterStatus ? amber : '#9ca3af', background: filterStatus ? '#fffbeb' : '#f9fafb', outline:'none', cursor:'pointer', fontFamily:"inherit", textTransform:'uppercase', letterSpacing:'.5px' }}>
-                        <option value="">상태</option>
-                        <option value="대기">대기</option>
-                        <option value="이동중">이동중</option>
-                        <option value="진행중">진행중</option>
-                        <option value="완료">완료</option>
-                      </select>
-                    </th>
+                    <th style={{ padding:'8px 10px', background:'#f9fafb', whiteSpace:'nowrap', fontSize:11, fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.5px' }}>상태</th>
                     {['현장담당자','날짜·시간','주소','폐기물량','시작','완료',''].map(h=>(
                       <th key={h} style={{ padding:'8px 10px', textAlign:'center', fontWeight:700, color:'#9ca3af', fontSize:11, whiteSpace:'nowrap', background:'#f9fafb', textTransform:'uppercase', letterSpacing:'.5px' }}>{h}</th>
                     ))}
