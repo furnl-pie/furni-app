@@ -3,6 +3,7 @@ import { today } from '../constants/styles'
 export function parseKoreanTime(raw) {
   if (!raw) return ''
   const s = raw.trim()
+  if (s.includes('첫타임')) return '첫타임'
   if (s.includes('오전중')) return '오전중'
   if (s.includes('오후중')) return '오후중'
   if (s.includes('당일중')) return '당일중'
@@ -94,6 +95,8 @@ export function parseKakaoChat(text) {
       time = '오전중'
     } else if (/오후중/.test(dateLine)) {
       time = '오후중'
+    } else if (/첫타임/.test(dateLine)) {
+      time = '첫타임'
     } else if (/당일중/.test(dateLine)) {
       time = '당일중'
     } else if (/막타임/.test(dateLine)) {
