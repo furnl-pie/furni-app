@@ -25,6 +25,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [showAdminSettings, setAdminSettings] = useState(false)
   const [showHelp, setHelp] = useState(false)
   const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
+  const [sortByTime, setSortByTime] = useState(false)
 
   const dragId = useRef(null)
 
@@ -371,11 +372,15 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   }
 
   const driverOrder = id => { const i=drivers.findIndex(d=>d.id===id); return i>=0?i:999 }
+  const TEXT_TIME_ORDER = { '첫타임': 0, '오전중': 1440, '오후중': 2160, '당일중': 2162, '막타임': 2164 }
+  const timeToMin = t => { if (!t) return 9999; if (TEXT_TIME_ORDER[t] != null) return TEXT_TIME_ORDER[t]; const [h,m] = String(t).split(':').map(Number); return isNaN(h) ? 9999 : (h*60+(m||0))*2+1 }
+
   const sorted = [...filtered].sort((a,b)=>{
     const dd = driverOrder(a.driver_id) - driverOrder(b.driver_id)
     if (dd!==0) return dd
     const dateA = a.date||'', dateB = b.date||''
     if (dateA !== dateB) return dateA.localeCompare(dateB)
+    if (sortByTime) return timeToMin(a.time) - timeToMin(b.time)
     const oA = a.order ?? 9999, oB = b.order ?? 9999
     if (oA !== oB) return oA - oB
     return (a.time||'').localeCompare(b.time||'')
@@ -549,6 +554,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                   : `총 ${sorted.length}건`
                 }
               </span>
+              <button onClick={()=>setSortByTime(p=>!p)}
+                style={{ padding:'4px 10px', borderRadius:6, border:`1.5px solid ${sortByTime?blue:border}`, fontSize:12, fontWeight:600, cursor:'pointer', background:sortByTime?'#eff6ff':'#fff', color:sortByTime?blue:muted, whiteSpace:'nowrap' }}>
+                {sortByTime ? '⏱ 시간순' : '⏱ 시간순'}
+              </button>
               <div style={{ display:'flex', gap:3, background:'#f1f5f9', borderRadius:8, padding:3 }}>
                 {[['table','≡ 표'],['card','▦ 카드']].map(([v,l])=>(
                   <button key={v} onClick={()=>setListView(v)}
