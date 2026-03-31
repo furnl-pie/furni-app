@@ -589,7 +589,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                             }}>
                             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                                <Badge status={s.status}/>
+                                <Badge status={s.status} billed={!!s.billing_total}/>
                                 <span onClick={e=>e.stopPropagation()}>
                                   {editingId===s.id ? (
                                     <select autoFocus
@@ -751,7 +751,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                               </div>
                             )}
                           </td>
-                          <td style={{ padding:'8px 10px', textAlign:'center' }}><Badge status={s.status}/></td>
+                          <td style={{ padding:'8px 10px', textAlign:'center' }}><Badge status={s.status} billed={!!s.billing_total}/></td>
                           <td style={{ padding:'8px 10px', textAlign:'center', whiteSpace:'nowrap', fontSize:13 }}>
                             {s.cname}
                             {s.co_driver_id && (

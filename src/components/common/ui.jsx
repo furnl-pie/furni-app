@@ -2,8 +2,9 @@
 import { useState } from 'react'
 import { STATUS_CFG, blue, muted, border, textC, navy, green } from '../../constants/styles'
 
-export function Badge({ status }) {
-  const s = STATUS_CFG[status] || STATUS_CFG['대기']
+export function Badge({ status, billed }) {
+  const key = billed ? '청구완료' : status
+  const s = STATUS_CFG[key] || STATUS_CFG['대기']
   return (
     <span style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:6, color:s.color, background:s.bg, border:`1px solid ${s.border||'transparent'}`, whiteSpace:'nowrap', display:'inline-flex', alignItems:'center', gap:2 }}>
       {s.label}
@@ -24,9 +25,9 @@ export function Btn({ children, onClick, color=blue, outline, style={}, disabled
   )
 }
 
-export function Card({ children, style={} }) {
+export function Card({ children, style={}, onClick }) {
   return (
-    <div style={{ background:'#fff', borderRadius:12, border:`1px solid ${border}`, padding:16, ...style }}>
+    <div onClick={onClick} style={{ background:'#fff', borderRadius:12, border:`1px solid ${border}`, padding:16, ...style }}>
       {children}
     </div>
   )
