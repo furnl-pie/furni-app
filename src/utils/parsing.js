@@ -6,6 +6,7 @@ export function parseKoreanTime(raw) {
   if (s.includes('오전중')) return '오전중'
   if (s.includes('오후중')) return '오후중'
   if (s.includes('당일중')) return '당일중'
+  if (s.includes('막타임')) return '막타임'
   // 시간 범위(~) 는 그대로 보존
   if (s.includes('~')) return s
   if (/^\d{1,2}:\d{2}$/.test(s)) {
@@ -95,6 +96,8 @@ export function parseKakaoChat(text) {
       time = '오후중'
     } else if (/당일중/.test(dateLine)) {
       time = '당일중'
+    } else if (/막타임/.test(dateLine)) {
+      time = '막타임'
     } else if (/~/.test(dateLine)) {
       // 시간 범위(예: 오후2시~4시, 14:00~16:00) 그대로 보존
       const rangeM = dateLine.match(/((?:오전|오후)?\s*\d+시(?:\s*\d+분)?\s*~\s*(?:오전|오후)?\s*\d+시(?:\s*\d+분)?|\d{1,2}:\d{2}\s*~\s*\d{1,2}:\d{2})/)

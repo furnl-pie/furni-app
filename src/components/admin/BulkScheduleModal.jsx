@@ -157,7 +157,8 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
       }
 
       // 루트 이미지를 모든 일정에 추가 + 시간 오름차순 정렬
-      const toMin = t => { if (!t) return 9999; const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0) }
+      const TEXT_TIME = { '오전중': 600, '오후중': 780, '당일중': 900, '막타임': 1020 }
+      const toMin = t => { if (!t) return 9999; if (TEXT_TIME[t] != null) return TEXT_TIME[t]; const [h, m] = String(t).split(':').map(Number); return isNaN(h) ? 9999 : h * 60 + (m || 0) }
       const finalRows = allRows.map(r => ({
         ...r,
         _photos: [...(r._groupPhotos || []), ...rootPhotos],
