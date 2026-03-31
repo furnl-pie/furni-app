@@ -157,7 +157,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     .sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
 
   const exportCSV = async () => {
-    const carNum = id => users.find(u => u.id === id)?.car_num || ''
+    const carNum = id => { const u = users.find(u => u.id === id); return u?.car_number || u?.car_num || '' }
     const fmtCar = num => num ? `="${num}"` : ''
 
     // 처리비 데이터 fetch (같은 날짜)

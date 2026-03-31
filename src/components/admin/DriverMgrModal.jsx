@@ -7,7 +7,7 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
   const [adding, setAdding]       = useState(false)
   const [editId, setEditId]       = useState(null)
   const [delId,  setDelId]        = useState(null)
-  const [form, setForm]           = useState({ loginId:'', name:'', phone:'', pw:'', car_num:'' })
+  const [form, setForm]           = useState({ loginId:'', name:'', phone:'', pw:'', car_number:'' })
   const [editForm, setEditForm]   = useState({})
   const [idErr, setIdErr]         = useState('')
   const setF  = (k,v) => { setForm(p=>({...p,[k]:v})); if(k==='loginId') setIdErr('') }
@@ -17,11 +17,11 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
     if (!form.loginId||!form.name||!form.phone||!form.pw) return alert('아이디·이름·연락처·비밀번호를 모두 입력하세요')
     if (!/^[a-z0-9_\uAC00-\uD7A3\u3130-\u318F]+$/.test(form.loginId)) { setIdErr('한글·영문·숫자·_만 사용 가능합니다 (공백 불가)'); return }
     if (getUsers().some(u=>u.id===form.loginId)) { setIdErr('이미 사용 중인 아이디입니다'); return }
-    onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw, car_num:form.car_num, role:'driver', driverOrder: Date.now() })
-    setForm({ loginId:'', name:'', phone:'', pw:'', car_num:'' }); setAdding(false)
+    onAdd({ id: form.loginId, name:form.name, phone:form.phone, pw:form.pw, car_number:form.car_number, role:'driver', driverOrder: Date.now() })
+    setForm({ loginId:'', name:'', phone:'', pw:'', car_number:'' }); setAdding(false)
   }
-  const startEdit = d => { setEditId(d.id); setEditForm({ loginId:d.id, name:d.name, phone:d.phone, pw:d.pw, car_num:d.car_num||'' }) }
-  const submitEdit = () => { onUpdate(editId, { name:editForm.name, phone:editForm.phone, pw:editForm.pw, car_num:editForm.car_num }); setEditId(null) }
+  const startEdit = d => { setEditId(d.id); setEditForm({ loginId:d.id, name:d.name, phone:d.phone, pw:d.pw, car_number:(d.car_number||d.car_num||'').slice(-4) }) }
+  const submitEdit = () => { onUpdate(editId, { name:editForm.name, phone:editForm.phone, pw:editForm.pw, car_number:editForm.car_number }); setEditId(null) }
 
   const scheduleCount = id => schedules.filter(s=>s.driver_id===id).length
 
@@ -61,7 +61,7 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                       </div>
                       <div>
                         <div style={{ fontSize:11, color:muted, marginBottom:4 }}>차량번호</div>
-                        <input value={editForm.car_num||''} onChange={e=>setEF('car_num',e.target.value)} placeholder="예: 12가3456" style={{ ...iStyle, fontSize:13 }}/>
+                        <input value={editForm.car_number||''} onChange={e=>setEF('car_number',e.target.value.slice(-4))} placeholder="뒤 4자리" maxLength={4} style={{ ...iStyle, fontSize:13 }}/>
                       </div>
                     </div>
                     <div style={{ display:'flex', gap:8 }}>
@@ -104,7 +104,7 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                       <div style={{ fontSize:12, color:muted, marginTop:2, display:'flex', gap:10, flexWrap:'wrap' }}>
                         <span style={{ fontFamily:'monospace', background:'#f1f5f9', padding:'1px 6px', borderRadius:4, color:navy }}>ID: {d.id}</span>
                         <span>{d.phone}</span>
-                        {d.car_num && <span style={{ fontFamily:'monospace', background:'#fefce8', padding:'1px 6px', borderRadius:4, color:amber }}>{d.car_num}</span>}
+                        {(d.car_number||d.car_num) && <span style={{ fontFamily:'monospace', background:'#fefce8', padding:'1px 6px', borderRadius:4, color:amber }}>{d.car_number||d.car_num}</span>}
                         <span style={{ color:green }}>일정 {scheduleCount(d.id)}건</span>
                       </div>
                     </div>
@@ -153,7 +153,7 @@ export default function DriverMgrModal({ drivers, schedules, onAdd, onUpdate, on
                 </div>
                 <div>
                   <div style={{ fontSize:11, color:muted, marginBottom:4 }}>차량번호</div>
-                  <input value={form.car_num} onChange={e=>setF('car_num',e.target.value)} placeholder="예: 12가3456" style={iStyle}/>
+                  <input value={form.car_number} onChange={e=>setF('car_number',e.target.value.slice(-4))} placeholder="뒤 4자리" maxLength={4} style={iStyle}/>
                 </div>
               </div>
               <div style={{ display:'flex', gap:8 }}>

@@ -44,7 +44,7 @@ export default function BillingPage({ schedules, onUpdate, onBack }) {
     return (Math.round(val * 10000)).toLocaleString() + '원'
   }
 
-  const carNum = driverId => getUsers().find(u => u.id === driverId)?.car_num || ''
+  const carNum = driverId => { const u = getUsers().find(u => u.id === driverId); return u?.car_number || u?.car_num || '' }
 
   // 당일 모드: 기사별 그룹
   const groupedByDriver = billed.reduce((acc, s) => {

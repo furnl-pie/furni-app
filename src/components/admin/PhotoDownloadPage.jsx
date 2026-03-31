@@ -14,7 +14,7 @@ export default function PhotoDownloadPage({ schedules, users, onBack }) {
   const [errors, setErrors]     = useState([])
 
   const getDriverName = id => users.find(u => u.id === id)?.name || '미배치'
-  const getCarNum     = id => users.find(u => u.id === id)?.car_num || ''
+  const getCarNum     = id => { const u = users.find(u => u.id === id); return u?.car_number || u?.car_num || '' }
 
   // 청구서 저장된 항목 (사진 없어도 txt 다운로드 가능)
   const withPhotos = useMemo(() => {
