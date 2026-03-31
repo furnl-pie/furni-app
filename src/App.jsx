@@ -93,8 +93,8 @@ export default function App() {
         }
         input::placeholder { color: #94a3b8 !important; -webkit-text-fill-color: #94a3b8 !important; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
-        input.driver-date { color: #fff !important; -webkit-text-fill-color: #fff !important; color-scheme: dark !important; }
-        input.driver-date::-webkit-calendar-picker-indicator { filter: invert(1); }
+        input.driver-date { color: #111827 !important; -webkit-text-fill-color: #111827 !important; color-scheme: light !important; }
+        input.driver-date::-webkit-calendar-picker-indicator { filter: invert(0); }
       `}</style>
       {user.role==='admin'
         ? <AdminApp
