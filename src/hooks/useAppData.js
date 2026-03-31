@@ -57,7 +57,7 @@ export function useAppData() {
       try {
         unsubUsers = onSnapshot(collection(db, 'users'), snap => {
           setUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })))
-        }, err => setError(err.message))
+        }, err => { console.error('users 스냅샷 오류:', err); setError('데이터를 불러오지 못했습니다.') })
 
         const cutoff = new Date()
         cutoff.setDate(cutoff.getDate() - 7)
@@ -69,7 +69,7 @@ export function useAppData() {
         unsubSchedules = onSnapshot(query(collection(db, 'schedules'), where('date', '>=', cutoffStr), where('date', '<=', upperStr)), snap => {
           setSchedules(snap.docs.map(d => ({ ...d.data(), id: d.id })))
           setLoading(false)
-        }, err => { setError(err.message); setLoading(false) })
+        }, err => { console.error('schedules 스냅샷 오류:', err); setError('데이터를 불러오지 못했습니다.'); setLoading(false) })
 
       } catch (e) {
         setError(e.message)
@@ -126,6 +126,9 @@ export function useAppData() {
 
   // ── 일정 수정 (사진은 Cloudinary 업로드 후 URL 저장) ──────────
   const updateSchedule = useCallback(async (id, patch) => {
+    // 롤백용 이전 상태 저장
+    const prevSchedules = schedules
+
     // 낙관적 업데이트 (UI 즉시 반영)
     setSchedules(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s))
 
@@ -168,7 +171,10 @@ export function useAppData() {
         updatedAt: serverTimestamp(),
       })
     } catch (e) {
-      setError('저장 실패: ' + e.message)
+      // 실패 시 UI 롤백
+      setSchedules(prevSchedules)
+      console.error('일정 저장 실패:', e)
+      setError('저장에 실패했습니다. 잠시 후 다시 시도해주세요.')
     }
   }, [schedules])
 
@@ -186,7 +192,8 @@ export function useAppData() {
       await setDoc(doc(db, 'users', d.id), { role: 'driver', ...d })
       return {}
     } catch (e) {
-      return { error: e.message }
+      console.error('기사 추가 실패:', e)
+      return { error: '기사 추가에 실패했습니다.' }
     }
   }, [users])
 
