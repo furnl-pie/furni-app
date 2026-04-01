@@ -4,20 +4,7 @@ import { db } from '../../lib/firebase'
 import { Btn, Card } from '../common/ui'
 import { navy, blue, green, red, border, muted, textC, iStyle, today } from '../../constants/styles'
 import { readFilesAsBase64 } from '../../utils/image'
-
-const CLOUD  = import.meta.env.VITE_CLOUDINARY_CLOUD
-const PRESET = import.meta.env.VITE_CLOUDINARY_PRESET
-
-async function uploadPhoto(base64, folder) {
-  if (!base64.startsWith('data:')) return base64
-  const fd = new FormData()
-  fd.append('file', base64)
-  fd.append('upload_preset', PRESET)
-  fd.append('folder', folder)
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, { method:'POST', body:fd })
-  if (!res.ok) throw new Error('사진 업로드 실패')
-  return (await res.json()).secure_url
-}
+import { uploadToCloudinary } from '../../utils/cloudinary'
 
 const SITES = ['HK', '강서천일', '기타']
 const QUALITY_OPTIONS = ['혼합', '목재', '왈가닥', '기타']
@@ -105,7 +92,7 @@ export default function DisposalTab({ user }) {
     try {
       const finalSite = form.site === '기타' ? (form.site_custom || '기타') : form.site
       const folder = `disposal/${form.date}`
-      const uploadedPhotos = await Promise.all(form.photos.map(p => uploadPhoto(p, folder)))
+      const uploadedPhotos = await Promise.all(form.photos.map(p => uploadToCloudinary(p, folder)))
       const data = {
         date:        form.date,
         site:        finalSite,

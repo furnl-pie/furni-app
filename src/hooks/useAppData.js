@@ -1,5 +1,4 @@
 // src/hooks/useAppData.js
-// Firebase Firestore + Cloudinary 이미지 업로드
 import { useState, useEffect, useCallback } from 'react'
 import { db } from '../lib/firebase'
 import {
@@ -9,40 +8,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { hashPw } from '../utils/auth'
-
-const CLOUD  = import.meta.env.VITE_CLOUDINARY_CLOUD
-const PRESET = import.meta.env.VITE_CLOUDINARY_PRESET
-
-// ── base64 → Cloudinary 업로드 후 URL 반환 ──────────────────────
-async function uploadToCloudinary(base64DataUrl, folder = 'dispatch') {
-  // 이미 URL이면 그대로 반환 (기존 업로드 사진)
-  if (!base64DataUrl.startsWith('data:')) return base64DataUrl
-
-  const formData = new FormData()
-  formData.append('file', base64DataUrl)
-  formData.append('upload_preset', PRESET)
-  formData.append('folder', folder)
-
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
-    { method: 'POST', body: formData }
-  )
-
-  if (!res.ok) throw new Error('사진 업로드 실패')
-  const data = await res.json()
-  return data.secure_url
-}
-
-// 여러 장 배치 업로드 (5장씩 순차 처리)
-async function uploadPhotos(base64Array, folder = 'dispatch') {
-  const results = []
-  const BATCH = 5
-  for (let i = 0; i < base64Array.length; i += BATCH) {
-    const batch = await Promise.all(base64Array.slice(i, i + BATCH).map(b => uploadToCloudinary(b, folder)))
-    results.push(...batch)
-  }
-  return results
-}
+import { uploadPhotos } from '../utils/cloudinary'
 
 // ── 훅 ──────────────────────────────────────────────────────────
 export function useAppData() {

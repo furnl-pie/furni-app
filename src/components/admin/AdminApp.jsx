@@ -12,13 +12,19 @@ import AdminHelpModal from './AdminHelpModal'
 import PhotoDownloadPage from './PhotoDownloadPage'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
-import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, hexToArgb, DRIVER_NAME_COLORS, today, getDriverSortKey } from '../../constants/styles'
+import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, hexToArgb, DRIVER_NAME_COLORS, getDriverSortKey } from '../../constants/styles'
 import { userName } from '../../utils/users'
 import { timeToMin } from '../../utils/parsing'
 import useWindowWidth from '../../utils/useWindowWidth'
+import { useAdminFilters } from '../../hooks/useAdminFilters'
+import { useDeleteMode } from '../../hooks/useDeleteMode'
+import { useAssignMode } from '../../hooks/useAssignMode'
 
 export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAddDriver, onUpdateDriver, onDeleteDriver, onLogout }) {
-  const isPC = useWindowWidth() >= 1024
+  const _w   = useWindowWidth()
+  const isPC     = _w >= 1024
+  const isTablet = _w >= 768 && _w < 1024
+  const isWide   = _w >= 768  // 태블릿 + PC
   const [view, setView]           = useState('list')
   const [selectedId, setSelId]    = useState(null)
   const [showModal, setModal]     = useState(false)
@@ -114,52 +120,29 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     setCopyModal(null)
   }
 
-  const [filterDriver, setFD]     = useState(new Set())
-  const [driverDropOpen, setDriverDropOpen] = useState(false)
-
-  // 모바일 기사 드롭다운 바깥 클릭 시 닫기
-  useEffect(() => {
-    if (!driverDropOpen) return
-    const handler = (e) => { if (!e.target.closest('[data-driver-drop]')) setDriverDropOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [driverDropOpen])
-  const [filterStatus, setFStatus] = useState('') // '' | '대기' | '이동중' | '진행중' | '완료'
-  const [filterDate, setFDate]    = useState(today)
   const [editingId, setEditingId] = useState(null)
 
-  const [deleteMode,     setDeleteMode]   = useState(false)
-  const [checkedIds,     setCheckedIds]   = useState(new Set())
-  const [showDelConfirm, setDelConfirm]   = useState(false)
-  const [confirmSingleDel, setConfirmSingleDel] = useState(null) // 개별 삭제 일정 id
+  const drivers = useMemo(() =>
+    users.filter(u => u.role === 'driver').sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
+  , [users])
 
-  const [assignMode,     setAssignMode]   = useState(false)
-  const [assignChecked,  setAssignChecked] = useState(new Set())
-  const [assignTarget,   setAssignTarget]  = useState('')
+  const {
+    filterDriver, setFD, filterStatus, setFStatus, filterDate, setFDate,
+    driverDropOpen, setDriverDropOpen, toggleDriverFilter,
+    baseFiltered, filtered, sorted, stats,
+  } = useAdminFilters(schedules, drivers)
 
-  const toggleAssignCheck = id => setAssignChecked(prev => {
-    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
-  })
-  const toggleAssignAll = () => setAssignChecked(prev =>
-    prev.size === sorted.length ? new Set() : new Set(sorted.map(s=>s.id))
-  )
-  const exitAssignMode = () => { setAssignMode(false); setAssignChecked(new Set()); setAssignTarget('') }
-  const confirmAssign  = () => {
-    assignChecked.forEach(id => onUpdate(id, { driver_id: assignTarget || null }))
-    exitAssignMode()
-  }
+  const {
+    deleteMode, setDeleteMode, checkedIds, setCheckedIds,
+    showDelConfirm, setDelConfirm, confirmSingleDel, setConfirmSingleDel,
+    toggleCheck, toggleAll, exitDeleteMode,
+  } = useDeleteMode(sorted, onDelete)
 
-  const toggleCheck = id => setCheckedIds(prev => {
-    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
-  })
-  const toggleAll = () => setCheckedIds(prev =>
-    prev.size === sorted.length ? new Set() : new Set(sorted.map(s=>s.id))
-  )
-  const exitDeleteMode = () => { setDeleteMode(false); setCheckedIds(new Set()) }
-
-  const drivers = users
-    .filter(u => u.role === 'driver')
-    .sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
+  const {
+    assignMode, setAssignMode, assignChecked, setAssignChecked,
+    assignTarget, setAssignTarget, toggleAssignCheck, toggleAssignAll,
+    exitAssignMode, confirmAssign,
+  } = useAssignMode(sorted, onUpdate)
 
   const exportCSV = async () => {
     const carNum = id => { const u = users.find(u => u.id === id); return u?.car_number || u?.car_num || '' }
@@ -248,34 +231,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     URL.revokeObjectURL(a.href)
   }
 
-  const baseFiltered = useMemo(() => schedules.filter(s => {
-    if (filterDriver.size > 0) {
-      const unassignedSelected = filterDriver.has('unassigned')
-      if (!s.driver_id && !unassignedSelected) return false
-      if (s.driver_id && !filterDriver.has(s.driver_id) && !filterDriver.has('all')) return false
-    }
-    if (filterDate && s.date !== filterDate) return false
-    return true
-  }), [schedules, filterDriver, filterDate])
-
-  const filtered = useMemo(() => baseFiltered.filter(s => {
-    if (filterStatus === '대기')    return s.status === '대기' && !s.billing_total
-    if (filterStatus === '이동중')  return s.status === '이동중'
-    if (filterStatus === '작업중')  return s.status === '진행중'
-    if (filterStatus === '작업완료') return s.status === '완료' && !s.billing_total
-    if (filterStatus === '청구완료') return !!s.billing_total
-    return true
-  }), [baseFiltered, filterStatus])
-
-  const toggleDriverFilter = (val) => {
-    setFD(prev => {
-      const next = new Set(prev)
-      if (next.has(val)) next.delete(val)
-      else next.add(val)
-      return next
-    })
-  }
-
   const exportScheduleExcel = async () => {
     const fmtDate = d => {
       if (!d) return ''
@@ -349,7 +304,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     URL.revokeObjectURL(a.href)
   }
 
-  const driverOrder = id => { const i=drivers.findIndex(d=>d.id===id); return i>=0?i:999 }
   const applyTimeSort = () => {
     const byDriver = {}
     filtered.forEach(s => {
@@ -361,25 +315,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       const sorted = [...group].sort((a,b) => timeToMin(a.time) - timeToMin(b.time))
       sorted.forEach((s, i) => { if (s.order !== i) onUpdate(s.id, { order: i }) })
     })
-  }
-
-  const sorted = useMemo(() => [...filtered].sort((a,b)=>{
-    const dd = driverOrder(a.driver_id) - driverOrder(b.driver_id)
-    if (dd!==0) return dd
-    const dateA = a.date||'', dateB = b.date||''
-    if (dateA !== dateB) return dateA.localeCompare(dateB)
-    const oA = a.order ?? 9999, oB = b.order ?? 9999
-    if (oA !== oB) return oA - oB
-    return (a.time||'').localeCompare(b.time||'')
-  }), [filtered])
-
-  const stats = {
-    total:    baseFiltered.length,
-    waiting:  baseFiltered.filter(s=>s.status==='대기' && !s.billing_total).length,
-    moving:   baseFiltered.filter(s=>s.status==='이동중').length,
-    working:  baseFiltered.filter(s=>s.status==='진행중').length,
-    workDone: baseFiltered.filter(s=>s.status==='완료' && !s.billing_total).length,
-    billed:   baseFiltered.filter(s=>!!s.billing_total).length,
   }
 
   const selected = schedules.find(s=>s.id===selectedId)
@@ -557,7 +492,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           </div>
 
           {/* 기사 필터 */}
-          {isPC ? (
+          {isWide ? (
             <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
               <span style={{ fontSize:11, fontWeight:700, color:muted, marginRight:2, whiteSpace:'nowrap' }}>기사</span>
               <button
@@ -662,7 +597,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         {g.items.length}건
                       </span>
                     </div>
-                    <div style={{ display: isPC ? 'grid' : 'flex', flexDirection: isPC ? undefined : 'column', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, gap:8 }}>
+                    <div style={{ display: isWide ? 'grid' : 'flex', flexDirection: isWide ? undefined : 'column', gridTemplateColumns: isWide ? '1fr 1fr' : undefined, gap:8 }}>
                       {g.items.map(s => {
                         const lc = s.status==='완료' ? green : s.status==='진행중' ? amber : s.status==='이동중' ? blue : border
                         const isDeleteChecked = checkedIds.has(s.id)

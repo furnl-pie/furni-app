@@ -15,7 +15,7 @@ const iStyle = {
 }
 
 export default function DisposalPage({ onBack }) {
-  const isPC = useWindowWidth() >= 1024
+  const isWide = useWindowWidth() >= 768
   const [records,    setRecords]    = useState([])
   const [filterDate, setFilterDate] = useState(today)
   const [editRecord, setEditRecord] = useState(null)  // 수정 중인 레코드
@@ -170,7 +170,7 @@ export default function DisposalPage({ onBack }) {
         </div>
       </div>
 
-      <div style={{ padding:16, maxWidth: isPC ? 1200 : 600, margin:'0 auto' }}>
+      <div style={{ padding:16, maxWidth: isWide ? 1200 : 600, margin:'0 auto' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
           <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}
             style={{ padding:'8px 12px', borderRadius:8, border:'1.5px solid #eaecf0', fontSize:14, background:'#fff', color:'#111827', outline:'none', fontWeight:600 }}/>
@@ -192,9 +192,9 @@ export default function DisposalPage({ onBack }) {
             <div style={{ fontSize:14 }}>이 날짜에 처리 기록이 없습니다</div>
           </div>
         ) : (
-          <div style={{ display: isPC ? 'grid' : 'block', gridTemplateColumns: isPC ? '1fr 1fr' : undefined, gap: isPC ? 12 : undefined }}>
+          <div style={{ display: isWide ? 'grid' : 'block', gridTemplateColumns: isWide ? '1fr 1fr' : undefined, gap: isWide ? 12 : undefined }}>
           {filtered.map(r => (
-            <Card key={r.id} style={{ marginBottom: isPC ? 0 : 10 }}>
+            <Card key={r.id} style={{ marginBottom: isWide ? 0 : 10 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                 <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                   <span style={{ fontWeight:700, color:navy, fontSize:15 }}>{r.site}</span>
