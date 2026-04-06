@@ -393,8 +393,10 @@ export default function DriverDetail({ schedule, onUpdate, onBack }) {
                 <span style={{ fontSize:14, fontWeight:700, color:textC, minWidth:22 }}>①</span>
                 <span style={{ fontSize:15, fontWeight:700, color:textC }}>출발</span>
               </div>
-              <div style={{ flexShrink:0 }}>
-                {isReady && <Btn onClick={openDepartModal} color='#6366f1' style={{ padding:'8px 16px', fontSize:14 }}>🚚 출발</Btn>}
+              <div style={{ flexShrink:0, display:'flex', gap:8, alignItems:'center' }}>
+                {isReady && (
+                  <Btn onClick={openDepartModal} color='#6366f1' style={{ padding:'8px 16px', fontSize:14 }}>🚚 출발</Btn>
+                )}
                 {(isMoving||isWorking||isDone) && schedule.depart_time && (
                   <button onClick={()=>setShowCancelDepart(true)}
                     style={{ background:'none', border:`1px solid ${border}`, borderRadius:8, padding:'7px 11px', fontSize:13, color:muted, cursor:'pointer' }}>

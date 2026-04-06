@@ -128,6 +128,7 @@ export default function BillingPage({ schedules, onUpdate, onBack }) {
     })
   }
 
+
   const setF = (k, v) => setEditForm(p => {
     const next = { ...p, [k]: v }
     const a = parseFloat(next.billing_amount) || 0

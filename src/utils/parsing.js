@@ -8,6 +8,12 @@ export function parseKoreanTime(raw) {
   if (s.includes('오후중')) return '오후중'
   if (s.includes('당일중')) return '당일중'
   if (s.includes('막타임')) return '막타임'
+  // 한글 시간 키워드
+  if (/새벽/.test(s)) return '06:00'
+  if (/아침/.test(s)) return '09:00'
+  if (/점심시간|점심때|점심/.test(s)) return '12:00'
+  if (/저녁시간|저녁/.test(s)) return '18:00'
+  if (/야간|밤/.test(s)) return '20:00'
   // 시간 범위(~) 는 그대로 보존
   if (s.includes('~')) return s
   if (/^\d{1,2}:\d{2}$/.test(s)) {
@@ -101,8 +107,18 @@ export function parseKakaoChat(text) {
       time = '당일중'
     } else if (/막타임/.test(dateLine)) {
       time = '막타임'
+    } else if (/새벽/.test(dateLine)) {
+      time = '06:00'
+    } else if (/아침/.test(dateLine)) {
+      time = '09:00'
+    } else if (/점심시간|점심때|점심/.test(dateLine)) {
+      time = '12:00'
+    } else if (/저녁시간|저녁/.test(dateLine)) {
+      time = '18:00'
+    } else if (/야간|밤/.test(dateLine)) {
+      time = '20:00'
     } else if (/~/.test(dateLine)) {
-      // 시간 범위(예: 오후2시~4시, 14:00~16:00) 그대로 보존
+      // 시간 범위(예: 오후 2시 ~ 4시, 14:00~16:00) 그대로 보존, 공백 허용
       const rangeM = dateLine.match(/((?:오전|오후)?\s*\d+시(?:\s*\d+분)?\s*~\s*(?:오전|오후)?\s*\d+시(?:\s*\d+분)?|\d{1,2}:\d{2}\s*~\s*\d{1,2}:\d{2})/)
       if (rangeM) time = rangeM[1].replace(/\s+/g, '')
       else {
@@ -126,8 +142,19 @@ export function parseKakaoChat(text) {
       }
     }
 
-    const address = contentLines[2] || ''
-    const rest = contentLines.slice(3)
+    // 주소: 3번째 줄부터 시작, 공동/세대/비밀번호/PW/전화번호 패턴 전까지 연속 줄 합치기
+    const ADDRESS_STOP = /^(공동|세대|비밀번호|pw|비번)\s*[:：]/i
+    const PHONE_PATTERN = /\d{3}[\s-]\d{3,4}[\s-]\d{4}/
+    let addrLines = []
+    let addrEnd = 2 // contentLines[2]부터 시작
+    for (let i = 2; i < contentLines.length; i++) {
+      const l = contentLines[i]
+      if (ADDRESS_STOP.test(l) || PHONE_PATTERN.test(l)) break
+      addrLines.push(l)
+      addrEnd = i + 1
+    }
+    const address = addrLines.join(' ').trim()
+    const rest = contentLines.slice(addrEnd)
 
     const doorLine = rest.find(l => /^공동\s*(?:비밀번호|비번|현관|pw|패스워드)?\s*[:：]/i.test(l))
     const unitLine = rest.find(l => /^세대\s*(?:비밀번호|비번|현관|pw|패스워드)?\s*[:：]/i.test(l))

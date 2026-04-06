@@ -12,7 +12,7 @@ import AdminHelpModal from './AdminHelpModal'
 import PhotoDownloadPage from './PhotoDownloadPage'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
-import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, hexToArgb, DRIVER_NAME_COLORS, getDriverSortKey } from '../../constants/styles'
+import { navy, blue, green, amber, red, border, muted, textC, iStyle, driverChip, hexToArgb, DRIVER_NAME_COLORS, getDriverSortKey, STATUS_CFG, getKSTToday } from '../../constants/styles'
 import { userName } from '../../utils/users'
 import { timeToMin } from '../../utils/parsing'
 import useWindowWidth from '../../utils/useWindowWidth'
@@ -33,7 +33,11 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [showHelp, setHelp] = useState(false)
   const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
 
-  const dragId = useRef(null)
+  const dragId         = useRef(null)
+  const touchGhost     = useRef(null)
+  const touchDragId    = useRef(null)
+  const touchOverId    = useRef(null)
+  const listContRef    = useRef(null)
 
   // 청구/처리 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
   useEffect(() => {
@@ -55,7 +59,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     e.preventDefault()
     setDragOverRowId(null)
     const from = dragId.current
-    const to   = dragOverRowId
+    const to   = e.currentTarget.dataset?.dragId  // state 대신 DOM에서 직접 읽어 stale closure 방지
     if (!from || !to || from === to) return
     const fromS = sorted.find(s=>s.id===from)
     const toS   = sorted.find(s=>s.id===to)
@@ -121,6 +125,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   }
 
   const [editingId, setEditingId] = useState(null)
+  const [searchText, setSearchText] = useState('')
 
   const drivers = useMemo(() =>
     users.filter(u => u.role === 'driver').sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
@@ -131,6 +136,17 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     driverDropOpen, setDriverDropOpen, toggleDriverFilter,
     baseFiltered, filtered, sorted, stats,
   } = useAdminFilters(schedules, drivers)
+
+  // searchText 필터 (address, cname, memo AND 조건)
+  const searchFiltered = useMemo(() => {
+    if (!searchText.trim()) return sorted
+    const q = searchText.trim().toLowerCase()
+    return sorted.filter(s =>
+      (s.address || '').toLowerCase().includes(q) ||
+      (s.cname   || '').toLowerCase().includes(q) ||
+      (s.memo    || '').toLowerCase().includes(q)
+    )
+  }, [sorted, searchText])
 
   const {
     deleteMode, setDeleteMode, checkedIds, setCheckedIds,
@@ -143,6 +159,104 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     assignTarget, setAssignTarget, toggleAssignCheck, toggleAssignAll,
     exitAssignMode, confirmAssign,
   } = useAssignMode(sorted, onUpdate)
+
+  // 터치 드래그앤드롭 (sorted/deleteMode/assignMode 선언 이후에 위치해야 함)
+  useEffect(() => {
+    const cont = listContRef.current
+    if (!cont) return
+
+    const getRowId = el => {
+      let cur = el
+      while (cur && cur !== cont) {
+        if (cur.dataset?.dragId) return cur.dataset.dragId
+        cur = cur.parentElement
+      }
+      return null
+    }
+
+    const onTouchStart = (e) => {
+      if (deleteMode || assignMode) return
+      const id = getRowId(e.target)
+      if (!id) return
+      touchDragId.current = id
+      const srcEl = cont.querySelector(`[data-drag-id="${id}"]`)
+      if (!srcEl) return
+      const rect = srcEl.getBoundingClientRect()
+      const ghost = srcEl.cloneNode(true)
+      ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.7;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:12px;transition:none;`
+      document.body.appendChild(ghost)
+      touchGhost.current = ghost
+    }
+
+    const onTouchMove = (e) => {
+      if (!touchDragId.current) return
+      e.preventDefault()
+      const touch = e.touches[0]
+      const ghost = touchGhost.current
+      if (ghost) {
+        ghost.style.left = `${touch.clientX - ghost.offsetWidth / 2}px`
+        ghost.style.top  = `${touch.clientY - ghost.offsetHeight / 2}px`
+      }
+      ghost && (ghost.style.display = 'none')
+      const el = document.elementFromPoint(touch.clientX, touch.clientY)
+      ghost && (ghost.style.display = '')
+      const overId = el ? getRowId(el) : null
+      if (overId && overId !== touchDragId.current) {
+        if (touchOverId.current !== overId) {
+          if (touchOverId.current) {
+            const prev = cont.querySelector(`[data-drag-id="${touchOverId.current}"]`)
+            if (prev) prev.style.outline = ''
+          }
+          touchOverId.current = overId
+          const cur = cont.querySelector(`[data-drag-id="${overId}"]`)
+          if (cur) cur.style.outline = `2px dashed ${blue}`
+        }
+      } else if (!overId && touchOverId.current) {
+        const prev = cont.querySelector(`[data-drag-id="${touchOverId.current}"]`)
+        if (prev) prev.style.outline = ''
+        touchOverId.current = null
+      }
+    }
+
+    const onTouchEnd = () => {
+      if (!touchDragId.current) return
+      if (touchGhost.current) { document.body.removeChild(touchGhost.current); touchGhost.current = null }
+      if (touchOverId.current) {
+        const el = cont.querySelector(`[data-drag-id="${touchOverId.current}"]`)
+        if (el) el.style.outline = ''
+      }
+      const from = touchDragId.current
+      const to   = touchOverId.current
+      touchDragId.current = null
+      touchOverId.current = null
+      if (!from || !to || from === to) return
+      const fromS = sorted.find(s => s.id === from)
+      const toS   = sorted.find(s => s.id === to)
+      if (!fromS || !toS) return
+      if (fromS.driver_id !== toS.driver_id) {
+        const toOrder = toS.order ?? sorted.indexOf(toS)
+        onUpdate(from, { driver_id: toS.driver_id, order: toOrder - 0.5 })
+      } else {
+        const group   = sorted.filter(s => s.driver_id === fromS.driver_id)
+        const fromIdx = group.findIndex(s => s.id === from)
+        const toIdx   = group.findIndex(s => s.id === to)
+        if (fromIdx < 0 || toIdx < 0) return
+        const newGroup = [...group]
+        newGroup.splice(fromIdx, 1)
+        newGroup.splice(toIdx, 0, fromS)
+        newGroup.forEach((s, i) => { if ((s.order ?? -1) !== i) onUpdate(s.id, { order: i }) })
+      }
+    }
+
+    cont.addEventListener('touchstart', onTouchStart, { passive: true })
+    cont.addEventListener('touchmove',  onTouchMove,  { passive: false })
+    cont.addEventListener('touchend',   onTouchEnd,   { passive: true })
+    return () => {
+      cont.removeEventListener('touchstart', onTouchStart)
+      cont.removeEventListener('touchmove',  onTouchMove)
+      cont.removeEventListener('touchend',   onTouchEnd)
+    }
+  }, [deleteMode, assignMode, sorted, onUpdate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportCSV = async () => {
     const carNum = id => { const u = users.find(u => u.id === id); return u?.car_number || u?.car_num || '' }
@@ -368,7 +482,41 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
         </div>
       </div>
 
-      <div style={{ padding:20, maxWidth:1060, margin:'0 auto' }}>
+      <div ref={listContRef} style={{ padding:20, maxWidth:1060, margin:'0 auto' }}>
+        {/* 오늘 현황 요약 배너 */}
+        {(() => {
+          const today = getKSTToday()
+          const todayAll = schedules.filter(s => s.date === today)
+          if (todayAll.length === 0) return null
+          const todayDone    = todayAll.filter(s => s.status === '완료' || s.status === '청구완료').length
+          const todayWorking = todayAll.filter(s => s.status === '진행중').length
+          const todayMoving  = todayAll.filter(s => s.status === '이동중').length
+          const todayUnassigned = todayAll.filter(s => !s.driver_id && s.status === '대기').length
+          const allDone = todayAll.every(s => s.status === '완료' || s.status === '청구완료')
+          return (
+            <div style={{ background:'#fff', border:`1px solid ${border}`, borderRadius:10, padding:'10px 16px', marginBottom:14, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+              <span style={{ fontSize:13, fontWeight:700, color:navy, marginRight:4 }}>
+                오늘 {todayAll.length}건
+                {allDone && <span style={{ marginLeft:8, fontSize:12, color:green, fontWeight:700 }}>전체 완료</span>}
+              </span>
+              <span style={{ color:border }}>·</span>
+              {[
+                { label:'완료', count:todayDone,      color:STATUS_CFG['완료'].color,   bg:STATUS_CFG['완료'].bg,    filterVal:'완료' },
+                { label:'진행중', count:todayWorking, color:STATUS_CFG['진행중'].color, bg:STATUS_CFG['진행중'].bg,  filterVal:'작업중' },
+                { label:'이동중', count:todayMoving,  color:STATUS_CFG['이동중'].color, bg:STATUS_CFG['이동중'].bg,  filterVal:'이동중' },
+                { label:'미배정', count:todayUnassigned, color:red, bg:'#fef2f2',        filterVal:'' },
+              ].map(({ label, count, color, bg, filterVal }) => (
+                <button key={label}
+                  onClick={() => setFStatus(filterStatus === filterVal ? '' : filterVal)}
+                  style={{ background: filterStatus === filterVal ? bg : 'transparent', border:`1px solid ${filterStatus === filterVal ? color : border}`, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:700, color, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
+                  <span style={{ fontSize:15, fontWeight:800 }}>{count}</span>
+                  <span style={{ fontWeight:600 }}>{label}</span>
+                </button>
+              ))}
+            </div>
+          )
+        })()}
+
         <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, marginBottom:16 }}>
           {[
             ['전체',    stats.total,    '#6366f1', ''],
@@ -399,8 +547,34 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
 
         <Card style={{ marginBottom:14 }}>
           <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginBottom:10 }}>
-            <input type="date" value={filterDate} onChange={e=>setFDate(e.target.value)}
-              style={{ ...iStyle, width:'auto', height:38 }}/>
+            {/* 날짜 ‹ 오늘 › 버튼 */}
+            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <button
+                onClick={() => {
+                  const base = filterDate || getKSTToday()
+                  const d = new Date(base); d.setDate(d.getDate() - 1)
+                  setFDate(d.toISOString().slice(0,10))
+                }}
+                style={{ height:38, width:32, border:`1px solid ${border}`, borderRadius:8, background:'#f8fafc', color:muted, fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                ‹
+              </button>
+              <input type="date" value={filterDate} onChange={e=>setFDate(e.target.value)}
+                style={{ ...iStyle, width:'auto', height:38 }}/>
+              <button
+                onClick={() => {
+                  const base = filterDate || getKSTToday()
+                  const d = new Date(base); d.setDate(d.getDate() + 1)
+                  setFDate(d.toISOString().slice(0,10))
+                }}
+                style={{ height:38, width:32, border:`1px solid ${border}`, borderRadius:8, background:'#f8fafc', color:muted, fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                ›
+              </button>
+              <button
+                onClick={() => setFDate(getKSTToday())}
+                style={{ height:38, padding:'0 10px', border:`1px solid ${border}`, borderRadius:8, background:'#f8fafc', color:muted, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                오늘
+              </button>
+            </div>
 
             <div style={{ width:1, height:32, background:border }}/>
 
@@ -473,7 +647,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                   ? <span style={{ color:green, fontWeight:600 }}>{assignChecked.size}건 선택됨</span>
                   : deleteMode && checkedIds.size > 0
                   ? <span style={{ color:red, fontWeight:600 }}>{checkedIds.size}건 선택됨</span>
-                  : `총 ${sorted.length}건`
+                  : `총 ${searchFiltered.length}건`
                 }
               </span>
               <button onClick={applyTimeSort}
@@ -564,18 +738,36 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
               )}
             </div>
           )}
+
+          {/* 검색창 */}
+          <div style={{ marginTop:10, position:'relative' }}>
+            <input
+              type="text"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              placeholder="주소/업체 검색..."
+              style={{ ...iStyle, height:36, paddingRight: searchText ? 34 : 12, fontSize:13 }}
+            />
+            {searchText && (
+              <button
+                onClick={() => setSearchText('')}
+                style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:muted, fontSize:16, cursor:'pointer', lineHeight:1, padding:0 }}>
+                ✕
+              </button>
+            )}
+          </div>
         </Card>
 
         {/* 카드 뷰 */}
         {listView === 'card' && (
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            {sorted.length === 0 && (
+            {searchFiltered.length === 0 && (
               <div style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</div>
             )}
             {(() => {
               const groups = []
               let lastId = '__none__'
-              sorted.forEach(s => {
+              searchFiltered.forEach(s => {
                 const gid = s.driver_id || '__unassigned__'
                 if (gid !== lastId) { groups.push({ driverId: s.driver_id||null, items:[] }); lastId = gid }
                 groups[groups.length-1].items.push(s)
@@ -605,6 +797,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         const isDragOver = dragOverRowId === s.id
                         return (
                           <div key={s.id}
+                            data-drag-id={s.id}
                             draggable={!deleteMode && !assignMode}
                             onDragStart={()=>handleDragStart(s.id)}
                             onDragOver={e=>handleDragOver(e, s.id)}
@@ -689,8 +882,8 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                     {(deleteMode||assignMode) && (
                       <th style={{ padding:'10px 12px', textAlign:'center', fontSize:14, color:muted, fontWeight:600, width:60, background:'#f8fafc' }}>
                         <button onClick={assignMode ? toggleAssignAll : toggleAll}
-                          style={{ background: (assignMode ? assignChecked.size===sorted.length : checkedIds.size===sorted.length)&&sorted.length>0 ? (assignMode?'#059669':red) : '#e2e8f0', color:'#fff', border:'none', borderRadius:5, padding:'4px 8px', fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
-                          {(assignMode ? assignChecked.size===sorted.length : checkedIds.size===sorted.length)&&sorted.length>0 ? '전체해제' : '전체선택'}
+                          style={{ background: (assignMode ? assignChecked.size===searchFiltered.length : checkedIds.size===searchFiltered.length)&&searchFiltered.length>0 ? (assignMode?'#059669':red) : '#e2e8f0', color:'#fff', border:'none', borderRadius:5, padding:'4px 8px', fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+                          {(assignMode ? assignChecked.size===searchFiltered.length : checkedIds.size===searchFiltered.length)&&searchFiltered.length>0 ? '전체해제' : '전체선택'}
                         </button>
                       </th>
                     )}
@@ -702,10 +895,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                   </tr>
                 </thead>
                 <tbody>
-                  {sorted.length===0 && (
+                  {searchFiltered.length===0 && (
                     <tr><td colSpan={9} style={{ textAlign:'center', padding:40, color:muted }}>일정이 없습니다</td></tr>
                   )}
-                  {sorted.map(s => {
+                  {searchFiltered.map(s => {
                     const showDiv = s.driver_id !== lastDriverId
                     lastDriverId = s.driver_id
                     const chip = s.driver_id ? driverChip(s.driver_id, drivers) : null
@@ -727,12 +920,13 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                             }}>
                               {s.driver_id ? `▸ ${userName(s.driver_id)}` : '▸ 미배치'}
                               <span style={{ marginLeft:10, fontWeight:400, opacity:.65, fontSize:15 }}>
-                                {sorted.filter(x=>x.driver_id===s.driver_id).length}건
+                                {searchFiltered.filter(x=>x.driver_id===s.driver_id).length}건
                               </span>
                             </td>
                           </tr>
                         )}
                         <tr
+                          data-drag-id={s.id}
                           draggable={!deleteMode && !assignMode && !isEdit}
                           onDragStart={()=>handleDragStart(s.id)}
                           onDragOver={e=>handleDragOver(e, s.id)}
@@ -874,6 +1068,20 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                 <input type="date" value={copyModal._copyDate}
                   onChange={e=>setCopyModal(p=>({...p, _copyDate:e.target.value}))}
                   style={{ ...iStyle }}/>
+                {/* 퀵 날짜 버튼 */}
+                <div style={{ display:'flex', gap:4, marginTop:6, flexWrap:'wrap' }}>
+                  {[1,3,7,14].map(days => (
+                    <button key={days}
+                      onClick={() => {
+                        const d = new Date(copyModal._copyDate || getKSTToday())
+                        d.setDate(d.getDate() + days)
+                        setCopyModal(p => ({ ...p, _copyDate: d.toISOString().slice(0,10) }))
+                      }}
+                      style={{ flex:1, padding:'4px 0', borderRadius:6, border:`1px solid ${border}`, background:'#f8fafc', fontSize:11, fontWeight:600, color:muted, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      +{days}일
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:6 }}>시간</div>

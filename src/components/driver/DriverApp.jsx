@@ -180,8 +180,25 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
           </div>
         </div>
         {tab === 'schedule' && (
-          <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)} className="driver-date"
-            style={{ padding:'9px 12px', borderRadius:9, border:'1.5px solid #eaecf0', background:'#f9fafb', color:'#111827', fontSize:15, fontWeight:600, width:'100%', boxSizing:'border-box', outline:'none' }}/>
+          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <button
+              onClick={() => { const d = new Date(filterDate); d.setDate(d.getDate() - 1); setFD(d.toISOString().slice(0,10)) }}
+              style={{ flexShrink:0, height:40, width:36, border:'1.5px solid #eaecf0', borderRadius:9, background:'#f9fafb', color:'#374151', fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              ‹
+            </button>
+            <input type="date" value={filterDate} onChange={e=>setFD(e.target.value)} className="driver-date"
+              style={{ flex:1, padding:'9px 12px', borderRadius:9, border:'1.5px solid #eaecf0', background:'#f9fafb', color:'#111827', fontSize:15, fontWeight:600, boxSizing:'border-box', outline:'none', minWidth:0 }}/>
+            <button
+              onClick={() => { const d = new Date(filterDate); d.setDate(d.getDate() + 1); setFD(d.toISOString().slice(0,10)) }}
+              style={{ flexShrink:0, height:40, width:36, border:'1.5px solid #eaecf0', borderRadius:9, background:'#f9fafb', color:'#374151', fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              ›
+            </button>
+            <button
+              onClick={() => setFD(today)}
+              style={{ flexShrink:0, height:40, padding:'0 10px', border:'1.5px solid #eaecf0', borderRadius:9, background:'#f9fafb', color:'#374151', fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+              오늘
+            </button>
+          </div>
         )}
       </div>
 
