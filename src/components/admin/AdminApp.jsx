@@ -176,22 +176,25 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       return null
     }
 
+    let longPressTimer = null
     const onTouchStart = (e) => {
       if (deleteMode || assignMode) return
       const id = getRowId(e.target)
       if (!id) return
-      touchDragId.current = id
-      const srcEl = cont.querySelector(`[data-drag-id="${id}"]`)
-      if (!srcEl) return
-      const rect = srcEl.getBoundingClientRect()
-      const ghost = srcEl.cloneNode(true)
-      ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.7;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:12px;transition:none;`
-      document.body.appendChild(ghost)
-      touchGhost.current = ghost
+      longPressTimer = setTimeout(() => {
+        touchDragId.current = id
+        const srcEl = cont.querySelector(`[data-drag-id="${id}"]`)
+        if (!srcEl) return
+        const rect = srcEl.getBoundingClientRect()
+        const ghost = srcEl.cloneNode(true)
+        ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.7;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:12px;transition:none;`
+        document.body.appendChild(ghost)
+        touchGhost.current = ghost
+      }, 500)
     }
 
     const onTouchMove = (e) => {
-      if (!touchDragId.current) return
+      if (!touchDragId.current) { clearTimeout(longPressTimer); return }
       e.preventDefault()
       const touch = e.touches[0]
       const ghost = touchGhost.current
@@ -221,6 +224,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     }
 
     const onTouchEnd = () => {
+      clearTimeout(longPressTimer)
       if (!touchDragId.current) return
       if (touchGhost.current) { document.body.removeChild(touchGhost.current); touchGhost.current = null }
       if (touchOverId.current) {
