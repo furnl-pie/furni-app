@@ -9,6 +9,7 @@ import BulkScheduleModal from './BulkScheduleModal'
 import DriverMgrModal from './DriverMgrModal'
 import AdminSettingsModal from './AdminSettingsModal'
 import AdminHelpModal from './AdminHelpModal'
+import NoticeModal from './NoticeModal'
 import PhotoDownloadPage from './PhotoDownloadPage'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
@@ -31,6 +32,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [showDriverMgr, setDriverMgr] = useState(false)
   const [showAdminSettings, setAdminSettings] = useState(false)
   const [showHelp, setHelp] = useState(false)
+  const [showNotice, setNotice] = useState(false)
   const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
 
   const dragId         = useRef(null)
@@ -467,7 +469,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           </div>
         </div>
         <div style={{ display:'flex', gap:4, justifyContent:'flex-end', alignItems:'center' }}>
-          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['⬇','엑셀',exportCSV],['👤','기사',()=>setDriverMgr(true)],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
+          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['⬇','엑셀',exportCSV],['👤','기사',()=>setDriverMgr(true)],['📢','공지',()=>setNotice(true)],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
             <button key={label} onClick={fn}
               style={{ height:32, padding: isPC ? '0 11px' : '0 9px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize: isPC ? 12 : 15, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
               onMouseEnter={e=>{ e.currentTarget.style.background='#eef2ff'; e.currentTarget.style.color='#4f46e5'; e.currentTarget.style.borderColor='#a5b4fc' }}
@@ -1041,6 +1043,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
         </div>
       )}
       {showHelp && <AdminHelpModal onClose={()=>setHelp(false)}/>}
+      {showNotice && <NoticeModal onClose={()=>setNotice(false)}/>}
       {showModal && <BulkScheduleModal drivers={drivers} schedules={schedules} onAddMany={list=>{ onAddMany(list); setModal(false) }} onUpdate={onUpdate} onClose={()=>setModal(false)}/>}
       {showDriverMgr && <DriverMgrModal drivers={drivers} schedules={schedules} onAdd={onAddDriver} onUpdate={onUpdateDriver} onDelete={onDeleteDriver} onClose={()=>setDriverMgr(false)}/>}
       {showAdminSettings && <AdminSettingsModal user={user} onUpdateDriver={onUpdateDriver} onClose={()=>setAdminSettings(false)}/>}
