@@ -9,9 +9,9 @@ import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, border, muted, textC, iStyle, today } from '../../constants/styles'
 import { userName } from '../../utils/users'
-import { hashPw } from '../../utils/auth'
+import { verifyPw } from '../../utils/auth'
 
-export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
+export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout, onRequestDeletion }) {
   const [view, setView]        = useState('list')
   const [tab, setTab]          = useState('schedule') // 'schedule' | 'disposal' | 'chat'
   const [unreadCount, setUnread] = useState(0)
@@ -29,6 +29,8 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   )
   const [notification, setNotification] = useState(null)
+  const [showDeleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleteStatus, setDeleteStatus]       = useState('idle') // idle | done
   const notifTimer   = useRef(null)
   const prevMineRef  = useRef(null)
 
@@ -140,8 +142,8 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
 
   const changePw = async () => {
     setPwErr('')
-    const currentHashed = await hashPw(pwForm.current)
-    if (user.pw !== currentHashed && user.pw !== pwForm.current) { setPwErr('현재 비밀번호가 틀렸습니다'); return }
+    const match = await verifyPw(pwForm.current, user.pw)
+    if (!match) { setPwErr('현재 비밀번호가 틀렸습니다'); return }
     if (pwForm.next.length < 4)     { setPwErr('새 비밀번호는 4자 이상 입력하세요'); return }
     if (pwForm.next !== pwForm.confirm) { setPwErr('새 비밀번호가 일치하지 않습니다'); return }
     await onUpdateDriver(user.id, { pw: pwForm.next })
@@ -382,7 +384,7 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
               <div style={{ borderTop:`1px solid ${border}`, marginBottom:24 }}/>
 
               {/* 알림 설정 */}
-              <div>
+              <div style={{ marginBottom:24 }}>
                 <div style={{ fontSize:13, fontWeight:700, color:navy, marginBottom:10 }}>🔔 알림 설정</div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', background:'#f8fafc', borderRadius:10, border:`1px solid ${border}` }}>
                   <div>
@@ -397,6 +399,44 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
                   <div style={{ fontSize:11, color:muted, marginTop:8, lineHeight:1.6 }}>
                     스마트폰 설정 → 브라우저 앱 → 알림 권한을 허용으로 변경하세요.
                   </div>
+                )}
+              </div>
+
+              <div style={{ borderTop:`1px solid ${border}`, marginBottom:24 }}/>
+
+              {/* 계정 삭제 요청 */}
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:'#dc2626', marginBottom:10 }}>🗑️ 계정 삭제</div>
+                {deleteStatus === 'done' ? (
+                  <div style={{ fontSize:13, color:'#166534', background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10, padding:'12px 14px', fontWeight:600 }}>
+                    ✅ 삭제 요청이 접수되었습니다. 관리자 확인 후 7일 이내 처리됩니다.
+                  </div>
+                ) : showDeleteConfirm ? (
+                  <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'14px' }}>
+                    <div style={{ fontSize:13, color:'#dc2626', fontWeight:600, marginBottom:8 }}>정말 계정 삭제를 요청하시겠습니까?</div>
+                    <div style={{ fontSize:12, color:'#6b7280', marginBottom:14, lineHeight:1.6 }}>
+                      계정, 일정 내역 등 모든 데이터가 영구 삭제되며 복구가 불가능합니다.
+                    </div>
+                    <div style={{ display:'flex', gap:8 }}>
+                      <button onClick={()=>setDeleteConfirm(false)}
+                        style={{ flex:1, padding:'10px 0', borderRadius:8, border:`1px solid ${border}`, background:'#f8fafc', color:muted, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                        취소
+                      </button>
+                      <button onClick={async ()=>{
+                        await onRequestDeletion({ userId:user.id, name:user.name, phone:user.phone, reason:'앱 내 삭제 요청' })
+                        setDeleteConfirm(false)
+                        setDeleteStatus('done')
+                      }}
+                        style={{ flex:2, padding:'10px 0', borderRadius:8, border:'none', background:'#dc2626', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                        삭제 요청
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={()=>setDeleteConfirm(true)}
+                    style={{ width:'100%', padding:'11px 0', borderRadius:10, border:'1.5px solid #fca5a5', background:'#fff', color:'#dc2626', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                    계정 삭제 요청
+                  </button>
                 )}
               </div>
 

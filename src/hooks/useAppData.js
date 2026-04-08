@@ -7,7 +7,39 @@ import {
   onSnapshot, writeBatch,
   serverTimestamp,
 } from 'firebase/firestore'
-import { hashPw } from '../utils/auth'
+import { hashPw, verifyPw } from '../utils/auth'
+
+// ── 로그인 시도 횟수 제한 ─────────────────────────────────────────
+const MAX_ATTEMPTS   = 5
+const LOCK_MS        = 15 * 60 * 1000  // 15분
+
+function getRateEntry(id) {
+  try {
+    const raw = localStorage.getItem(`_la_${id}`)
+    return raw ? JSON.parse(raw) : { count: 0, lockUntil: 0 }
+  } catch { return { count: 0, lockUntil: 0 } }
+}
+function setRateEntry(id, entry) {
+  try { localStorage.setItem(`_la_${id}`, JSON.stringify(entry)) } catch {}
+}
+function checkRateLimit(id) {
+  const { count, lockUntil } = getRateEntry(id)
+  if (lockUntil > Date.now()) {
+    const remaining = Math.ceil((lockUntil - Date.now()) / 60000)
+    return { locked: true, remaining }
+  }
+  if (lockUntil > 0) setRateEntry(id, { count: 0, lockUntil: 0 }) // 만료된 잠금 해제
+  return { locked: false }
+}
+function recordFail(id) {
+  const entry = getRateEntry(id)
+  const count = (entry.lockUntil > 0 && entry.lockUntil <= Date.now()) ? 1 : entry.count + 1
+  const lockUntil = count >= MAX_ATTEMPTS ? Date.now() + LOCK_MS : 0
+  setRateEntry(id, { count, lockUntil })
+}
+function resetRate(id) {
+  try { localStorage.removeItem(`_la_${id}`) } catch {}
+}
 import { uploadPhotos } from '../utils/cloudinary'
 
 // ── 훅 ──────────────────────────────────────────────────────────
@@ -51,17 +83,55 @@ export function useAppData() {
     return () => { unsubUsers?.(); unsubSchedules?.() }
   }, [])
 
-  // ── 로그인 (SHA-256 해싱 + 평문→해시 자동 마이그레이션) ─────────
+  // ── 로그인 (salt+SHA-256, 구형 자동 마이그레이션, 횟수 제한) ─────
   const login = useCallback(async (id, pw) => {
-    const hashed = await hashPw(pw)
-    const user = users.find(u => u.id === id && (u.pw === hashed || u.pw === pw))
-    if (!user) return { error: '아이디 또는 비밀번호가 올바르지 않습니다' }
-    // 평문으로 일치한 경우 → 해시로 업그레이드 (백그라운드)
-    if (user.pw === pw && user.pw !== hashed) {
-      updateDoc(doc(db, 'users', user.id), { pw: hashed }).catch(() => {})
+    const rateCheck = checkRateLimit(id)
+    if (rateCheck.locked) {
+      return { error: `로그인 시도 횟수 초과. ${rateCheck.remaining}분 후 다시 시도하세요.` }
     }
+
+    const user = users.find(u => u.id === id)
+    if (!user) {
+      recordFail(id)
+      return { error: '아이디 또는 비밀번호가 올바르지 않습니다' }
+    }
+
+    const match = await verifyPw(pw, user.pw)
+    if (!match) {
+      recordFail(id)
+      return { error: '아이디 또는 비밀번호가 올바르지 않습니다' }
+    }
+
+    // 구형 해시(솔트 없음 또는 평문) → 신형 salt:hash 로 업그레이드 (백그라운드)
+    if (!user.pw.includes(':')) {
+      hashPw(pw).then(newHash =>
+        updateDoc(doc(db, 'users', user.id), { pw: newHash }).catch(() => {})
+      )
+    }
+
+    // 세션 토큰 생성 (30일)
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0')).join('')
+    const expiry = Date.now() + 30 * 24 * 60 * 60 * 1000
+    updateDoc(doc(db, 'users', user.id), { sessionToken: token, sessionExpiry: expiry }).catch(() => {})
+
+    resetRate(id)
+    return { user, sessionToken: token }
+  }, [users])
+
+  // ── 토큰으로 자동 로그인 ───────────────────────────────────────────
+  const loginWithToken = useCallback(async (userId, token) => {
+    if (!token || !userId) return { error: '세션 없음' }
+    const user = users.find(u => u.id === userId)
+    if (!user || user.sessionToken !== token) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
+    if (!user.sessionExpiry || user.sessionExpiry < Date.now()) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
     return { user }
   }, [users])
+
+  // ── 세션 삭제 (로그아웃 시) ───────────────────────────────────────
+  const clearSession = useCallback(async (userId) => {
+    updateDoc(doc(db, 'users', userId), { sessionToken: null, sessionExpiry: null }).catch(() => {})
+  }, [])
 
   // ── 일정 추가 ─────────────────────────────────────────────────
   const addSchedules = useCallback(async (list) => {
@@ -190,10 +260,24 @@ export function useAppData() {
     await batch.commit()
   }, [schedules])
 
+  // ── 계정 삭제 요청 ───────────────────────────────────────────────
+  const requestAccountDeletion = useCallback(async ({ userId, name, phone, reason }) => {
+    const { addDoc, collection: col } = await import('firebase/firestore')
+    await addDoc(col(db, 'deletion_requests'), {
+      userId: userId || '',
+      name: name || '',
+      phone: phone || '',
+      reason: reason || '',
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    })
+  }, [])
+
   return {
     users, schedules, loading, error,
-    login,
+    login, loginWithToken, clearSession,
     addSchedules, updateSchedule, deleteSchedules,
     addDriver, updateDriver, deleteDriver,
+    requestAccountDeletion,
   }
 }

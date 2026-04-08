@@ -4,51 +4,58 @@ import { Field, Btn } from './common/ui'
 import { navy, muted, red, border, textC, iStyle } from '../constants/styles'
 import { VERSION, CHANGELOG } from '../constants/version'
 
-export default function LoginPage({ onLogin, users }) {
+export default function LoginPage({ onLogin, onLoginWithToken, users }) {
   const [id,        setId]        = useState(() => localStorage.getItem('saved_id') || '')
-  const [pw,        setPw]        = useState(() => localStorage.getItem('saved_pw') || '')
+  const [pw,        setPw]        = useState('')
   const [saveId,    setSaveId]    = useState(() => localStorage.getItem('save_id') === '1')
-  const [savePw,    setSavePw]    = useState(() => localStorage.getItem('save_pw') === '1')
   const [autoLogin, setAutoLogin] = useState(() => localStorage.getItem('auto_login') === '1')
   const [err,       setErr]       = useState('')
   const [showChangelog, setShowChangelog] = useState(
     () => localStorage.getItem('app_version_seen') !== VERSION
   )
 
+  // 토큰 기반 자동 로그인
   useEffect(() => {
-    if (autoLogin && users.length > 0) {
-      const savedId = localStorage.getItem('saved_id') || ''
-      const savedPw = localStorage.getItem('saved_pw') || ''
-      if (savedId && savedPw) {
-        onLogin(savedId, savedPw).catch(() => {})
+    if (!autoLogin || users.length === 0) return
+    const savedId = localStorage.getItem('saved_id') || ''
+    const token   = localStorage.getItem('session_token') || ''
+    if (!savedId || !token) return
+    onLoginWithToken(savedId, token).then(result => {
+      if (result?.error) {
+        // 토큰 만료 → 자동로그인 해제
+        localStorage.removeItem('session_token')
+        localStorage.setItem('auto_login', '0')
+        setAutoLogin(false)
+        setErr('자동 로그인이 만료되었습니다. 다시 로그인해 주세요.')
       }
-    }
-  }, [users])
+    }).catch(() => {})
+  }, [users]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = async () => {
     const result = await onLogin(id, pw)
     if (result.error) return setErr(result.error)
 
-    if (saveId)    { localStorage.setItem('saved_id', id); localStorage.setItem('save_id','1') }
-    else           { localStorage.removeItem('saved_id');   localStorage.setItem('save_id','0') }
-    if (savePw)    { localStorage.setItem('saved_pw', pw); localStorage.setItem('save_pw','1') }
-    else           { localStorage.removeItem('saved_pw');   localStorage.setItem('save_pw','0') }
-    if (autoLogin) { localStorage.setItem('auto_login','1') }
-    else           { localStorage.setItem('auto_login','0') }
+    if (saveId) { localStorage.setItem('saved_id', id); localStorage.setItem('save_id', '1') }
+    else        { localStorage.removeItem('saved_id');   localStorage.setItem('save_id', '0') }
+
+    if (autoLogin && result.sessionToken) {
+      localStorage.setItem('session_token', result.sessionToken)
+      localStorage.setItem('session_uid',   id)
+      localStorage.setItem('auto_login',    '1')
+    } else {
+      localStorage.removeItem('session_token')
+      localStorage.removeItem('session_uid')
+      localStorage.setItem('auto_login', '0')
+    }
   }
 
   const toggleSaveId = () => {
     const v = !saveId; setSaveId(v)
-    if (!v) { setSavePw(false); setAutoLogin(false) }
-  }
-  const toggleSavePw = () => {
-    const v = !savePw; setSavePw(v)
     if (!v) setAutoLogin(false)
-    if (v && !saveId) setSaveId(true)
   }
   const toggleAutoLogin = () => {
     const v = !autoLogin; setAutoLogin(v)
-    if (v) { setSaveId(true); setSavePw(true) }
+    if (v) setSaveId(true)
   }
 
   const chkStyle = (on) => ({
@@ -90,13 +97,12 @@ export default function LoginPage({ onLogin, users }) {
 
         <div style={{ display:'flex', gap:16, marginBottom:16, flexWrap:'wrap' }}>
           {[
-            [saveId,    toggleSaveId,    '아이디 저장',    'chk-save-id'],
-            [savePw,    toggleSavePw,    '비밀번호 저장',  'chk-save-pw'],
-            [autoLogin, toggleAutoLogin, '자동 로그인',    'chk-auto-login'],
-          ].map(([on, fn, label, id]) => (
-            <label key={id} htmlFor={id}
+            [saveId,    toggleSaveId,    '아이디 저장',  'chk-save-id'],
+            [autoLogin, toggleAutoLogin, '자동 로그인',  'chk-auto-login'],
+          ].map(([on, fn, label, cid]) => (
+            <label key={cid} htmlFor={cid}
               style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', userSelect:'none' }}>
-              <input type="checkbox" id={id} checked={on} onChange={fn}
+              <input type="checkbox" id={cid} checked={on} onChange={fn}
                 style={{ position:'absolute', opacity:0, width:0, height:0 }}/>
               <div style={chkStyle(on)} aria-hidden="true">
                 {on && <span style={{ color:'#fff', fontSize:11, fontWeight:700, lineHeight:1 }}>✓</span>}

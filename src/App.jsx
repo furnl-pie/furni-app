@@ -7,6 +7,7 @@ import { updateUsers } from './utils/users'
 import LoginPage from './components/LoginPage'
 import AdminApp from './components/admin/AdminApp'
 import DriverApp from './components/driver/DriverApp'
+import DeleteAccountPage from './components/DeleteAccountPage'
 import TruckIcon from './components/common/TruckIcon'
 import { navy, border, muted, textC } from './constants/styles'
 import { VERSION, CHANGELOG, CHANGELOG_DRIVER } from './constants/version'
@@ -17,10 +18,16 @@ export default function App() {
   const [showUpdate, setShowUpdate] = useState(false)
   const {
     users, schedules, loading, error,
-    login,
+    login, loginWithToken, clearSession,
     addSchedules, updateSchedule, deleteSchedules,
     addDriver, updateDriver, deleteDriver,
+    requestAccountDeletion,
   } = useAppData()
+
+  // /delete-account 경로는 로그인 없이 접근 가능
+  if (window.location.pathname === '/delete-account') {
+    return <DeleteAccountPage onSubmit={requestAccountDeletion} />
+  }
 
   updateUsers(users)
 
@@ -81,13 +88,24 @@ export default function App() {
     </div>
   )
 
-  if (!user) return <LoginPage onLogin={async (id, pw) => {
-    const result = await login(id, pw)
-    if (result.user) setUser(result.user)
-    return result
-  }} users={users}/>
+  if (!user) return <LoginPage
+    onLogin={async (id, pw) => {
+      const result = await login(id, pw)
+      if (result.user) setUser(result.user)
+      return result
+    }}
+    onLoginWithToken={async (userId, token) => {
+      const result = await loginWithToken(userId, token)
+      if (result.user) setUser(result.user)
+      return result
+    }}
+    users={users}
+  />
 
   const logoutHandler = () => {
+    clearSession(user.id)
+    localStorage.removeItem('session_token')
+    localStorage.removeItem('session_uid')
     localStorage.setItem('auto_login', '0')
     setUser(null)
     setLogoutConfirm(false)
@@ -122,6 +140,7 @@ export default function App() {
             onUpdate={(id, patch) => updateSchedule(id, patch)}
             onUpdateDriver={updateDriver}
             onLogout={logoutHandler}
+            onRequestDeletion={requestAccountDeletion}
           />
       }
 

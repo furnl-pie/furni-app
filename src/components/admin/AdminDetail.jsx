@@ -136,9 +136,27 @@ export default function AdminDetail({ schedule, onBack, onUpdate, drivers }) {
 
     if (!imgUrls.length) return
 
+    // 허용된 이미지 호스트만 fetch (그 외 도메인은 보안상 차단)
+    const ALLOWED_HOSTS = [
+      'res.cloudinary.com',
+      'firebasestorage.googleapis.com',
+      'storage.googleapis.com',
+      'i.imgur.com',
+      'img.icons8.com',
+      'images.unsplash.com',
+    ]
+    const isAllowedUrl = (url) => {
+      try {
+        const { protocol, hostname } = new URL(url)
+        if (protocol !== 'https:') return false
+        return ALLOWED_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h))
+      } catch { return false }
+    }
+
     // 각 URL을 fetch → 리사이즈 후 base64 (CORS 실패 시 조용히 스킵)
     const results = []
     for (const url of imgUrls) {
+      if (!isAllowedUrl(url)) continue
       try {
         const res = await fetch(url, { mode: 'cors' })
         if (!res.ok) continue
