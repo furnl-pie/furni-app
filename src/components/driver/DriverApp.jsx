@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import DriverDetail from './DriverDetail'
 import DisposalTab from './DisposalTab'
@@ -103,14 +103,16 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
   }, [])
 
-  // 읽지 않은 메시지 수 구독
+  // 읽지 않은 메시지 수 구독 (클라이언트 필터링)
   useEffect(() => {
     const q = query(
       collection(db, 'chats', user.id, 'messages'),
-      where('read', '==', false),
-      where('sender', '!=', user.id)
+      where('read', '==', false)
     )
-    const unsub = onSnapshot(q, snap => setUnread(snap.size))
+    const unsub = onSnapshot(q, snap => {
+      const count = snap.docs.filter(d => d.data().sender !== user.id).length
+      setUnread(count)
+    })
     return unsub
   }, [user.id])
 

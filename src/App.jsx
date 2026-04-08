@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore'
+import { doc, updateDoc } from 'firebase/firestore'
 import { db } from './lib/firebase'
 import { useAppData } from './hooks/useAppData'
 import { useFCM } from './hooks/useFCM'
@@ -15,8 +15,6 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [showLogoutConfirm, setLogoutConfirm] = useState(false)
   const [showUpdate, setShowUpdate] = useState(false)
-  const [notice, setNotice] = useState(null) // { adminItems, driverItems, active }
-  const [showNotice, setShowNotice] = useState(false)
   const {
     users, schedules, loading, error,
     login,
@@ -24,7 +22,6 @@ export default function App() {
     addDriver, updateDriver, deleteDriver,
   } = useAppData()
 
-  // 모든 컴포넌트가 최신 users를 참조하도록 동기화
   updateUsers(users)
 
   useEffect(() => {
@@ -39,7 +36,6 @@ export default function App() {
     return () => window.removeEventListener('popstate', handler)
   }, [user])
 
-  // FCM 토큰 등록만 수행 (포그라운드 토스트 없음 - 시스템 알림으로 통일)
   useFCM(user, null)
 
   // 로그인 후 새 버전이면 업데이트 팝업 표시
@@ -50,24 +46,6 @@ export default function App() {
     if (seen === VERSION) return
     const changelog = user.role === 'admin' ? CHANGELOG : CHANGELOG_DRIVER
     if (changelog.length > 0) setShowUpdate(true)
-  }, [user])
-
-  // 공지 실시간 구독 + 로그인 시 최초 1회 표시
-  useEffect(() => {
-    if (!user) return
-    const ref = doc(db, 'settings', 'notice')
-    const unsub = onSnapshot(ref, snap => {
-      if (!snap.exists()) return
-      const data = snap.data()
-      setNotice(data)
-      const items = user.role === 'admin' ? (data.adminItems || []) : (data.driverItems || [])
-      if (!data.active || items.length === 0) return
-      const key = `notice_seen_${user.id}`
-      const seen = localStorage.getItem(key)
-      const current = JSON.stringify(items)
-      if (seen !== current) setShowNotice(true)
-    })
-    return unsub
   }, [user])
 
   // 접속 상태 추적
@@ -115,10 +93,6 @@ export default function App() {
     setLogoutConfirm(false)
   }
 
-  const noticeItems = notice
-    ? (user.role === 'admin' ? notice.adminItems : notice.driverItems) || []
-    : []
-
   return (
     <>
       <style>{`
@@ -151,24 +125,7 @@ export default function App() {
           />
       }
 
-      {/* 공지 팝업 */}
-      {showNotice && noticeItems.length > 0 && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
-          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:340, padding:28 }}>
-            <div style={{ fontSize:20, marginBottom:4 }}>📢</div>
-            <div style={{ fontSize:16, fontWeight:700, color:textC, marginBottom:16 }}>공지사항</div>
-            <ul style={{ margin:0, padding:'0 0 0 18px', fontSize:13, color:textC, lineHeight:2 }}>
-              {noticeItems.map((item, i) => <li key={i}>{item}</li>)}
-            </ul>
-            <button onClick={() => { localStorage.setItem(`notice_seen_${user.id}`, JSON.stringify(noticeItems)); setShowNotice(false) }}
-              style={{ marginTop:20, width:'100%', padding:'11px 0', borderRadius:8, border:'none', background:navy, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>
-              확인
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 업데이트 팝업 */}
+      {/* 업데이트 팝업: 관리자=전체, 기사=기사용만 */}
       {showUpdate && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:24, fontFamily:"'Noto Sans KR', sans-serif" }}>
           <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:340, padding:28 }}>
