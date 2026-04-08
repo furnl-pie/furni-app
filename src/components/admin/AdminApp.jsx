@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, Fragment } from 'react'
 import ExcelJS from 'exceljs'
-import { getDocs, query as fsQuery, collection, where } from 'firebase/firestore'
+import { getDocs, query as fsQuery, collection, where, onSnapshot, orderBy } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import AdminDetail from './AdminDetail'
 import BillingPage from './BillingPage'
@@ -10,6 +10,7 @@ import DriverMgrModal from './DriverMgrModal'
 import AdminSettingsModal from './AdminSettingsModal'
 import AdminHelpModal from './AdminHelpModal'
 import NoticeModal from './NoticeModal'
+import ChatModal from '../common/ChatModal'
 import PhotoDownloadPage from './PhotoDownloadPage'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
@@ -32,7 +33,9 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [showDriverMgr, setDriverMgr] = useState(false)
   const [showAdminSettings, setAdminSettings] = useState(false)
   const [showHelp, setHelp] = useState(false)
-  const [showNotice, setNotice] = useState(false)
+  const [showNotice, setNotice]     = useState(false)
+  const [chatDriver, setChatDriver]  = useState(null) // { id, name }
+  const [unreadMap, setUnreadMap]    = useState({}) // { driverId: count }
   const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
 
   const dragId         = useRef(null)
@@ -132,6 +135,18 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const drivers = useMemo(() =>
     users.filter(u => u.role === 'driver').sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
   , [users])
+
+  // 기사별 읽지 않은 메시지 수 구독
+  useEffect(() => {
+    if (drivers.length === 0) return
+    const unsubs = drivers.map(d => {
+      const q = fsQuery(collection(db, 'chats', d.id, 'messages'), where('read', '==', false), where('sender', '!=', user.id))
+      return onSnapshot(q, snap => {
+        setUnreadMap(prev => ({ ...prev, [d.id]: snap.size }))
+      })
+    })
+    return () => unsubs.forEach(u => u())
+  }, [drivers.map(d=>d.id).join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     filterDriver, setFD, filterStatus, setFStatus, filterDate, setFDate,
@@ -786,14 +801,23 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                       display:'flex', alignItems:'center', gap:8, padding:'6px 12px',
                       background: chip ? chip.bg : '#fef2f2',
                       borderRadius:10, marginBottom:8,
-                      border:`1px solid ${chip ? chip.border : '#fecaca'}`
-                    }}>
+                      border:`1px solid ${chip ? chip.border : '#fecaca'}`,
+                      cursor: g.driverId ? 'pointer' : 'default',
+                    }}
+                      onClick={() => g.driverId && setChatDriver({ id: g.driverId, name: userName(g.driverId) })}
+                    >
                       <span style={{ fontSize:17, fontWeight:700, color: chip ? chip.color : red }}>
                         {g.driverId ? `▸ ${userName(g.driverId)}` : '▸ 미배치'}
                       </span>
                       <span style={{ fontSize:16, color: chip ? chip.color : red, opacity:.65 }}>
                         {g.items.length}건
                       </span>
+                      {g.driverId && unreadMap[g.driverId] > 0 && (
+                        <span style={{ marginLeft:'auto', background:'#ef4444', color:'#fff', borderRadius:20, fontSize:11, fontWeight:700, padding:'2px 7px' }}>
+                          {unreadMap[g.driverId]}
+                        </span>
+                      )}
+                      {g.driverId && <span style={{ marginLeft: g.driverId && unreadMap[g.driverId] > 0 ? 4 : 'auto', fontSize:13, color: chip ? chip.color : red, opacity:.7 }}>💬</span>}
                     </div>
                     <div style={{ display: isWide ? 'grid' : 'flex', flexDirection: isWide ? undefined : 'column', gridTemplateColumns: isWide ? '1fr 1fr' : undefined, gap:8 }}>
                       {g.items.map(s => {
@@ -916,18 +940,27 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                       <Fragment key={s.id}>
                         {showDiv && (
                           <tr>
-                            <td colSpan={(deleteMode||assignMode) ? 10 : 9} style={{
-                              padding:'5px 12px 5px 14px', fontSize:13, fontWeight:700,
-                              background:'#fafafa',
-                              color: chip ? chip.color : red,
-                              borderTop:`2px solid #f3f4f6`,
-                              borderBottom:`1px solid #f3f4f6`,
-                              borderLeft:`3px solid ${chip ? chip.border : '#fca5a5'}`
-                            }}>
+                            <td colSpan={(deleteMode||assignMode) ? 10 : 9}
+                              onClick={() => s.driver_id && setChatDriver({ id: s.driver_id, name: userName(s.driver_id) })}
+                              style={{
+                                padding:'5px 12px 5px 14px', fontSize:13, fontWeight:700,
+                                background:'#fafafa',
+                                color: chip ? chip.color : red,
+                                borderTop:`2px solid #f3f4f6`,
+                                borderBottom:`1px solid #f3f4f6`,
+                                borderLeft:`3px solid ${chip ? chip.border : '#fca5a5'}`,
+                                cursor: s.driver_id ? 'pointer' : 'default',
+                              }}>
                               {s.driver_id ? `▸ ${userName(s.driver_id)}` : '▸ 미배치'}
                               <span style={{ marginLeft:10, fontWeight:400, opacity:.65, fontSize:15 }}>
                                 {searchFiltered.filter(x=>x.driver_id===s.driver_id).length}건
                               </span>
+                              {s.driver_id && unreadMap[s.driver_id] > 0 && (
+                                <span style={{ marginLeft:10, background:'#ef4444', color:'#fff', borderRadius:20, fontSize:11, fontWeight:700, padding:'2px 7px' }}>
+                                  {unreadMap[s.driver_id]}
+                                </span>
+                              )}
+                              {s.driver_id && <span style={{ marginLeft:6, fontSize:13, opacity:.7 }}>💬</span>}
                             </td>
                           </tr>
                         )}
@@ -1048,6 +1081,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       )}
       {showHelp && <AdminHelpModal onClose={()=>setHelp(false)}/>}
       {showNotice && <NoticeModal onClose={()=>setNotice(false)}/>}
+      {chatDriver && <ChatModal driverId={chatDriver.id} driverName={chatDriver.name} me={user} onClose={()=>setChatDriver(null)}/>}
       {showModal && <BulkScheduleModal drivers={drivers} schedules={schedules} onAddMany={list=>{ onAddMany(list); setModal(false) }} onUpdate={onUpdate} onClose={()=>setModal(false)}/>}
       {showDriverMgr && <DriverMgrModal drivers={drivers} schedules={schedules} onAdd={onAddDriver} onUpdate={onUpdateDriver} onDelete={onDeleteDriver} onClose={()=>setDriverMgr(false)}/>}
       {showAdminSettings && <AdminSettingsModal user={user} onUpdateDriver={onUpdateDriver} onClose={()=>setAdminSettings(false)}/>}

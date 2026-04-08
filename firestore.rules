@@ -33,6 +33,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // ── chats 컬렉션 (관리자 ↔ 기사 채팅) ───────────────────────
+    match /chats/{driverId}/messages/{messageId} {
+      allow read, write: if true;
+    }
+
     // ── 그 외 컬렉션: 거부 ────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

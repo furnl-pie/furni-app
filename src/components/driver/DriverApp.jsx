@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
+import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
+import { db } from '../../lib/firebase'
 import DriverDetail from './DriverDetail'
 import DisposalTab from './DisposalTab'
 import HelpModal from './HelpModal'
+import ChatModal from '../common/ChatModal'
 import TruckIcon from '../common/TruckIcon'
 import { Badge, Btn, Card } from '../common/ui'
 import { navy, blue, green, amber, border, muted, textC, iStyle, today } from '../../constants/styles'
@@ -10,7 +13,8 @@ import { hashPw } from '../../utils/auth'
 
 export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, onLogout }) {
   const [view, setView]        = useState('list')
-  const [tab, setTab]          = useState('schedule') // 'schedule' | 'disposal'
+  const [tab, setTab]          = useState('schedule') // 'schedule' | 'disposal' | 'chat'
+  const [unreadCount, setUnread] = useState(0)
   const [showHelp, setHelp]    = useState(false)
   const [selectedId, setSelId] = useState(null)
   const scrollYRef = useRef(0)
@@ -98,6 +102,17 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
   useEffect(() => {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
   }, [])
+
+  // 읽지 않은 메시지 수 구독
+  useEffect(() => {
+    const q = query(
+      collection(db, 'chats', user.id, 'messages'),
+      where('read', '==', false),
+      where('sender', '!=', user.id)
+    )
+    const unsub = onSnapshot(q, snap => setUnread(snap.size))
+    return unsub
+  }, [user.id])
 
   useEffect(() => {
     if (view === 'detail') {
@@ -204,15 +219,31 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
 
       {/* 탭 바 */}
       <div style={{ display:'flex', background:'#fff', borderBottom:'1px solid #eaecf0' }}>
-        {[['schedule','📋 일정'],['disposal','🚛 처리']].map(([t,l])=>(
+        {[['schedule','📋 일정'],['disposal','🚛 처리'],['chat','💬 채팅']].map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)}
-            style={{ flex:1, padding:'12px 0', fontSize:13, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===t?'#6366f1':'transparent'}`, color:tab===t?'#6366f1':'#9ca3af', background:'none', cursor:'pointer', fontFamily:'inherit', transition:'all .12s' }}>
+            style={{ flex:1, padding:'12px 0', fontSize:13, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===t?'#6366f1':'transparent'}`, color:tab===t?'#6366f1':'#9ca3af', background:'none', cursor:'pointer', fontFamily:'inherit', transition:'all .12s', position:'relative' }}>
             {l}
+            {t === 'chat' && unreadCount > 0 && (
+              <span style={{ position:'absolute', top:8, right:'18%', background:'#ef4444', color:'#fff', borderRadius:20, fontSize:10, fontWeight:700, padding:'1px 5px', lineHeight:1.4 }}>
+                {unreadCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {tab === 'disposal' && <DisposalTab user={user}/>}
+
+      {tab === 'chat' && (
+        <ChatModal
+          driverId={user.id}
+          me={user}
+          driverName="관리자"
+          embedded
+          schedules={mine}
+          onClose={null}
+        />
+      )}
 
       {tab === 'schedule' && (
       <div style={{ padding:16, maxWidth:480, margin:'0 auto' }}>
