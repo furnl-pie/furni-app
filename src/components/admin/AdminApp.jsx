@@ -801,22 +801,13 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                       background: chip ? chip.bg : '#fef2f2',
                       borderRadius:10, marginBottom:8,
                       border:`1px solid ${chip ? chip.border : '#fecaca'}`,
-                      cursor: g.driverId ? 'pointer' : 'default',
-                    }}
-                      onClick={() => g.driverId && setChatDriver({ id: g.driverId, name: userName(g.driverId) })}
-                    >
+                    }}>
                       <span style={{ fontSize:17, fontWeight:700, color: chip ? chip.color : red }}>
                         {g.driverId ? `▸ ${userName(g.driverId)}` : '▸ 미배치'}
                       </span>
                       <span style={{ fontSize:16, color: chip ? chip.color : red, opacity:.65 }}>
                         {g.items.length}건
                       </span>
-                      {g.driverId && unreadMap[g.driverId] > 0 && (
-                        <span style={{ marginLeft:'auto', background:'#ef4444', color:'#fff', borderRadius:20, fontSize:11, fontWeight:700, padding:'2px 7px' }}>
-                          {unreadMap[g.driverId]}
-                        </span>
-                      )}
-                      {g.driverId && <span style={{ marginLeft: g.driverId && unreadMap[g.driverId] > 0 ? 4 : 'auto', fontSize:13, color: chip ? chip.color : red, opacity:.7 }}>💬</span>}
                     </div>
                     <div style={{ display: isWide ? 'grid' : 'flex', flexDirection: isWide ? undefined : 'column', gridTemplateColumns: isWide ? '1fr 1fr' : undefined, gap:8 }}>
                       {g.items.map(s => {
@@ -940,7 +931,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                         {showDiv && (
                           <tr>
                             <td colSpan={(deleteMode||assignMode) ? 10 : 9}
-                              onClick={() => s.driver_id && setChatDriver({ id: s.driver_id, name: userName(s.driver_id) })}
                               style={{
                                 padding:'5px 12px 5px 14px', fontSize:13, fontWeight:700,
                                 background:'#fafafa',
@@ -948,18 +938,11 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                                 borderTop:`2px solid #f3f4f6`,
                                 borderBottom:`1px solid #f3f4f6`,
                                 borderLeft:`3px solid ${chip ? chip.border : '#fca5a5'}`,
-                                cursor: s.driver_id ? 'pointer' : 'default',
                               }}>
                               {s.driver_id ? `▸ ${userName(s.driver_id)}` : '▸ 미배치'}
                               <span style={{ marginLeft:10, fontWeight:400, opacity:.65, fontSize:15 }}>
                                 {searchFiltered.filter(x=>x.driver_id===s.driver_id).length}건
                               </span>
-                              {s.driver_id && unreadMap[s.driver_id] > 0 && (
-                                <span style={{ marginLeft:10, background:'#ef4444', color:'#fff', borderRadius:20, fontSize:11, fontWeight:700, padding:'2px 7px' }}>
-                                  {unreadMap[s.driver_id]}
-                                </span>
-                              )}
-                              {s.driver_id && <span style={{ marginLeft:6, fontSize:13, opacity:.7 }}>💬</span>}
                             </td>
                           </tr>
                         )}
@@ -1013,7 +996,16 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
                             ) : (
                               <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:2 }}>
                                 {s.driver_id
-                                  ? <span style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 7px', fontSize:14, fontWeight:600, whiteSpace:'nowrap' }}>{userName(s.driver_id)}</span>
+                                  ? <span
+                                      onClick={e=>{ e.stopPropagation(); setChatDriver({ id: s.driver_id, name: userName(s.driver_id) }) }}
+                                      style={{ background:chip?.bg, color:chip?.color, border:`1px solid ${chip?.border}`, borderRadius:20, padding:'2px 7px', fontSize:14, fontWeight:600, whiteSpace:'nowrap', cursor:'pointer', position:'relative' }}>
+                                      {userName(s.driver_id)}
+                                      {unreadMap[s.driver_id] > 0 && (
+                                        <span style={{ position:'absolute', top:-4, right:-4, background:'#ef4444', color:'#fff', borderRadius:'50%', fontSize:9, fontWeight:700, width:14, height:14, display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+                                          {unreadMap[s.driver_id]}
+                                        </span>
+                                      )}
+                                    </span>
                                   : <span style={{ background:'#fef2f2', color:red, borderRadius:20, padding:'2px 7px', fontSize:14, fontWeight:600, border:'1px dashed #fca5a5', whiteSpace:'nowrap' }}>미배치</span>
                                 }
                                 <button onClick={e=>{ e.stopPropagation(); setEditingId(s.id) }} title="기사 변경"
