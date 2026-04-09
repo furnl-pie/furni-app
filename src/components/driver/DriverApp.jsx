@@ -404,6 +404,17 @@ export default function DriverApp({ user, schedules, onUpdate, onUpdateDriver, o
 
               <div style={{ borderTop:`1px solid ${border}`, marginBottom:24 }}/>
 
+              {/* 의견 보내기 */}
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:navy, marginBottom:10 }}>💡 의견 보내기</div>
+                <button onClick={() => window.open('/feedback', '_blank')}
+                  style={{ width:'100%', padding:'11px 0', borderRadius:10, border:`1.5px solid #a5b4fc`, background:'#fff', color:'#4f46e5', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                  불편사항 · 개선 제안 · 버그 신고
+                </button>
+              </div>
+
+              <div style={{ borderTop:`1px solid ${border}`, marginBottom:24 }}/>
+
               {/* 계정 삭제 요청 */}
               <div>
                 <div style={{ fontSize:13, fontWeight:700, color:'#dc2626', marginBottom:10 }}>🗑️ 계정 삭제</div>

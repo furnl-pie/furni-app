@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, Fragment } from 'react'
 import ExcelJS from 'exceljs'
-import { getDocs, query as fsQuery, collection, where, onSnapshot } from 'firebase/firestore'
+import { getDocs, query as fsQuery, collection, where, onSnapshot, orderBy } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import AdminDetail from './AdminDetail'
 import BillingPage from './BillingPage'
@@ -20,6 +20,73 @@ import useWindowWidth from '../../utils/useWindowWidth'
 import { useAdminFilters } from '../../hooks/useAdminFilters'
 import { useDeleteMode } from '../../hooks/useDeleteMode'
 import { useAssignMode } from '../../hooks/useAssignMode'
+
+// ── 의견함 페이지 ─────────────────────────────────────────────────
+function FeedbacksPage({ onBack }) {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const q = fsQuery(collection(db, 'feedbacks'), orderBy('createdAt', 'desc'))
+    const unsub = onSnapshot(q, snap => {
+      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setLoading(false)
+    }, () => setLoading(false))
+    return unsub
+  }, [])
+
+  const CATEGORY_CFG = {
+    bug:         { label: '버그 신고',  bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+    improvement: { label: '개선 제안',  bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
+    feature:     { label: '기능 요청',  bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
+    complaint:   { label: '불편 사항',  bg: '#fff7ed', color: '#ea580c', border: '#fed7aa' },
+    etc:         { label: '기타',       bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
+    '':          { label: '분류 없음',  bg: '#f8fafc', color: '#9ca3af', border: '#e5e7eb' },
+  }
+
+  const fmt = (ts) => {
+    if (!ts) return ''
+    const d = ts.toDate ? ts.toDate() : new Date(ts)
+    return d.toLocaleDateString('ko-KR', { month:'2-digit', day:'2-digit' }) + ' ' +
+           d.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' })
+  }
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#f8f9fc', fontFamily:"'Noto Sans KR', sans-serif" }}>
+      <div style={{ background:'#fff', borderBottom:'1px solid #eaecf0', padding:'12px 20px', display:'flex', alignItems:'center', gap:12 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', color:'#6b7280', lineHeight:1, padding:0 }}>←</button>
+        <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>📬 의견함</div>
+        <div style={{ marginLeft:'auto', fontSize:12, color:'#9ca3af' }}>총 {items.length}건</div>
+      </div>
+
+      <div style={{ padding:'16px 16px 40px', maxWidth:600, margin:'0 auto' }}>
+        {loading && <div style={{ textAlign:'center', color:'#9ca3af', padding:40, fontSize:14 }}>불러오는 중...</div>}
+        {!loading && items.length === 0 && (
+          <div style={{ textAlign:'center', color:'#9ca3af', padding:60, fontSize:14 }}>
+            <div style={{ fontSize:36, marginBottom:12 }}>📭</div>
+            아직 접수된 의견이 없습니다.
+          </div>
+        )}
+        {items.map(item => {
+          const cfg = CATEGORY_CFG[item.category] || CATEGORY_CFG['']
+          return (
+            <div key={item.id} style={{ background:'#fff', borderRadius:12, border:'1px solid #eaecf0', padding:'14px 16px', marginBottom:10, boxShadow:'0 1px 4px rgba(0,0,0,.04)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <span style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:6, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>
+                  {cfg.label}
+                </span>
+                {item.name && <span style={{ fontSize:12, color:'#374151', fontWeight:600 }}>{item.name}</span>}
+                {item.phone && <span style={{ fontSize:11, color:'#9ca3af' }}>{item.phone}</span>}
+                <span style={{ marginLeft:'auto', fontSize:11, color:'#d1d5db', flexShrink:0 }}>{fmt(item.createdAt)}</span>
+              </div>
+              <div style={{ fontSize:13, color:'#1f2937', lineHeight:1.7, whiteSpace:'pre-wrap' }}>{item.content}</div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAddDriver, onUpdateDriver, onDeleteDriver, onLogout }) {
   const _w   = useWindowWidth()
@@ -471,6 +538,9 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   if (view==='photos')
     return <PhotoDownloadPage schedules={schedules} users={users} onBack={()=>setView('list')}/>
 
+  if (view==='feedbacks')
+    return <FeedbacksPage onBack={()=>setView('list')}/>
+
   if (view==='detail' && selected)
     return <AdminDetail schedule={selected} onUpdate={p=>onUpdate(selected.id,p)} onBack={()=>setView('list')} drivers={drivers}/>
 
@@ -487,7 +557,7 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           </div>
         </div>
         <div style={{ display:'flex', gap:4, justifyContent:'flex-end', alignItems:'center' }}>
-          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['⬇','엑셀',exportCSV],['👤','기사',()=>setDriverMgr(true)],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
+          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['⬇','엑셀',exportCSV],['👤','기사',()=>setDriverMgr(true)],['📬','의견함',()=>setView('feedbacks')],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
             <button key={label} onClick={fn}
               style={{ height:32, padding: isPC ? '0 11px' : '0 9px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize: isPC ? 12 : 15, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
               onMouseEnter={e=>{ e.currentTarget.style.background='#eef2ff'; e.currentTarget.style.color='#4f46e5'; e.currentTarget.style.borderColor='#a5b4fc' }}

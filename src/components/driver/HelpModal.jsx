@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { navy, blue, green, amber, border, muted, textC } from '../../constants/styles'
+import { useState } from 'react'
 
 const Section = ({ title, children }) => (
   <div style={{ marginBottom:24 }}>
@@ -39,7 +39,7 @@ const StatusBadge = ({ status }) => {
   )
 }
 
-const TABS = ['기본 사용법', '업무 보고', '처리 탭', '알림/기타']
+const TABS = ['기본 사용법', '업무 보고', '처리 탭', '채팅', '설정·기타']
 
 export default function HelpModal({ onClose }) {
   const [tab, setTab] = useState(0)
@@ -57,7 +57,7 @@ export default function HelpModal({ onClose }) {
           <div style={{ display:'flex', gap:0, overflowX:'auto' }}>
             {TABS.map((t, i) => (
               <button key={t} onClick={() => setTab(i)}
-                style={{ flex:'none', padding:'8px 14px', fontSize:12, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===i ? blue : 'transparent'}`, color: tab===i ? blue : muted, background:'none', cursor:'pointer', whiteSpace:'nowrap' }}>
+                style={{ flex:'none', padding:'8px 12px', fontSize:12, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===i ? blue : 'transparent'}`, color: tab===i ? blue : muted, background:'none', cursor:'pointer', whiteSpace:'nowrap' }}>
                 {t}
               </button>
             ))}
@@ -72,10 +72,9 @@ export default function HelpModal({ onClose }) {
             <>
               <Section title="📱 화면 구성">
                 <div style={{ fontSize:13, color:textC, lineHeight:1.8 }}>
-                  <div style={{ marginBottom:6 }}><strong>상단 헤더</strong> — 이름, ⚙ 설정 (차량번호·비밀번호·알림), 로그아웃</div>
-                  <div style={{ marginBottom:6 }}><strong>? 버튼</strong> — 이 사용설명서 (앱 내에서 언제든 확인 가능)</div>
+                  <div style={{ marginBottom:6 }}><strong>상단 헤더</strong> — 이름, ⚙ 설정, 로그아웃, ? 버튼</div>
                   <div style={{ marginBottom:6 }}><strong>날짜 선택기</strong> — 일정 탭에서만 표시, 날짜별 일정 조회</div>
-                  <div style={{ marginBottom:6 }}><strong>탭 바</strong> — 📋 일정 / 🚛 처리 전환</div>
+                  <div style={{ marginBottom:6 }}><strong>탭 바</strong> — 📋 일정 / 🚛 처리 / 💬 채팅</div>
                 </div>
               </Section>
 
@@ -113,7 +112,7 @@ export default function HelpModal({ onClose }) {
           {/* ── 탭 1: 업무 보고 ── */}
           {tab === 1 && (
             <>
-              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:16, fontSize:12, color:muted }}>
+              <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:16, fontSize:12, color:muted, flexWrap:'wrap' }}>
                 {['대기','→','① 출발','→','② 작업시작','→','③ 완료'].map((s,i) => (
                   <span key={i} style={ s==='→' ? { color:'#cbd5e1' } : { background:'#eff6ff', color:blue, borderRadius:6, padding:'3px 8px', fontWeight:600 }}>
                     {s}
@@ -186,15 +185,50 @@ export default function HelpModal({ onClose }) {
             </>
           )}
 
-          {/* ── 탭 3: 알림/기타 ── */}
+          {/* ── 탭 3: 채팅 ── */}
           {tab === 3 && (
+            <>
+              <Section title="💬 관리자와 채팅">
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:12 }}>
+                  하단 탭에서 <strong>💬 채팅</strong>을 탭하면 관리자와 1:1 메시지를 주고받을 수 있습니다.
+                </div>
+                <div style={{ background:'#f8fafc', borderRadius:10, overflow:'hidden', border:`1px solid ${border}` }}>
+                  {[
+                    ['메시지 입력', '하단 입력창에 내용 입력 후 전송 버튼 탭'],
+                    ['읽음 확인', '메시지 옆 ✓ 표시로 상대방 읽음 여부 확인'],
+                    ['새 메시지 알림', '탭 바의 채팅 탭에 빨간 숫자 뱃지로 표시'],
+                    ['오늘 일정', '채팅창 상단에 오늘 내 일정 목록 표시'],
+                  ].map(([k, v], i) => (
+                    <div key={k} style={{ display:'flex', gap:10, padding:'8px 12px', borderBottom: i < 3 ? `1px solid ${border}` : 'none', background: i%2===0 ? '#fff' : '#f8fafc' }}>
+                      <span style={{ fontWeight:600, color:textC, fontSize:13, minWidth:90, flexShrink:0 }}>{k}</span>
+                      <span style={{ fontSize:12, color:muted }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+                <Tip>채팅은 관리자와 기사 사이 <strong>1:1 전용</strong>입니다. 다른 기사는 볼 수 없습니다.</Tip>
+              </Section>
+
+              <Section title="💡 의견 보내기">
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:10 }}>
+                  앱 개선 아이디어, 버그 신고, 불편 사항을 자유롭게 보낼 수 있습니다.
+                </div>
+                <Step num="1" color={blue}><strong>⚙ 설정</strong> 탭 → 하단 <strong>의견 보내기</strong> 버튼 탭</Step>
+                <Step num="2" color={blue}>유형 선택 후 내용 입력</Step>
+                <Step num="3" color={blue}><strong>의견 보내기</strong> 버튼으로 제출</Step>
+                <Tip>연락처를 남기시면 답변드릴 수 있습니다.</Tip>
+              </Section>
+            </>
+          )}
+
+          {/* ── 탭 4: 설정·기타 ── */}
+          {tab === 4 && (
             <>
               <Section title="🔔 알림 종류">
                 {[
                   ['새 일정 배정', '관리자가 일정을 배정했을 때'],
                   ['일정 변경', '날짜·시간·주소 등이 바뀌었을 때'],
                   ['일정 취소', '일정이 취소됐을 때'],
-                  ['순서 변경', '방문 순서가 바뀌었을 때 (60초 단위)'],
+                  ['순서 변경', '방문 순서가 바뀌었을 때'],
                 ].map(([t, d]) => (
                   <div key={t} style={{ display:'flex', gap:10, padding:'8px 12px', background:'#f8fafc', borderRadius:8, marginBottom:6, fontSize:13 }}>
                     <span style={{ fontWeight:600, color:textC, minWidth:80 }}>{t}</span>
@@ -204,14 +238,25 @@ export default function HelpModal({ onClose }) {
                 <Tip warn>알림이 오지 않으면 스마트폰 설정 → 브라우저 앱 → 알림 권한을 허용으로 바꿔주세요.</Tip>
               </Section>
 
-              <Section title="⚙ 설정">
+              <Section title="⚙ 설정 메뉴">
                 <Step num="1">상단 헤더 <strong>⚙ 설정</strong> 버튼 탭</Step>
-                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:8 }}>
-                  <div>• <strong>차량번호</strong> — 입력 후 저장 버튼 탭 (처리 탭에 자동 입력)</div>
-                  <div>• <strong>비밀번호 변경</strong> — 현재 비밀번호 → 새 비밀번호(4자 이상) → 변경</div>
+                <div style={{ fontSize:13, color:textC, lineHeight:1.9, marginBottom:8 }}>
+                  <div>• <strong>차량번호</strong> — 뒤 4자리 입력 후 저장 (처리 탭 자동 입력)</div>
+                  <div>• <strong>비밀번호 변경</strong> — 현재 비밀번호 확인 후 새 비밀번호 입력</div>
                   <div>• <strong>알림 설정</strong> — 푸시 알림 허용/차단 상태 확인 및 허용</div>
+                  <div>• <strong>의견 보내기</strong> — 불편사항·개선제안 전송</div>
+                  <div>• <strong>계정 삭제 요청</strong> — 계정 및 데이터 삭제 신청</div>
                 </div>
                 <Tip warn>비밀번호를 잊어버린 경우 관리자에게 초기화를 요청하세요.</Tip>
+              </Section>
+
+              <Section title="🔐 자동 로그인">
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8 }}>
+                  <div>• 로그인 화면에서 <strong>자동 로그인</strong> 체크 후 로그인하면 다음 방문 시 자동으로 로그인됩니다.</div>
+                  <div>• 자동 로그인은 <strong>30일</strong> 동안 유지됩니다.</div>
+                  <div>• 로그아웃하면 자동 로그인이 해제됩니다.</div>
+                </div>
+                <Tip warn>기기를 분실하거나 타인이 사용하는 경우 반드시 로그아웃하세요.</Tip>
               </Section>
 
               <Section title="🚪 로그아웃">
@@ -227,6 +272,8 @@ export default function HelpModal({ onClose }) {
                   ['출발을 잘못 눌렀어요', '일정 상세에서 출발 취소 버튼으로 되돌릴 수 있습니다.'],
                   ['완료 후 사진 추가?', '완료 상태에서 수정 버튼을 눌러 사진을 추가할 수 있습니다.'],
                   ['처리비 잘못 제출했어요', '처리 탭의 해당 기록에서 직접 삭제할 수 있습니다.'],
+                  ['자동 로그인이 풀렸어요', '30일 만료 또는 로그아웃 시 해제됩니다. 다시 로그인해 주세요.'],
+                  ['채팅 알림이 안 와요', '⚙ 설정 → 알림 허용 여부를 확인하세요.'],
                 ].map(([q, a]) => (
                   <div key={q} style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:8, padding:'10px 12px', marginBottom:8 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:blue, marginBottom:4 }}>Q. {q}</div>
@@ -234,13 +281,6 @@ export default function HelpModal({ onClose }) {
                   </div>
                 ))}
               </Section>
-
-              <div style={{ textAlign:'center', marginTop:8 }}>
-                <a href="/driver-help.html" target="_blank"
-                  style={{ display:'inline-block', background:navy, color:'#fff', borderRadius:8, padding:'10px 24px', fontSize:13, fontWeight:600, textDecoration:'none' }}>
-                  🖨 PDF 버전 보기
-                </a>
-              </div>
             </>
           )}
         </div>

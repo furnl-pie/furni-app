@@ -33,7 +33,7 @@ const Row = ({ label, desc }) => (
   </div>
 )
 
-const TABS = ['기본 화면', '일정 등록', '기사 배정', '처리·청구·기타']
+const TABS = ['기본 화면', '일정 등록', '기사 배정', '처리·청구', '채팅·의견·기타']
 
 export default function AdminHelpModal({ onClose }) {
   const [tab, setTab] = useState(0)
@@ -51,7 +51,7 @@ export default function AdminHelpModal({ onClose }) {
           <div style={{ display:'flex', gap:0, overflowX:'auto' }}>
             {TABS.map((t, i) => (
               <button key={t} onClick={() => setTab(i)}
-                style={{ flex:'none', padding:'8px 14px', fontSize:12, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===i ? '#6366f1' : 'transparent'}`, color: tab===i ? '#6366f1' : '#9ca3af', background:'none', cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
+                style={{ flex:'none', padding:'8px 12px', fontSize:12, fontWeight:600, border:'none', borderBottom:`2.5px solid ${tab===i ? '#6366f1' : 'transparent'}`, color: tab===i ? '#6366f1' : '#9ca3af', background:'none', cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
                 {t}
               </button>
             ))}
@@ -66,7 +66,7 @@ export default function AdminHelpModal({ onClose }) {
             <>
               <Section title="📊 상단 통계 카드">
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
-                  {[['전체', '해당 날짜 전체 일정 수', navy], ['미배치', '기사 미배정 건수', red], ['진행중', '현재 작업 중인 건수', amber], ['완료', '완료된 건수', green]].map(([l,d,c])=>(
+                  {[['전체','해당 날짜 전체 일정 수',navy],['미배치','기사 미배정 건수',red],['진행중','현재 작업 중인 건수',amber],['완료','완료된 건수',green]].map(([l,d,c])=>(
                     <div key={l} style={{ background:'#f8fafc', borderRadius:8, padding:'8px 6px', textAlign:'center', border:`1.5px solid ${c}22` }}>
                       <div style={{ fontSize:16, fontWeight:700, color:c }}>N</div>
                       <div style={{ fontSize:11, color:muted, marginTop:2 }}>{l}</div>
@@ -94,7 +94,7 @@ export default function AdminHelpModal({ onClose }) {
                   <div>• 업체명 · 주소 · 시간 · 폐기물량 · 연락처 · 비밀번호 확인</div>
                   <div>• <strong>기사 배정</strong> 변경 (배정 기사 클릭)</div>
                   <div>• <strong>현장 참고 사진</strong> 첨부 · 삭제</div>
-                  <div>• <strong>작업 진행 사진</strong>(기사 현장 사진) 확인</div>
+                  <div>• <strong>작업 진행 사진</strong> (기사 현장 사진) 확인</div>
                   <div>• <strong>완료 사진</strong> · 특이사항 · 최종 물량 확인</div>
                   <div>• <strong>청구 정보</strong> 입력 (인원·폐기물양·단가·부가세)</div>
                 </div>
@@ -107,7 +107,6 @@ export default function AdminHelpModal({ onClose }) {
             <>
               <Section title="+ 일정 등록 버튼">
                 <div style={{ fontSize:13, color:muted, marginBottom:12 }}>세 가지 입력 방식을 지원합니다.</div>
-
                 <div style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:10, overflow:'hidden', marginBottom:16 }}>
                   {[
                     ['📊 엑셀 붙여넣기', '엑셀에서 범위 복사(Ctrl+C) → 붙여넣기(Ctrl+V) → 컬럼 매핑 확인 → 가져오기'],
@@ -120,8 +119,7 @@ export default function AdminHelpModal({ onClose }) {
                     </div>
                   ))}
                 </div>
-
-                <Tip>엑셀 컬럼 매핑: 날짜·진입시간·주소·폐기물양·업체명·전화번호·<strong>공동비밀번호·세대비밀번호</strong>·비고·담당기사명·특이사항 지원</Tip>
+                <Tip>엑셀 컬럼 매핑: 날짜·진입시간·주소·폐기물양·업체명·전화번호·공동비밀번호·세대비밀번호·비고·담당기사명·특이사항 지원</Tip>
                 <Tip>카카오톡 형식 — <strong>업체명 → 날짜/시간 → 주소 → 공동/세대 비밀번호 → 폐기물량 → 전화번호</strong> 순서로 자동 파싱</Tip>
               </Section>
 
@@ -169,25 +167,15 @@ export default function AdminHelpModal({ onClose }) {
                 <Tip warn>드래그앤드롭은 표 보기에서만 동작합니다. 모바일은 ✏️ 버튼 배정을 사용하세요.</Tip>
               </Section>
 
-              <Section title="🗑 개별 삭제">
-                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:8 }}>
-                  각 일정 카드(카드 보기) 또는 행(표 보기)의 <strong>🗑 버튼</strong>으로 해당 일정만 바로 삭제할 수 있습니다.
-                </div>
-                <Step num="1" color={red}>일정의 <strong>🗑 버튼</strong> 클릭</Step>
-                <Step num="2" color={red}>확인 팝업에서 <strong>삭제</strong> 클릭</Step>
-                <Tip warn>삭제된 일정은 복구할 수 없습니다.</Tip>
-              </Section>
-
-              <Section title="🗑 일괄 삭제 모드">
-                <Step num="1" color={red}><strong>🗑 삭제</strong> 버튼 클릭 → 체크박스 활성화</Step>
-                <Step num="2" color={red}>삭제할 일정 선택</Step>
-                <Step num="3" color={red}><strong>🗑 N건 삭제</strong> → 확인 팝업 → 삭제</Step>
+              <Section title="🗑 개별·일괄 삭제">
+                <Row label="개별 삭제" desc="일정 카드 또는 행의 🗑 버튼 → 확인 팝업 → 삭제"/>
+                <Row label="일괄 삭제" desc="🗑 삭제 버튼 → 체크박스 선택 → 🗑 N건 삭제"/>
                 <Tip warn>삭제된 일정은 복구할 수 없습니다. 신중하게 선택하세요.</Tip>
               </Section>
             </>
           )}
 
-          {/* ── 탭 3: 처리·청구·기타 ── */}
+          {/* ── 탭 3: 처리·청구 ── */}
           {tab === 3 && (
             <>
               <Section title="🚛 처리 현황">
@@ -217,8 +205,36 @@ export default function AdminHelpModal({ onClose }) {
               </Section>
 
               <Section title="⚙️ 설정">
-                <Row label="비밀번호 변경" desc="현재 비밀번호 확인 후 새 비밀번호(4자 이상) 설정"/>
+                <Row label="비밀번호 변경" desc="현재 비밀번호 확인 후 새 비밀번호 설정"/>
                 <Row label="연체 알림" desc="일정 시작 시간 초과 시 관리자에게 푸시 알림 ON/OFF"/>
+              </Section>
+            </>
+          )}
+
+          {/* ── 탭 4: 채팅·의견·기타 ── */}
+          {tab === 4 && (
+            <>
+              <Section title="💬 기사 채팅">
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:10 }}>
+                  일정 카드의 기사 이름 뱃지를 탭하면 해당 기사와 1:1 채팅창이 열립니다.
+                </div>
+                <Row label="읽지 않은 수" desc="기사 뱃지에 빨간 숫자로 미읽음 메시지 수 표시"/>
+                <Row label="오늘 일정" desc="채팅창 상단에 해당 기사의 오늘 일정 목록 표시"/>
+                <Row label="읽음 처리" desc="채팅창 열면 자동으로 읽음 처리됩니다."/>
+                <Tip>채팅은 기사별 1:1 전용입니다. 여러 기사에게 동시에 보낼 수 없습니다.</Tip>
+              </Section>
+
+              <Section title="📬 기사 의견함">
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginBottom:10 }}>
+                  기사들이 앱에서 보낸 의견을 확인할 수 있습니다.
+                </div>
+                <Step num="1" color={blue}>상단 헤더의 <strong>📬 의견함</strong> 버튼 클릭</Step>
+                <Step num="2" color={blue}>접수된 의견 목록 확인 (최신순)</Step>
+                <div style={{ fontSize:13, color:textC, lineHeight:1.8, marginTop:8 }}>
+                  <div>• 유형별 색상 구분 (버그/개선/기능/불편/기타)</div>
+                  <div>• 이름·연락처·내용·제출 시각 표시</div>
+                </div>
+                <Tip>기사 외에도 <strong>furni-app-a118d.web.app/feedback</strong> 에서 누구나 의견을 제출할 수 있습니다.</Tip>
               </Section>
 
               <Section title="❓ 자주 묻는 질문">
@@ -227,6 +243,7 @@ export default function AdminHelpModal({ onClose }) {
                   ['기사 앱에 일정이 안 떠요', '일정에 기사 배정이 되어 있는지, 날짜가 맞는지 확인하세요.'],
                   ['중복 등록을 방지하려면', '같은 날짜+주소 일정은 등록 시 자동으로 중복 감지됩니다.'],
                   ['처리 기록을 수정하려면', '🚛 처리 페이지에서 해당 기록의 수정 버튼을 사용하세요.'],
+                  ['기사 비밀번호를 잊어버렸어요', '👤 기사 관리에서 해당 기사의 비밀번호를 초기화할 수 있습니다.'],
                 ].map(([q, a]) => (
                   <div key={q} style={{ background:'#f8fafc', border:`1px solid ${border}`, borderRadius:8, padding:'10px 12px', marginBottom:8 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:blue, marginBottom:4 }}>Q. {q}</div>
