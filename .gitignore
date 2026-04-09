@@ -3,6 +3,11 @@
 .env.*
 !.env.example
 
+# Android 서명 관련 (비밀번호/키 포함)
+local.properties
+android.keystore
+*.jks
+
 # Logs
 logs
 *.log
