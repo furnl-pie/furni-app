@@ -273,11 +273,24 @@ export function useAppData() {
     })
   }, [])
 
+  // ── 의견 접수 ─────────────────────────────────────────────────
+  const submitFeedback = useCallback(async ({ name, phone, category, content }) => {
+    const { addDoc, collection: col } = await import('firebase/firestore')
+    await addDoc(col(db, 'feedbacks'), {
+      name:     name || '',
+      phone:    phone || '',
+      category: category || '',
+      content:  content || '',
+      createdAt: serverTimestamp(),
+    })
+  }, [])
+
   return {
     users, schedules, loading, error,
     login, loginWithToken, clearSession,
     addSchedules, updateSchedule, deleteSchedules,
     addDriver, updateDriver, deleteDriver,
     requestAccountDeletion,
+    submitFeedback,
   }
 }

@@ -8,6 +8,7 @@ import LoginPage from './components/LoginPage'
 import AdminApp from './components/admin/AdminApp'
 import DriverApp from './components/driver/DriverApp'
 import DeleteAccountPage from './components/DeleteAccountPage'
+import FeedbackPage from './components/FeedbackPage'
 import TruckIcon from './components/common/TruckIcon'
 import { navy, border, muted, textC } from './constants/styles'
 import { VERSION, CHANGELOG, CHANGELOG_DRIVER } from './constants/version'
@@ -21,12 +22,15 @@ export default function App() {
     login, loginWithToken, clearSession,
     addSchedules, updateSchedule, deleteSchedules,
     addDriver, updateDriver, deleteDriver,
-    requestAccountDeletion,
+    requestAccountDeletion, submitFeedback,
   } = useAppData()
 
-  // /delete-account 경로는 로그인 없이 접근 가능
+  // 로그인 없이 접근 가능한 공개 페이지
   if (window.location.pathname === '/delete-account') {
     return <DeleteAccountPage onSubmit={requestAccountDeletion} />
+  }
+  if (window.location.pathname === '/feedback') {
+    return <FeedbackPage onSubmit={submitFeedback} />
   }
 
   updateUsers(users)
