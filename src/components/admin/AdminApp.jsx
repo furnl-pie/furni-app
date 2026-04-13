@@ -88,7 +88,7 @@ function FeedbacksPage({ onBack }) {
   )
 }
 
-export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAddDriver, onUpdateDriver, onDeleteDriver, onLogout }) {
+export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, onDelete, onAddDriver, onUpdateDriver, onDeleteDriver, onLogout, onEnsureDate }) {
   const _w   = useWindowWidth()
   const isPC     = _w >= 1024
   const isTablet = _w >= 768 && _w < 1024
@@ -219,6 +219,9 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     driverDropOpen, setDriverDropOpen, toggleDriverFilter,
     baseFiltered, filtered, sorted, stats,
   } = useAdminFilters(schedules, drivers)
+
+  // 초기 로드 범위 밖 날짜 선택 시 Firestore 재조회
+  useEffect(() => { onEnsureDate?.(filterDate) }, [filterDate])
 
   // searchText 필터 (address, cname, memo AND 조건)
   const searchFiltered = useMemo(() => {
@@ -573,40 +576,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
       </div>
 
       <div ref={listContRef} style={{ padding:20, maxWidth:1060, margin:'0 auto' }}>
-        {/* 오늘 현황 요약 배너 */}
-        {(() => {
-          const today = getKSTToday()
-          const todayAll = schedules.filter(s => s.date === today)
-          if (todayAll.length === 0) return null
-          const todayDone    = todayAll.filter(s => s.status === '완료' || s.status === '청구완료').length
-          const todayWorking = todayAll.filter(s => s.status === '진행중').length
-          const todayMoving  = todayAll.filter(s => s.status === '이동중').length
-          const todayUnassigned = todayAll.filter(s => !s.driver_id && s.status === '대기').length
-          const allDone = todayAll.every(s => s.status === '완료' || s.status === '청구완료')
-          return (
-            <div style={{ background:'#fff', border:`1px solid ${border}`, borderRadius:10, padding:'10px 16px', marginBottom:14, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-              <span style={{ fontSize:13, fontWeight:700, color:navy, marginRight:4 }}>
-                오늘 {todayAll.length}건
-                {allDone && <span style={{ marginLeft:8, fontSize:12, color:green, fontWeight:700 }}>전체 완료</span>}
-              </span>
-              <span style={{ color:border }}>·</span>
-              {[
-                { label:'완료', count:todayDone,      color:STATUS_CFG['완료'].color,   bg:STATUS_CFG['완료'].bg,    filterVal:'완료' },
-                { label:'진행중', count:todayWorking, color:STATUS_CFG['진행중'].color, bg:STATUS_CFG['진행중'].bg,  filterVal:'작업중' },
-                { label:'이동중', count:todayMoving,  color:STATUS_CFG['이동중'].color, bg:STATUS_CFG['이동중'].bg,  filterVal:'이동중' },
-                { label:'미배정', count:todayUnassigned, color:red, bg:'#fef2f2',        filterVal:'' },
-              ].map(({ label, count, color, bg, filterVal }) => (
-                <button key={label}
-                  onClick={() => setFStatus(filterStatus === filterVal ? '' : filterVal)}
-                  style={{ background: filterStatus === filterVal ? bg : 'transparent', border:`1px solid ${filterStatus === filterVal ? color : border}`, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:700, color, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
-                  <span style={{ fontSize:15, fontWeight:800 }}>{count}</span>
-                  <span style={{ fontWeight:600 }}>{label}</span>
-                </button>
-              ))}
-            </div>
-          )
-        })()}
-
         <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, marginBottom:16 }}>
           {[
             ['전체',    stats.total,    '#6366f1', ''],
