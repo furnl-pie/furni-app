@@ -25,9 +25,11 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
   const [colMap, setColMap]       = useState({})
   const [parseMsg, setParseMsg]   = useState('')
 
-  const [kakaoRaw,  setKakaoRaw]  = useState('')
-  const [kakaoRows, setKakaoRows] = useState([])
-  const [kakaoMsg,  setKakaoMsg]  = useState('')
+  const [kakaoRaw,      setKakaoRaw]      = useState('')
+  const [kakaoRows,     setKakaoRows]     = useState([])
+  const [kakaoMsg,      setKakaoMsg]      = useState('')
+  const [kakaoDateFrom, setKakaoDateFrom] = useState('')
+  const [kakaoDateTo,   setKakaoDateTo]   = useState('')
   const kakaoFileRef = useRef(null)
 
   const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -238,11 +240,17 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
     e.target.value = ''
   }
 
+  const kakaoRowsFiltered = kakaoRows.filter(r => {
+    if (kakaoDateFrom && r.date < kakaoDateFrom) return false
+    if (kakaoDateTo   && r.date > kakaoDateTo)   return false
+    return true
+  })
+
   const applyKakao = () => {
-    if (!kakaoRows.length) return
+    if (!kakaoRowsFiltered.length) return
     const autoAssign = {}
     const autoCoAssign = {}
-    kakaoRows.forEach(r => {
+    kakaoRowsFiltered.forEach(r => {
       if (r.driver_hint) {
         const parts = r.driver_hint.split(/[,，]/)
         const main = findDriver(parts[0])
@@ -253,7 +261,7 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
         }
       }
     })
-    setRows(kakaoRows)
+    setRows(kakaoRowsFiltered)
     setAssigns(autoAssign)
     setCoAssigns(autoCoAssign)
     setKakaoMsg('')
@@ -505,9 +513,28 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
                 {kakaoRows.length > 0 && (
                   <div style={{ marginTop:14 }}>
+                    {/* 날짜 범위 필터 */}
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10, flexWrap:'wrap', background:'#eff6ff', border:`1px solid #bfdbfe`, borderRadius:9, padding:'8px 12px' }}>
+                      <span style={{ fontSize:12, fontWeight:600, color:blue, whiteSpace:'nowrap' }}>📅 일자 선택</span>
+                      <input type="date" value={kakaoDateFrom} onChange={e=>setKakaoDateFrom(e.target.value)}
+                        style={{ padding:'4px 8px', border:`1px solid #93c5fd`, borderRadius:6, fontSize:12, outline:'none', background:'#fff', color:textC, colorScheme:'light' }} />
+                      <span style={{ fontSize:12, color:blue }}>~</span>
+                      <input type="date" value={kakaoDateTo} onChange={e=>setKakaoDateTo(e.target.value)}
+                        style={{ padding:'4px 8px', border:`1px solid #93c5fd`, borderRadius:6, fontSize:12, outline:'none', background:'#fff', color:textC, colorScheme:'light' }} />
+                      {(kakaoDateFrom || kakaoDateTo) && (
+                        <button onClick={()=>{ setKakaoDateFrom(''); setKakaoDateTo('') }}
+                          style={{ background:'none', border:'none', color:muted, fontSize:11, cursor:'pointer', textDecoration:'underline', whiteSpace:'nowrap' }}>
+                          초기화
+                        </button>
+                      )}
+                      <span style={{ marginLeft:'auto', fontSize:12, color:blue, fontWeight:600, whiteSpace:'nowrap' }}>
+                        {kakaoRowsFiltered.length}/{kakaoRows.length}건
+                      </span>
+                    </div>
+
                     <div style={{ fontSize:12, fontWeight:600, color:muted, marginBottom:8 }}>파싱 결과 미리보기</div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:260, overflowY:'auto' }}>
-                      {kakaoRows.map((r,i)=>(
+                    <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:240, overflowY:'auto' }}>
+                      {kakaoRowsFiltered.map((r,i)=>(
                         <div key={r._id} style={{ background:'#fff', border:`1px solid ${border}`, borderRadius:8, padding:'10px 12px', fontSize:12 }}>
                           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                             <span style={{ fontWeight:700, color:navy }}>{i+1}. {r.cname}</span>
@@ -521,6 +548,9 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
                           {r.memo && <div style={{ color:muted, fontSize:11, marginTop:2 }}>메모: {r.memo}</div>}
                         </div>
                       ))}
+                      {kakaoRowsFiltered.length === 0 && (
+                        <div style={{ textAlign:'center', color:muted, fontSize:12, padding:20 }}>선택한 날짜 범위에 일정이 없습니다.</div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -791,12 +821,12 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
               }
               <div style={{ display:'flex', gap:10, alignItems:'center' }}>
                 {inputMode==='manual' && <span style={{ fontSize:13, color:muted }}>총 {rows.length}건</span>}
-                {inputMode==='kakao'  && kakaoRows.length>0 && <span style={{ fontSize:13, color:muted }}>{kakaoRows.length}건 파싱됨</span>}
+                {inputMode==='kakao'  && kakaoRows.length>0 && <span style={{ fontSize:13, color:muted }}>{kakaoRowsFiltered.length}/{kakaoRows.length}건</span>}
                 {inputMode==='folder' && folderRows.length>0 && <span style={{ fontSize:13, color:muted }}>{folderRows.length}건 파싱됨</span>}
                 <Btn onClick={onClose} outline color={muted} style={{ padding:'9px 16px' }}>취소</Btn>
                 {inputMode==='kakao' ? (
-                  <Btn onClick={applyKakao} disabled={kakaoRows.length===0} style={{ padding:'9px 20px' }}>
-                    가져오기 ({kakaoRows.length}건) →
+                  <Btn onClick={applyKakao} disabled={kakaoRowsFiltered.length===0} style={{ padding:'9px 20px' }}>
+                    가져오기 ({kakaoRowsFiltered.length}건) →
                   </Btn>
                 ) : inputMode==='folder' ? (
                   <Btn onClick={applyFolder} disabled={folderRows.length===0||folderLoading} style={{ padding:'9px 20px' }}>
