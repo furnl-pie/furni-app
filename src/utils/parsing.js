@@ -6,20 +6,26 @@ export function isKakaoExport(text) {
          /\[.+?\]\s*\[(?:오전|오후)\s*\d{1,2}:\d{2}\]/.test(text)
 }
 
-// [이름] [오전/오후 HH:MM] 형식 prefix 제거, 날짜 구분선 제거
+// [이름] [오전/오후 HH:MM] 형식 prefix 제거, 날짜 구분선에서 채팅 날짜 추출해 마커로 주입
 export function preprocessKakaoExport(text) {
   const lines = text.split('\n')
   const result = []
+  let currentChatDate = ''
   for (const line of lines) {
     const t = line.trim()
-    // 날짜 구분선 건너뜀: "──────── 2024년 3월 18일 월요일 ────────"
-    if (/^[-─]{5,}/.test(t)) continue
+    // 날짜 구분선: "──────── 2026년 3월 18일 월요일 ────────" → 날짜 추출 후 건너뜀
+    if (/^[-─]{5,}/.test(t)) {
+      const dm = t.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/)
+      if (dm) currentChatDate = `${dm[1]}-${String(dm[2]).padStart(2,'0')}-${String(dm[3]).padStart(2,'0')}`
+      continue
+    }
     // 파일 헤더 건너뜀
     if (t === '카카오톡 대화' || t.startsWith('저장한 날짜')) continue
-    // 메시지 prefix 제거 후 빈 줄로 블록 구분
+    // 메시지 prefix 제거 후 빈 줄로 블록 구분, 채팅 날짜 마커 주입
     const m = t.match(/^\[.+?\]\s*\[(?:오전|오후)\s*\d{1,2}:\d{2}\]\s*(.*)$/)
     if (m) {
       if (result.length > 0 && result[result.length - 1] !== '') result.push('')
+      if (currentChatDate) result.push(`__CHAT_DATE__:${currentChatDate}`)
       result.push(m[1])
     } else {
       result.push(line)
@@ -105,7 +111,12 @@ export function parseKakaoChat(text) {
   const results = []
 
   for (const block of blocks) {
-    const lines = block.trim().split('\n').map(l => l.trim()).filter(l => l)
+    let lines = block.trim().split('\n').map(l => l.trim()).filter(l => l)
+    // 채팅 날짜 마커 추출 (카톡 내보내기 파일에서만 존재)
+    const chatDateLine = lines.find(l => l.startsWith('__CHAT_DATE__:'))
+    const chatDate = chatDateLine ? chatDateLine.slice(14) : ''
+    if (chatDateLine) lines = lines.filter(l => !l.startsWith('__CHAT_DATE__:'))
+
     if (lines.length < 3) continue
 
     const phoneIdx = [...lines].reverse().findIndex(l => /\d{3}[\s-]\d{3,4}[\s-]\d{4}/.test(l))
@@ -119,10 +130,11 @@ export function parseKakaoChat(text) {
     const cname = contentLines[0]
 
     const dateLine = contentLines[1] || ''
-    let date = today
+    let date = chatDate || today  // 채팅 날짜 우선, 없으면 오늘
     const dateM = dateLine.match(/(\d{1,2})월\s*(\d{1,2})일/)
     if (dateM) {
-      const y = new Date().getFullYear()
+      // 채팅 날짜가 있으면 그 해를 사용 (연도 추론 정확도 향상)
+      const y = chatDate ? parseInt(chatDate.slice(0, 4)) : new Date().getFullYear()
       date = `${y}-${String(dateM[1]).padStart(2,'0')}-${String(dateM[2]).padStart(2,'0')}`
     }
     let time = '09:00'
