@@ -1,5 +1,33 @@
 import { today } from '../constants/styles'
 
+// 카카오톡 대화 내보내기 파일인지 감지 (txt 파일 혹은 그냥 붙여넣기 모두 대응)
+export function isKakaoExport(text) {
+  return /^카카오톡 대화/.test(text.trim()) ||
+         /\[.+?\]\s*\[(?:오전|오후)\s*\d{1,2}:\d{2}\]/.test(text)
+}
+
+// [이름] [오전/오후 HH:MM] 형식 prefix 제거, 날짜 구분선 제거
+export function preprocessKakaoExport(text) {
+  const lines = text.split('\n')
+  const result = []
+  for (const line of lines) {
+    const t = line.trim()
+    // 날짜 구분선 건너뜀: "──────── 2024년 3월 18일 월요일 ────────"
+    if (/^[-─]{5,}/.test(t)) continue
+    // 파일 헤더 건너뜀
+    if (t === '카카오톡 대화' || t.startsWith('저장한 날짜')) continue
+    // 메시지 prefix 제거 후 빈 줄로 블록 구분
+    const m = t.match(/^\[.+?\]\s*\[(?:오전|오후)\s*\d{1,2}:\d{2}\]\s*(.*)$/)
+    if (m) {
+      if (result.length > 0 && result[result.length - 1] !== '') result.push('')
+      result.push(m[1])
+    } else {
+      result.push(line)
+    }
+  }
+  return result.join('\n')
+}
+
 export function parseKoreanTime(raw) {
   if (!raw) return ''
   const s = raw.trim()
@@ -72,7 +100,8 @@ export function detectColMap(headers) {
 }
 
 export function parseKakaoChat(text) {
-  const blocks = text.trim().split(/\n{2,}/)
+  const processedText = isKakaoExport(text) ? preprocessKakaoExport(text) : text
+  const blocks = processedText.trim().split(/\n{2,}/)
   const results = []
 
   for (const block of blocks) {

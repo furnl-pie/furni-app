@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Btn } from '../common/ui'
-import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, newRow, timeToMin } from '../../utils/parsing'
+import { parseKoreanTime, parseDate, detectColMap, parseKakaoChat, isKakaoExport, preprocessKakaoExport, newRow, timeToMin } from '../../utils/parsing'
 import { navy, blue, green, amber, red, border, muted, textC, driverChip } from '../../constants/styles'
 import { resizeImage } from '../../utils/image'
 
@@ -28,6 +28,7 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
   const [kakaoRaw,  setKakaoRaw]  = useState('')
   const [kakaoRows, setKakaoRows] = useState([])
   const [kakaoMsg,  setKakaoMsg]  = useState('')
+  const kakaoFileRef = useRef(null)
 
   const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
   const todayStr = today.toISOString().slice(0, 10)
@@ -213,11 +214,28 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
   const handleKakaoParse = (text) => {
     if (!text.trim()) return
+    const processed = isKakaoExport(text) ? preprocessKakaoExport(text) : text
+    const blockCount = processed.trim().split(/\n{2,}/)
+      .filter(b => b.trim().split('\n').filter(l => l.trim()).length >= 3).length
     const result = parseKakaoChat(text)
     setKakaoRows(result)
+    const skipped = Math.max(0, blockCount - result.length)
     setKakaoMsg(result.length > 0
-      ? `✅ ${result.length}건 파싱 완료 · 확인 후 가져오기`
+      ? `✅ ${result.length}건 파싱 완료${skipped > 0 ? ` · ${skipped}건 전화번호 없어 건너뜀` : ''} · 확인 후 가져오기`
       : '⚠️ 인식된 일정이 없습니다. 형식을 확인해주세요.')
+  }
+
+  const handleKakaoFile = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const text = ev.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+      setKakaoRaw(text)
+      handleKakaoParse(text)
+    }
+    reader.readAsText(file, 'utf-8')
+    e.target.value = ''
   }
 
   const applyKakao = () => {
@@ -442,9 +460,14 @@ export default function BulkScheduleModal({ drivers, schedules = [], onAddMany, 
 
             {inputMode==='kakao' && (
               <div style={{ flex:1, overflowY:'auto', padding:20 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:textC, marginBottom:8, display:'flex', alignItems:'center', gap:8 }}>
+                <input ref={kakaoFileRef} type="file" accept=".txt" style={{ display:'none' }} onChange={handleKakaoFile} />
+                <div style={{ fontSize:13, fontWeight:600, color:textC, marginBottom:8, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                   💬 카카오톡 일정 메시지 붙여넣기
-                  <span style={{ fontSize:11, color:muted, fontWeight:400 }}>스케줄방 메시지를 복사해서 붙여넣으세요</span>
+                  <span style={{ fontSize:11, color:muted, fontWeight:400 }}>스케줄방 메시지를 복사하거나 txt 파일로 올려주세요</span>
+                  <button onClick={() => kakaoFileRef.current?.click()}
+                    style={{ marginLeft:'auto', padding:'5px 12px', background:'#eff6ff', color:blue, border:`1px solid #bfdbfe`, borderRadius:7, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                    📄 txt 파일 열기
+                  </button>
                 </div>
 
                 <div style={{ background:'#f0fdf4', border:`1px solid #86efac`, borderRadius:10, padding:'10px 14px', marginBottom:14, fontSize:12, color:'#166534', lineHeight:1.8 }}>
