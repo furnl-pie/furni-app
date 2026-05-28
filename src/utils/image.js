@@ -24,15 +24,18 @@ export const readFilesAsBase64 = async files => {
   const results = []
   for (const f of Array.from(files)) {
     if (!ALLOWED_MIME.includes(f.type)) {
-      alert(`"${f.name}"은(는) 이미지 파일이 아닙니다. (jpg/png/webp만 허용)`)
+      alert(`"${f.name}"은(는) 이미지 파일이 아닙니다. (${ALLOWED_MIME.map(m=>m.replace('image/','')).join('/')}만 허용)`)
       continue
     }
     if (f.size > MAX_FILE_SIZE) {
       alert(`"${f.name}"의 크기가 너무 큽니다. (20MB 이하만 허용)`)
       continue
     }
-    try { results.push(await resizeImage(f)) } catch (e) {
+    try {
+      results.push(await resizeImage(f))
+    } catch (e) {
       console.warn('이미지 처리 실패:', f.name, e)
+      alert(`"${f.name}" 처리 중 오류가 발생했습니다. 다른 이미지로 시도해 주세요.`)
     }
   }
   return results

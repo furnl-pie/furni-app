@@ -201,6 +201,14 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     users.filter(u => u.role === 'driver').sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
   , [users])
 
+  const scheduledDriverIds = useMemo(() => {
+    const set = new Set()
+    schedules.forEach(s => {
+      if (s.date === filterDate && s.driver_id) set.add(s.driver_id)
+    })
+    return set
+  }, [schedules, filterDate])
+
   // 기사별 읽지 않은 메시지 수 구독 (클라이언트 필터링)
   useEffect(() => {
     if (drivers.length === 0) return
@@ -605,6 +613,32 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
         )}
 
         <Card style={{ marginBottom:14 }}>
+          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', width:'100%' }}>
+              <div style={{ fontSize:13, fontWeight:700, color:textC, whiteSpace:'nowrap' }}>기사 채팅</div>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', overflowX:'auto', padding:'4px 0', minWidth:0 }}>
+                {drivers.map(d => (
+                  <button key={d.id} onClick={() => setChatDriver({ id:d.id, name:d.name })}
+                    style={{
+                      flex:'0 0 auto', display:'inline-flex', alignItems:'center', gap:6, minWidth:82, height:32,
+                      padding:'0 12px', borderRadius:999, border:`1px solid ${scheduledDriverIds.has(d.id) ? '#c7d2fe' : '#fce7f3'}`,
+                      background: scheduledDriverIds.has(d.id) ? '#eef2ff' : '#fdf2f8', color: scheduledDriverIds.has(d.id) ? '#4338ca' : '#be123c',
+                      fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'
+                    }}>
+                    <span>{d.name}</span>
+                    {unreadMap[d.id] > 0 && (
+                      <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:18, height:18, borderRadius:'50%', background:'#ef4444', color:'#fff', fontSize:10, fontWeight:700 }}>
+                        {unreadMap[d.id]}
+                      </span>
+                    )}
+                    {!scheduledDriverIds.has(d.id) && (
+                      <span style={{ background:'#fce7f3', color:'#be123c', borderRadius:999, padding:'0 6px', fontSize:10, fontWeight:700 }}>일정없음</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
           <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginBottom:10 }}>
             {/* 날짜 ‹ 오늘 › 버튼 */}
             <div style={{ display:'flex', alignItems:'center', gap:4 }}>

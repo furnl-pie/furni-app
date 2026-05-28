@@ -4,7 +4,7 @@ import { db } from '../../lib/firebase'
 import { Btn, Card } from '../common/ui'
 import { navy, blue, green, red, border, muted, textC, iStyle, today } from '../../constants/styles'
 import { readFilesAsBase64 } from '../../utils/image'
-import { uploadToCloudinary } from '../../utils/cloudinary'
+import { uploadPhotos } from '../../utils/cloudinary'
 
 const SITES = ['HK', '강서천일', '기타']
 const QUALITY_OPTIONS = ['혼합', '목재', '왈가닥', '기타']
@@ -92,7 +92,7 @@ export default function DisposalTab({ user }) {
     try {
       const finalSite = form.site === '기타' ? (form.site_custom || '기타') : form.site
       const folder = `disposal/${form.date}`
-      const uploadedPhotos = await Promise.all(form.photos.map(p => uploadToCloudinary(p, folder)))
+      const uploadedPhotos = await uploadPhotos(form.photos, folder)
       const data = {
         date:        form.date,
         site:        finalSite,
