@@ -1,10 +1,10 @@
 // src/hooks/useAppData.js
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { db } from '../lib/firebase'
 import {
   collection, doc, query, where,
-  setDoc, updateDoc, deleteDoc,
-  onSnapshot, writeBatch,
+  setDoc, updateDoc, deleteDoc, getDoc,
+  onSnapshot, writeBatch, getDocs,
   serverTimestamp,
 } from 'firebase/firestore'
 import { hashPw, verifyPw } from '../utils/auth'
@@ -49,6 +49,11 @@ export function useAppData() {
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState(null)
 
+  // 초기 로드 범위 및 추가 조회한 날짜 추적
+  const rangeRef       = useRef({ min: '', max: '' })
+  const fetchedDates   = useRef(new Set())
+  const usersLoadedRef = useRef(false)
+
   useEffect(() => {
     let unsubUsers, unsubSchedules
 
@@ -56,7 +61,9 @@ export function useAppData() {
       try {
         unsubUsers = onSnapshot(collection(db, 'users'), snap => {
           setUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })))
-        }, err => { console.error('users 스냅샷 오류:', err); setError('데이터를 불러오지 못했습니다.') })
+          usersLoadedRef.current = true
+          setLoading(false)
+        }, err => { console.error('users 스냅샷 오류:', err); setError('데이터를 불러오지 못했습니다.'); setLoading(false) })
 
         const cutoff = new Date()
         cutoff.setDate(cutoff.getDate() - 7)
@@ -64,14 +71,25 @@ export function useAppData() {
         const upper = new Date()
         upper.setDate(upper.getDate() + 30)
         const upperStr = upper.toISOString().slice(0, 10)
+        rangeRef.current = { min: cutoffStr, max: upperStr }
 
         unsubSchedules = onSnapshot(query(collection(db, 'schedules'), where('date', '>=', cutoffStr), where('date', '<=', upperStr)), snap => {
-          setSchedules(snap.docs.map(d => ({ ...d.data(), id: d.id })))
-          setLoading(false)
+          const rangeDocs = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+          // 범위 밖에서 추가 조회한 날짜 데이터는 보존
+          setSchedules(prev => {
+            const extras = prev.filter(s => s.date < cutoffStr || s.date > upperStr)
+            return [...rangeDocs, ...extras]
+          })
+          if (usersLoadedRef.current) setLoading(false)
         }, err => { console.error('schedules 스냅샷 오류:', err); setError('데이터를 불러오지 못했습니다.'); setLoading(false) })
 
         // 네트워크 불안정 시 무한로딩 방지 (8초 후 강제 해제)
-        setTimeout(() => setLoading(false), 8000)
+        setTimeout(() => {
+          if (!usersLoadedRef.current) {
+            setError('Firebase 연결 상태를 확인해주세요. 데이터를 불러오는 중 문제가 발생했습니다.')
+          }
+          setLoading(false)
+        }, 8000)
 
       } catch (e) {
         setError(e.message)
@@ -81,6 +99,23 @@ export function useAppData() {
 
     init()
     return () => { unsubUsers?.(); unsubSchedules?.() }
+  }, [])
+
+  // ── 범위 밖 날짜 단건 조회 ────────────────────────────────────────
+  const ensureDate = useCallback(async (dateStr) => {
+    if (!dateStr) return
+    const { min, max } = rangeRef.current
+    if (min && max && dateStr >= min && dateStr <= max) return // 이미 실시간 구독 범위 내
+    if (fetchedDates.current.has(dateStr)) return              // 이미 조회함
+    fetchedDates.current.add(dateStr)
+    try {
+      const snap = await getDocs(query(collection(db, 'schedules'), where('date', '==', dateStr)))
+      const newDocs = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+      setSchedules(prev => [...prev.filter(s => s.date !== dateStr), ...newDocs])
+    } catch (e) {
+      fetchedDates.current.delete(dateStr) // 실패 시 재시도 가능하도록
+      console.error('날짜 조회 실패:', e)
+    }
   }, [])
 
   // ── 로그인 (salt+SHA-256, 구형 자동 마이그레이션, 횟수 제한) ─────
@@ -109,11 +144,11 @@ export function useAppData() {
       )
     }
 
-    // 세션 토큰 생성 (30일)
+    // 세션 토큰 생성 (30일) → sessions 컬렉션에 저장
     const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map(b => b.toString(16).padStart(2, '0')).join('')
     const expiry = Date.now() + 30 * 24 * 60 * 60 * 1000
-    updateDoc(doc(db, 'users', user.id), { sessionToken: token, sessionExpiry: expiry }).catch(() => {})
+    setDoc(doc(db, 'sessions', user.id), { token, expiry }).catch(() => {})
 
     resetRate(id)
     return { user, sessionToken: token }
@@ -123,13 +158,23 @@ export function useAppData() {
   const loginWithToken = useCallback(async (userId, token) => {
     if (!token || !userId) return { error: '세션 없음' }
     const user = users.find(u => u.id === userId)
-    if (!user || user.sessionToken !== token) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
-    if (!user.sessionExpiry || user.sessionExpiry < Date.now()) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
+    if (!user) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
+    try {
+      const snap = await getDoc(doc(db, 'sessions', userId))
+      if (!snap.exists()) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
+      const { token: savedToken, expiry } = snap.data()
+      if (savedToken !== token) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
+      if (!expiry || expiry < Date.now()) return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
+    } catch {
+      return { error: '세션 확인에 실패했습니다. 다시 로그인해 주세요.' }
+    }
     return { user }
   }, [users])
 
   // ── 세션 삭제 (로그아웃 시) ───────────────────────────────────────
   const clearSession = useCallback(async (userId) => {
+    // sessions 컬렉션에서 삭제 + 구형 users 문서에 남은 필드도 정리
+    deleteDoc(doc(db, 'sessions', userId)).catch(() => {})
     updateDoc(doc(db, 'users', userId), { sessionToken: null, sessionExpiry: null }).catch(() => {})
   }, [])
 
@@ -292,5 +337,6 @@ export function useAppData() {
     addDriver, updateDriver, deleteDriver,
     requestAccountDeletion,
     submitFeedback,
+    ensureDate,
   }
 }
