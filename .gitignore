@@ -15,6 +15,29 @@ local.properties
 android.keystore
 *.jks
 
+# Android 프로젝트 빌드 결과물
+*.apk
+*.aab
+*.idsig
+app/build/
+build/
+.gradle/
+
+# Android Firebase 설정 (API 키 포함)
+app/google-services.json
+
+# TWA/Bubblewrap 생성 파일
+twa-manifest.json
+manifest-checksum.txt
+store_icon.png
+fnfurni-app.png
+
+# 임시 파일
+temp_firestore_check.cjs
+
+# Claude Code 내부 설정
+.claude/
+
 # Logs
 logs
 *.log
