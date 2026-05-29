@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, Fragment } from 'react'
 import ExcelJS from 'exceljs'
-import { getDocs, query as fsQuery, collection, where, onSnapshot, orderBy } from 'firebase/firestore'
+import { getDocs, query as fsQuery, collection, where, onSnapshot, orderBy, limit } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import AdminDetail from './AdminDetail'
 import BillingPage from './BillingPage'
@@ -101,6 +101,8 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const [showHelp, setHelp] = useState(false)
   const [chatDriver, setChatDriver]  = useState(null) // { id, name }
   const [unreadMap, setUnreadMap]    = useState({}) // { driverId: count }
+  const [hasChatsMap, setHasChatsMap] = useState({}) // { driverId: bool }
+  const [showMenuDrop, setMenuDrop]  = useState(false)
   const [listView, setListView]   = useState(() => window.innerWidth < 768 ? 'card' : 'table')
 
   const dragId         = useRef(null)
@@ -108,6 +110,21 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   const touchDragId    = useRef(null)
   const touchOverId    = useRef(null)
   const listContRef    = useRef(null)
+  const menuDropRef    = useRef(null)
+
+  // 메뉴 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!showMenuDrop) return
+    const handler = (e) => {
+      if (menuDropRef.current && !menuDropRef.current.contains(e.target)) setMenuDrop(false)
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [showMenuDrop])
 
   // 청구/처리 탭 진입 시 history 엔트리 추가 → 브라우저 뒤로가기로 메인 복귀
   useEffect(() => {
@@ -201,16 +218,22 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     users.filter(u => u.role === 'driver').sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
   , [users])
 
-  // 기사별 읽지 않은 메시지 수 구독 (클라이언트 필터링)
+  // 기사별 읽지 않은 메시지 수 + 채팅 존재 여부 구독
   useEffect(() => {
     if (drivers.length === 0) return
-    const unsubs = drivers.map(d => {
-      const q = fsQuery(collection(db, 'chats', d.id, 'messages'), where('read', '==', false))
-      return onSnapshot(q, snap => {
-        const count = snap.docs.filter(doc => doc.data().sender !== user.id).length
-        setUnreadMap(prev => ({ ...prev, [d.id]: count }))
-      })
-    })
+    const unsubs = drivers.flatMap(d => [
+      onSnapshot(
+        fsQuery(collection(db, 'chats', d.id, 'messages'), where('read', '==', false)),
+        snap => {
+          const count = snap.docs.filter(doc => doc.data().sender !== user.id).length
+          setUnreadMap(prev => ({ ...prev, [d.id]: count }))
+        }
+      ),
+      onSnapshot(
+        fsQuery(collection(db, 'chats', d.id, 'messages'), limit(1)),
+        snap => setHasChatsMap(prev => ({ ...prev, [d.id]: snap.docs.length > 0 }))
+      ),
+    ])
     return () => unsubs.forEach(u => u())
   }, [drivers.map(d=>d.id).join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -555,6 +578,17 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
   if (view==='detail' && selected)
     return <AdminDetail schedule={selected} onUpdate={p=>onUpdate(selected.id,p)} onBack={()=>setView('list')} drivers={drivers}/>
 
+  const menuItems = [
+    ['📥', '사진',   () => setView('photos')],
+    ['🚛', '처리',   () => setView('disposal')],
+    ['💰', '청구',   () => setView('billing')],
+    ['⬇',  '엑셀',   exportCSV],
+    ['👤', '기사',   () => setDriverMgr(true)],
+    ['📬', '의견함', () => setView('feedbacks')],
+    ['?',  '도움말', () => setHelp(true)],
+    ['⚙️', '설정',   () => setAdminSettings(true)],
+  ]
+
   let lastDriverId = '__init__'
 
   return (
@@ -568,14 +602,33 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
           </div>
         </div>
         <div style={{ display:'flex', gap:4, justifyContent:'flex-end', alignItems:'center' }}>
-          {[['📥','사진',()=>setView('photos')],['🚛','처리',()=>setView('disposal')],['💰','청구',()=>setView('billing')],['⬇','엑셀',exportCSV],['👤','기사',()=>setDriverMgr(true)],['📬','의견함',()=>setView('feedbacks')],['?','도움말',()=>setHelp(true)],['⚙️','설정',()=>setAdminSettings(true)]].map(([icon,label,fn]) => (
+          {isPC ? menuItems.map(([icon,label,fn]) => (
             <button key={label} onClick={fn}
-              style={{ height:32, padding: isPC ? '0 11px' : '0 9px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize: isPC ? 12 : 15, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
+              style={{ height:32, padding:'0 11px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#6b7280', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}
               onMouseEnter={e=>{ e.currentTarget.style.background='#eef2ff'; e.currentTarget.style.color='#4f46e5'; e.currentTarget.style.borderColor='#a5b4fc' }}
               onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#6b7280'; e.currentTarget.style.borderColor='#eaecf0' }}>
-              {isPC ? `${icon} ${label}` : icon}
+              {icon} {label}
             </button>
-          ))}
+          )) : (
+            <div ref={menuDropRef} style={{ position:'relative' }}>
+              <button onClick={()=>setMenuDrop(v=>!v)}
+                style={{ height:32, padding:'0 13px', borderRadius:8, border:'1px solid #eaecf0', background: showMenuDrop ? '#eef2ff' : 'transparent', color: showMenuDrop ? '#4f46e5' : '#6b7280', fontSize:20, lineHeight:1, cursor:'pointer', fontFamily:'inherit' }}>
+                ≡
+              </button>
+              {showMenuDrop && (
+                <div style={{ position:'absolute', top:38, right:0, background:'#fff', border:'1px solid #eaecf0', borderRadius:12, boxShadow:'0 4px 24px rgba(0,0,0,.13)', zIndex:300, minWidth:150, padding:'4px 0', overflow:'hidden' }}>
+                  {menuItems.map(([icon,label,fn], i) => (
+                    <div key={label}
+                      onClick={()=>{ fn(); setMenuDrop(false) }}
+                      style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 16px', cursor:'pointer', fontSize:14, color:'#374151', fontWeight:600, borderBottom: i < menuItems.length-1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <span style={{ fontSize:17, width:22, textAlign:'center', flexShrink:0 }}>{icon}</span>
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <button onClick={onLogout}
             style={{ height:32, padding: isPC ? '0 11px' : '0 9px', borderRadius:8, border:'1px solid #eaecf0', background:'transparent', color:'#9ca3af', fontSize: isPC ? 12 : 15, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
             {isPC ? '로그아웃' : '↩'}
@@ -617,7 +670,10 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
             <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', width:'100%' }}>
               <div style={{ fontSize:13, fontWeight:700, color:textC, whiteSpace:'nowrap' }}>기사 채팅</div>
               <div style={{ display:'flex', gap:6, flexWrap:'wrap', overflowX:'auto', padding:'4px 0', minWidth:0 }}>
-                {drivers.map(d => (
+                {drivers.filter(d => hasChatsMap[d.id]).length === 0 && (
+                  <span style={{ fontSize:12, color:'#9ca3af', padding:'4px 0' }}>채팅 내역 없음</span>
+                )}
+                {drivers.filter(d => hasChatsMap[d.id]).map(d => (
                   <button key={d.id} onClick={() => setChatDriver({ id:d.id, name:d.name })}
                     style={{
                       flex:'0 0 auto', display:'inline-flex', alignItems:'center', gap:6, minWidth:82, height:32,
