@@ -6,15 +6,21 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow create: if isValidUser(request.resource.data);
-      allow update: if true;
+      // role·id 변경 불가, sessionToken/sessionExpiry는 삭제(null)만 허용
+      allow update: if isValidUserUpdate(request.resource.data, resource.data);
       allow delete: if resource.data.role != 'admin';
+    }
+
+    // ── sessions 컬렉션 (세션 토큰 분리) ─────────────────────────
+    match /sessions/{userId} {
+      allow read, write: if true;
     }
 
     // ── schedules 컬렉션 ─────────────────────────────────────────
     match /schedules/{scheduleId} {
       allow read: if true;
       allow create: if isValidSchedule(request.resource.data);
-      allow update: if true;
+      allow update: if isValidScheduleUpdate(request.resource.data);
       allow delete: if true;
     }
 
@@ -38,6 +44,21 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // ── deletion_requests 컬렉션 (계정 삭제 요청) ────────────────
+    // 생성만 허용 (읽기·수정·삭제는 서버/관리자만)
+    match /deletion_requests/{docId} {
+      allow create: if isValidDeletionRequest(request.resource.data);
+      allow read, update, delete: if false;
+    }
+
+    // ── feedbacks 컬렉션 (의견함) ─────────────────────────────────
+    // 생성·읽기 허용, 수정·삭제 불가
+    match /feedbacks/{docId} {
+      allow create: if isValidFeedback(request.resource.data);
+      allow read: if true;
+      allow update, delete: if false;
+    }
+
     // ── 그 외 컬렉션: 거부 ────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
@@ -52,10 +73,35 @@ service cloud.firestore {
         && data.name is string && data.name.size() <= 30;
     }
 
+    function isValidUserUpdate(newData, oldData) {
+      // role, id 변경 불가
+      // sessionToken/sessionExpiry: null(삭제)만 허용, 신규 값 설정 불가
+      return newData.role == oldData.role
+        && newData.id == oldData.id
+        && (newData.get('sessionToken', null) == oldData.get('sessionToken', null)
+            || newData.get('sessionToken', null) == null)
+        && (newData.get('sessionExpiry', null) == oldData.get('sessionExpiry', null)
+            || newData.get('sessionExpiry', null) == null);
+    }
+
     function isValidSchedule(data) {
       return data.keys().hasAll(['date', 'status'])
         && data.status in ['대기', '이동중', '진행중', '완료', '청구완료']
         && data.date is string && data.date.size() == 10;
+    }
+
+    function isValidScheduleUpdate(data) {
+      return data.status in ['대기', '이동중', '진행중', '완료', '청구완료']
+        && data.date is string && data.date.size() == 10;
+    }
+
+    function isValidDeletionRequest(data) {
+      return data.keys().hasAll(['status', 'createdAt'])
+        && data.status == 'pending';
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['createdAt']);
     }
   }
 }

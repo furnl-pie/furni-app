@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import TruckIcon from './common/TruckIcon'
 import { Field, Btn } from './common/ui'
 import { navy, muted, red, border, textC, iStyle } from '../constants/styles'
@@ -31,6 +31,22 @@ export default function LoginPage({ onLogin, onLoginWithToken, users }) {
     }).catch(() => {})
   }, [users]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const initialSavedId = useRef(localStorage.getItem('saved_id') || '')
+  useEffect(() => {
+    // 초기 로드 시 로컬에 저장된 ID가 실제로 존재하지 않으면 제거합니다.
+    if (!initialSavedId.current) return
+    if (users.length === 0) return
+    const exists = users.some(u => u.id === initialSavedId.current)
+    if (!exists) {
+      localStorage.removeItem('saved_id')
+      localStorage.setItem('save_id', '0')
+      // 초기 저장 ID만 제거하고, 사용자가 입력 중인 값에는 간섭하지 않습니다.
+      setId('')
+      setSaveId(false)
+      setErr('저장된 아이디가 없습니다. 아이디를 다시 입력해 주세요.')
+    }
+  }, [users])
+
   const go = async () => {
     const result = await onLogin(id, pw)
     if (result.error) return setErr(result.error)
@@ -48,6 +64,9 @@ export default function LoginPage({ onLogin, onLoginWithToken, users }) {
       localStorage.setItem('auto_login', '0')
     }
   }
+
+  const currentUser = users.find(u => u.id === id)
+  const showDefaultPasswordHint = !currentUser || currentUser.role !== 'admin'
 
   const toggleSaveId = () => {
     const v = !saveId; setSaveId(v)
@@ -93,7 +112,9 @@ export default function LoginPage({ onLogin, onLoginWithToken, users }) {
             onKeyDown={e=>e.key==='Enter'&&go()} placeholder="비밀번호를 입력하세요"
             style={inputStyle}/>
         </Field>
-        <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16, marginTop:-6 }}>기본 비밀번호 : 1111</div>
+        {showDefaultPasswordHint && (
+          <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16, marginTop:-6 }}>기본 비밀번호 : 1111</div>
+        )}
 
         <div style={{ display:'flex', gap:16, marginBottom:16, flexWrap:'wrap' }}>
           {[

@@ -1,4 +1,5 @@
 const { region, pubsub } = require('firebase-functions/v1')
+const crypto = require('crypto')
 const { initializeApp } = require('firebase-admin/app')
 const { getFirestore } = require('firebase-admin/firestore')
 const { getMessaging } = require('firebase-admin/messaging')
@@ -150,4 +151,24 @@ exports.checkOverdue = pubsub
         },
       }).catch(() => null)
     }
+  })
+
+// ── Cloudinary 서명 발급 (클라이언트 대신 서버에서 서명) ──────────
+// 환경변수 설정: firebase functions:config:set cloudinary.api_key="..." cloudinary.api_secret="..."
+exports.getCloudinarySignature = region('us-central1')
+  .runWith({ maxInstances: 10 })
+  .https.onCall((data) => {
+    const apiKey    = process.env.CLOUDINARY_API_KEY
+    const apiSecret = process.env.CLOUDINARY_API_SECRET
+    if (!apiKey || !apiSecret) throw new Error('Cloudinary 환경변수가 설정되지 않았습니다')
+
+    const timestamp = Math.floor(Date.now() / 1000)
+    const folder    = (data && typeof data.folder === 'string') ? data.folder : 'dispatch'
+
+    // 서명 대상 파라미터 (알파벳 순 정렬 필수) — furni_photo preset 동일 설정
+    const params  = { folder, overwrite: 'false', timestamp }
+    const toSign  = Object.keys(params).sort().map(k => `${k}=${params[k]}`).join('&') + apiSecret
+    const signature = crypto.createHash('sha1').update(toSign).digest('hex')
+
+    return { timestamp, signature, apiKey, overwrite: false }
   })

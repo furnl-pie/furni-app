@@ -3,6 +3,13 @@
 .env.*
 !.env.example
 
+# Firebase 설정 메모 (실제 키 포함 가능)
+src/firebase_env.txt
+
+# Firebase Functions 환경변수 (API 시크릿 포함)
+functions/.env
+functions/.env.*
+
 # Android 서명 관련 (비밀번호/키 포함)
 local.properties
 android.keystore

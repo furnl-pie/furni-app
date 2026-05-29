@@ -1,6 +1,14 @@
 import { useState } from 'react'
+import { db } from '../lib/firebase'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 
-export default function DeleteAccountPage({ onSubmit }) {
+export default function DeleteAccountPage() {
+  const onSubmit = async ({ userId, name, phone, reason }) => {
+    await addDoc(collection(db, 'deletion_requests'), {
+      userId: userId || '', name: name || '', phone: phone || '',
+      reason: reason || '', status: 'pending', createdAt: serverTimestamp(),
+    })
+  }
   const [form, setForm]   = useState({ userId: '', name: '', phone: '', reason: '' })
   const [status, setStatus] = useState('idle') // idle | loading | done | error
   const [errMsg, setErrMsg] = useState('')

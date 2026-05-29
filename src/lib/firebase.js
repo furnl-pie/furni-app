@@ -3,6 +3,7 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
 import { getMessaging }  from 'firebase/messaging'
+import { getFunctions }  from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,7 +15,8 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig)
-export const db = getFirestore(app)
+export const db        = getFirestore(app)
+export const functions = getFunctions(app, 'us-central1')
 enableIndexedDbPersistence(db).catch(() => {})
 
 let messaging = null

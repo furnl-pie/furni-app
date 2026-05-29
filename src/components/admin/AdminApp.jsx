@@ -201,14 +201,6 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     users.filter(u => u.role === 'driver').sort((a,b) => getDriverSortKey(a) - getDriverSortKey(b))
   , [users])
 
-  const scheduledDriverIds = useMemo(() => {
-    const set = new Set()
-    schedules.forEach(s => {
-      if (s.date === filterDate && s.driver_id) set.add(s.driver_id)
-    })
-    return set
-  }, [schedules, filterDate])
-
   // 기사별 읽지 않은 메시지 수 구독 (클라이언트 필터링)
   useEffect(() => {
     if (drivers.length === 0) return
@@ -227,6 +219,14 @@ export default function AdminApp({ user, users, schedules, onAddMany, onUpdate, 
     driverDropOpen, setDriverDropOpen, toggleDriverFilter,
     baseFiltered, filtered, sorted, stats,
   } = useAdminFilters(schedules, drivers)
+
+  const scheduledDriverIds = useMemo(() => {
+    const set = new Set()
+    schedules.forEach(s => {
+      if (s.date === filterDate && s.driver_id) set.add(s.driver_id)
+    })
+    return set
+  }, [schedules, filterDate])
 
   // 초기 로드 범위 밖 날짜 선택 시 Firestore 재조회
   useEffect(() => { onEnsureDate?.(filterDate) }, [filterDate])

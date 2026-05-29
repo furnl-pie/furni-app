@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { db } from '../lib/firebase'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 
-export default function FeedbackPage({ onSubmit }) {
+export default function FeedbackPage() {
   const [form, setForm] = useState({ name: '', phone: '', category: '', content: '' })
-  const [status, setStatus] = useState('idle') // idle | loading | done
+  const [status, setStatus] = useState('idle')
   const [errMsg, setErrMsg] = useState('')
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
@@ -15,11 +17,12 @@ export default function FeedbackPage({ onSubmit }) {
     setErrMsg('')
     setStatus('loading')
     try {
-      await onSubmit({
-        name:     form.name.trim(),
-        phone:    form.phone.trim(),
-        category: form.category,
-        content:  form.content.trim(),
+      await addDoc(collection(db, 'feedbacks'), {
+        name:      form.name.trim(),
+        phone:     form.phone.trim(),
+        category:  form.category,
+        content:   form.content.trim(),
+        createdAt: serverTimestamp(),
       })
       setStatus('done')
     } catch {
@@ -68,8 +71,7 @@ export default function FeedbackPage({ onSubmit }) {
 
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>유형</div>
-          <select value={form.category} onChange={set('category')}
-            style={{ ...inp }}>
+          <select value={form.category} onChange={set('category')} style={inp}>
             <option value="">선택 안 함</option>
             <option value="bug">🐛 버그 신고</option>
             <option value="improvement">💡 개선 제안</option>
@@ -91,14 +93,12 @@ export default function FeedbackPage({ onSubmit }) {
 
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>이름 (선택)</div>
-          <input value={form.name} onChange={set('name')} placeholder="홍길동"
-            style={inp} />
+          <input value={form.name} onChange={set('name')} placeholder="홍길동" style={inp} />
         </div>
 
         <div style={{ marginBottom: 22 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>연락처 (선택)</div>
-          <input value={form.phone} onChange={set('phone')} placeholder="답변 원하시면 입력해 주세요"
-            style={inp} />
+          <input value={form.phone} onChange={set('phone')} placeholder="답변 원하시면 입력해 주세요" style={inp} />
         </div>
 
         {errMsg && (
